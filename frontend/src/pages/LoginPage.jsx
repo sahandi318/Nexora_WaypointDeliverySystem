@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import {
+  Link,
   useNavigate,
 } from "react-router-dom";
 
@@ -134,6 +135,7 @@ function LoginPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
       {/* Theme control */}
+
       <div className="absolute right-5 top-5 z-20 sm:right-8 sm:top-8">
         <ThemeToggle />
       </div>
@@ -170,6 +172,7 @@ function LoginPage() {
               bg-white/5
             "
           />
+
 
           <div
             className="
@@ -564,6 +567,27 @@ function LoginPage() {
                 </div>
 
 
+                {/* FORGOT PASSWORD */}
+
+                <div className="flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="
+                      nexora-focus
+                      rounded-md
+                      text-sm
+                      font-semibold
+                      text-[var(--color-primary)]
+                      transition
+                      hover:text-[var(--color-primary-hover)]
+                      hover:underline
+                    "
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+
                 {/* ERROR */}
 
                 {errorMessage && (
@@ -679,6 +703,10 @@ function LoginPage() {
 }
 
 
+// ============================================================
+// BRAND LOCKUP
+// ============================================================
+
 function BrandLockup({
   inverse = false,
 }) {
@@ -744,6 +772,10 @@ function BrandLockup({
   );
 }
 
+
+// ============================================================
+// FEATURE BADGE
+// ============================================================
 
 function FeatureBadge({
   icon: Icon,

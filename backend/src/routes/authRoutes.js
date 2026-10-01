@@ -10,6 +10,8 @@ import {
 
 import {
   forgotPassword,
+  resetPassword,
+  verifyResetOtp,
 } from "../controllers/passwordResetController.js";
 
 import {
@@ -34,6 +36,18 @@ router.post(
 router.post(
   "/forgot-password",
   forgotPassword
+);
+
+
+router.post(
+  "/verify-reset-otp",
+  verifyResetOtp
+);
+
+
+router.post(
+  "/reset-password",
+  resetPassword
 );
 
 

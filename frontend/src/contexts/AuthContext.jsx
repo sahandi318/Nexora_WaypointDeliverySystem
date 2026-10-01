@@ -7,6 +7,12 @@ import api, {
   ACCESS_TOKEN_KEY,
 } from "../services/api";
 
+import {
+  clearPasswordResetSession,
+  savePasswordResetIdentifier,
+  savePasswordResetToken,
+} from "../services/passwordResetSession";
+
 import AuthContext from "./AuthContextCore";
 
 
@@ -126,6 +132,9 @@ export function AuthProvider({
     }
 
 
+    clearPasswordResetSession();
+
+
     sessionStorage.setItem(
       ACCESS_TOKEN_KEY,
       token
@@ -142,7 +151,7 @@ export function AuthProvider({
 
 
   // ==========================================================
-  // CHANGE PASSWORD
+  // FIRST LOGIN PASSWORD CHANGE
   // ==========================================================
 
   async function changePassword({
@@ -182,6 +191,112 @@ export function AuthProvider({
 
 
   // ==========================================================
+  // REQUEST PASSWORD RESET
+  // ==========================================================
+
+  async function requestPasswordReset({
+    identifier,
+  }) {
+    const cleanedIdentifier =
+      identifier.trim();
+
+
+    const response =
+      await api.post(
+        "/auth/forgot-password",
+        {
+          identifier:
+            cleanedIdentifier,
+        }
+      );
+
+
+    savePasswordResetIdentifier(
+      cleanedIdentifier
+    );
+
+
+    /*
+     * A new OTP request invalidates the browser's
+     * previously stored reset authorization.
+     */
+    savePasswordResetToken(
+      null
+    );
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
+  // VERIFY RESET OTP
+  // ==========================================================
+
+  async function verifyPasswordResetOtp({
+    identifier,
+    otp,
+  }) {
+    const response =
+      await api.post(
+        "/auth/verify-reset-otp",
+        {
+          identifier:
+            identifier.trim(),
+
+          otp,
+        }
+      );
+
+
+    const resetToken =
+      response.data.resetToken;
+
+
+    if (!resetToken) {
+      throw new Error(
+        "The server returned an invalid reset authorization."
+      );
+    }
+
+
+    savePasswordResetToken(
+      resetToken
+    );
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
+  // RESET FORGOTTEN PASSWORD
+  // ==========================================================
+
+  async function resetForgottenPassword({
+    resetToken,
+    newPassword,
+    confirmPassword,
+  }) {
+    const response =
+      await api.post(
+        "/auth/reset-password",
+        {
+          resetToken,
+          newPassword,
+          confirmPassword,
+        }
+      );
+
+
+    clearPasswordResetSession();
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
   // LOGOUT
   // ==========================================================
 
@@ -189,6 +304,8 @@ export function AuthProvider({
     sessionStorage.removeItem(
       ACCESS_TOKEN_KEY
     );
+
+    clearPasswordResetSession();
 
     setUser(null);
   }
@@ -224,7 +341,15 @@ export function AuthProvider({
 
     login,
     logout,
+
     changePassword,
+
+    requestPasswordReset,
+
+    verifyPasswordResetOtp,
+
+    resetForgottenPassword,
+
     refreshUser,
   };
 

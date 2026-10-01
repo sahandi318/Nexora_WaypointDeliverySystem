@@ -9,9 +9,16 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import useAuth from "./hooks/useAuth";
 
 import ChangePasswordPage from "./pages/ChangePasswordPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
+import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+
+import {
+  getPasswordResetToken,
+} from "./services/passwordResetSession";
 
 import {
   getRoleHomePath,
@@ -33,6 +40,34 @@ function App() {
         path="/login"
         element={
           <LoginRoute />
+        }
+      />
+
+
+      <Route
+        path="/forgot-password"
+        element={
+          <RecoveryRoute>
+            <ForgotPasswordPage />
+          </RecoveryRoute>
+        }
+      />
+
+
+      <Route
+        path="/verify-reset-otp"
+        element={
+          <RecoveryRoute>
+            <VerifyResetOtpPage />
+          </RecoveryRoute>
+        }
+      />
+
+
+      <Route
+        path="/reset-password"
+        element={
+          <ResetPasswordRoute />
         }
       />
 
@@ -222,12 +257,124 @@ function LoginRoute() {
   }
 
 
-  return <LoginPage />;
+  return (
+    <LoginPage />
+  );
 }
 
 
 // ============================================================
-// PASSWORD CHANGE ROUTE
+// PUBLIC RECOVERY ROUTE
+// ============================================================
+
+function RecoveryRoute({
+  children,
+}) {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return children;
+}
+
+
+// ============================================================
+// RESET PASSWORD ROUTE
+// ============================================================
+
+function ResetPasswordRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  const resetToken =
+    getPasswordResetToken();
+
+
+  if (!resetToken) {
+    return (
+      <Navigate
+        to="/forgot-password"
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <ResetPasswordPage />
+  );
+}
+
+
+// ============================================================
+// FIRST-LOGIN PASSWORD CHANGE
 // ============================================================
 
 function PasswordChangeRoute() {

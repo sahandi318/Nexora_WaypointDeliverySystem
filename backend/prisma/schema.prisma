@@ -126,16 +126,6 @@ model User {
 // ============================================================
 // PASSWORD RESET OTP
 // ============================================================
-//
-// The real six-digit OTP is never stored.
-// Only a cryptographic HMAC hash is stored.
-//
-// Stage 5.5D will use:
-// - expiration
-// - attempt limits
-// - one-time use protection
-//
-// ============================================================
 
 model PasswordResetOtp {
   id Int @id @default(autoincrement())
@@ -143,13 +133,22 @@ model PasswordResetOtp {
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HMAC-SHA256 hash of the real six-digit OTP.
   otpHash String @db.VarChar(64)
 
+  // OTP cannot be verified after this time.
   expiresAt DateTime
 
+  // Number of failed verification attempts.
   attempts Int @default(0)
 
+  // Set once the OTP has successfully been verified
+  // or otherwise invalidated.
   usedAt DateTime?
+
+  // Set after Stage 5.5E successfully changes the password.
+  // This prevents the reset authorization from being reused.
+  resetCompletedAt DateTime?
 
   createdAt DateTime @default(now())
 
