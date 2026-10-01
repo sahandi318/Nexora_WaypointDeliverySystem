@@ -15,7 +15,7 @@ import ThemeToggle from "../../components/common/ThemeToggle";
 
 import useAuth from "../../hooks/useAuth";
 
-import waypointLogo from "../../assets/nexora-logo.jpeg";
+import waypointLogo from "../../assets/waypoint-logo.png";
 
 
 function StoreManagerDashboardPage() {
@@ -45,6 +45,10 @@ function StoreManagerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+      {/* ======================================================
+          HEADER
+          ====================================================== */}
+
       <header
         className="
           border-b
@@ -65,6 +69,8 @@ function StoreManagerDashboardPage() {
             sm:px-8
           "
         >
+          {/* BRAND */}
+
           <div className="flex items-center gap-3">
             <div
               className="
@@ -74,34 +80,47 @@ function StoreManagerDashboardPage() {
                 items-center
                 justify-center
                 overflow-hidden
-                rounded-xl
-                bg-white
-                p-1
-                shadow-sm
               "
             >
               <img
                 src={waypointLogo}
                 alt="Waypoint"
-                className="h-full w-full object-contain"
+                className="
+                  h-full
+                  w-full
+                  object-contain
+                "
               />
             </div>
 
 
             <div>
-              <p className="font-extrabold tracking-[0.03em]">
+              <p
+                className="
+                  font-extrabold
+                  tracking-[0.03em]
+                "
+              >
                 WAYPOINT
               </p>
 
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p
+                className="
+                  text-xs
+                  text-[var(--color-text-muted)]
+                "
+              >
                 Store Manager
               </p>
             </div>
           </div>
 
 
+          {/* HEADER ACTIONS */}
+
           <div className="flex items-center gap-2">
             <ThemeToggle />
+
 
             <button
               type="button"
@@ -138,6 +157,10 @@ function StoreManagerDashboardPage() {
       </header>
 
 
+      {/* ======================================================
+          PAGE CONTENT
+          ====================================================== */}
+
       <main
         className="
           mx-auto
@@ -158,6 +181,8 @@ function StoreManagerDashboardPage() {
             md:p-8
           "
         >
+          {/* PAGE HEADER */}
+
           <div
             className="
               flex
@@ -183,7 +208,14 @@ function StoreManagerDashboardPage() {
                   text-[var(--color-success)]
                 "
               >
-                <span className="h-2 w-2 rounded-full bg-[var(--color-success)]" />
+                <span
+                  className="
+                    h-2
+                    w-2
+                    rounded-full
+                    bg-[var(--color-success)]
+                  "
+                />
 
                 Authenticated
               </div>
@@ -241,7 +273,19 @@ function StoreManagerDashboardPage() {
           </div>
 
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* ==================================================
+              OUTLET SUMMARY
+              ================================================== */}
+
+          <div
+            className="
+              mt-8
+              grid
+              gap-4
+              sm:grid-cols-2
+              lg:grid-cols-4
+            "
+          >
             <InfoCard
               icon={Store}
               label="Outlet"
@@ -250,6 +294,7 @@ function StoreManagerDashboardPage() {
                 "Not assigned"
               }
             />
+
 
             <InfoCard
               icon={Building2}
@@ -260,6 +305,7 @@ function StoreManagerDashboardPage() {
               }
             />
 
+
             <InfoCard
               icon={MapPin}
               label="District"
@@ -268,6 +314,7 @@ function StoreManagerDashboardPage() {
                 "Not available"
               }
             />
+
 
             <InfoCard
               icon={Clock3}
@@ -282,6 +329,10 @@ function StoreManagerDashboardPage() {
           </div>
 
 
+          {/* ==================================================
+              ADDITIONAL OUTLET DETAILS
+              ================================================== */}
+
           <div
             className="
               mt-5
@@ -294,18 +345,17 @@ function StoreManagerDashboardPage() {
               icon={Building2}
               label="Assigned depot"
               value={
-                outlet?.depot
-                  ?.name ||
+                outlet?.depot?.name ||
                 "Not assigned"
               }
             />
+
 
             <DetailRow
               icon={ParkingCircle}
               label="Parking constraint"
               value={
-                outlet
-                  ?.parkingConstraint ||
+                outlet?.parkingConstraint ||
                 "None specified"
               }
             />
@@ -316,6 +366,10 @@ function StoreManagerDashboardPage() {
   );
 }
 
+
+// ============================================================
+// INFORMATION CARD
+// ============================================================
 
 function InfoCard({
   icon: Icon,
@@ -344,8 +398,11 @@ function InfoCard({
           text-[var(--color-primary)]
         "
       >
-        <Icon size={19} />
+        <Icon
+          size={19}
+        />
       </div>
+
 
       <p
         className="
@@ -360,13 +417,23 @@ function InfoCard({
         {label}
       </p>
 
-      <p className="mt-2 font-semibold">
+
+      <p
+        className="
+          mt-2
+          font-semibold
+        "
+      >
         {value}
       </p>
     </div>
   );
 }
 
+
+// ============================================================
+// DETAIL ROW
+// ============================================================
 
 function DetailRow({
   icon: Icon,
@@ -398,16 +465,31 @@ function DetailRow({
           text-[var(--color-primary)]
         "
       >
-        <Icon size={18} />
+        <Icon
+          size={18}
+        />
       </div>
 
 
       <div>
-        <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+        <p
+          className="
+            text-xs
+            font-semibold
+            text-[var(--color-text-muted)]
+          "
+        >
           {label}
         </p>
 
-        <p className="mt-1 text-sm font-semibold">
+
+        <p
+          className="
+            mt-1
+            text-sm
+            font-semibold
+          "
+        >
           {value}
         </p>
       </div>

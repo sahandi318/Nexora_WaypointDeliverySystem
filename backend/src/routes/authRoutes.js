@@ -3,9 +3,16 @@ import {
 } from "express";
 
 import {
+  changePassword,
   getCurrentUser,
   login,
 } from "../controllers/authController.js";
+
+import {
+  forgotPassword,
+  resetPassword,
+  verifyResetOtp,
+} from "../controllers/passwordResetController.js";
 
 import {
   authenticateToken,
@@ -17,7 +24,7 @@ const router =
 
 
 // ============================================================
-// PUBLIC AUTHENTICATION ROUTES
+// PUBLIC AUTH ROUTES
 // ============================================================
 
 router.post(
@@ -26,14 +33,39 @@ router.post(
 );
 
 
+router.post(
+  "/forgot-password",
+  forgotPassword
+);
+
+
+router.post(
+  "/verify-reset-otp",
+  verifyResetOtp
+);
+
+
+router.post(
+  "/reset-password",
+  resetPassword
+);
+
+
 // ============================================================
-// PROTECTED AUTHENTICATION ROUTES
+// AUTHENTICATED AUTH ROUTES
 // ============================================================
 
 router.get(
   "/me",
   authenticateToken,
   getCurrentUser
+);
+
+
+router.post(
+  "/change-password",
+  authenticateToken,
+  changePassword
 );
 
 

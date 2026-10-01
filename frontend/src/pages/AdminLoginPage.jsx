@@ -28,7 +28,7 @@ import {
   getRoleHomePath,
 } from "../utils/roleRoutes";
 
-import waypointLogo from "../assets/nexora-logo.jpeg";
+import waypointLogo from "../assets/waypoint-logo.png";
 
 
 function AdminLoginPage() {

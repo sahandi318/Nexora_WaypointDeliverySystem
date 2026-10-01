@@ -26,7 +26,7 @@ import {
   getRoleHomePath,
 } from "../utils/roleRoutes";
 
-import waypointLogo from "../assets/nexora-logo.jpeg";
+import waypointLogo from "../assets/waypoint-logo.png";
 
 
 function LoginPage() {
@@ -38,8 +38,10 @@ function LoginPage() {
   } = useAuth();
 
 
-  const [userId, setUserId] =
-    useState("");
+  const [
+    identifier,
+    setIdentifier,
+  ] = useState("");
 
   const [
     password,
@@ -68,13 +70,13 @@ function LoginPage() {
     event.preventDefault();
 
 
-    const cleanedUserId =
-      userId.trim();
+    const cleanedIdentifier =
+      identifier.trim();
 
 
-    if (!cleanedUserId) {
+    if (!cleanedIdentifier) {
       setErrorMessage(
-        "Enter your User ID."
+        "Enter your User ID or email."
       );
 
       return;
@@ -97,8 +99,8 @@ function LoginPage() {
 
       const authenticatedUser =
         await login({
-          userId:
-            cleanedUserId,
+          identifier:
+            cleanedIdentifier,
 
           password,
         });
@@ -393,6 +395,7 @@ function LoginPage() {
                   Staff access
                 </div>
 
+
                 <h2
                   className="
                     text-2xl
@@ -404,6 +407,7 @@ function LoginPage() {
                   Sign in to Waypoint
                 </h2>
 
+
                 <p
                   className="
                     mt-3
@@ -412,8 +416,9 @@ function LoginPage() {
                     text-[var(--color-text-secondary)]
                   "
                 >
-                  Use the User ID and
-                  password assigned to
+                  Use your User ID or
+                  registered email and
+                  password to access
                   your account.
                 </p>
               </div>
@@ -425,9 +430,11 @@ function LoginPage() {
                   handleSubmit
                 }
               >
+                {/* USER ID OR EMAIL */}
+
                 <div>
                   <label
-                    htmlFor="userId"
+                    htmlFor="identifier"
                     className="
                       mb-2
                       block
@@ -435,7 +442,7 @@ function LoginPage() {
                       font-semibold
                     "
                   >
-                    User ID
+                    User ID or Email
                   </label>
 
 
@@ -452,25 +459,27 @@ function LoginPage() {
                       "
                     />
 
+
                     <input
-                      id="userId"
-                      name="userId"
+                      id="identifier"
+                      name="identifier"
                       type="text"
                       autoComplete="username"
-                      autoCapitalize="characters"
-                      value={userId}
+                      value={
+                        identifier
+                      }
                       disabled={
                         isSubmitting
                       }
                       onChange={(
                         event
                       ) =>
-                        setUserId(
+                        setIdentifier(
                           event.target
                             .value
                         )
                       }
-                      placeholder="Enter your User ID"
+                      placeholder="Enter User ID or email"
                       className="
                         nexora-focus
                         h-12
@@ -523,6 +532,7 @@ function LoginPage() {
                       "
                     />
 
+
                     <input
                       id="password"
                       name="password"
@@ -532,7 +542,9 @@ function LoginPage() {
                           : "password"
                       }
                       autoComplete="current-password"
-                      value={password}
+                      value={
+                        password
+                      }
                       disabled={
                         isSubmitting
                       }
@@ -617,6 +629,27 @@ function LoginPage() {
                       )}
                     </button>
                   </div>
+                </div>
+
+
+                {/* FORGOT PASSWORD */}
+
+                <div className="flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="
+                      nexora-focus
+                      rounded-md
+                      text-sm
+                      font-semibold
+                      text-[var(--color-primary)]
+                      transition
+                      hover:text-[var(--color-primary-hover)]
+                      hover:underline
+                    "
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
 
 
@@ -759,6 +792,10 @@ function LoginPage() {
 }
 
 
+// ============================================================
+// BRAND LOCKUP
+// ============================================================
+
 function BrandLockup({
   inverse = false,
 }) {
@@ -773,13 +810,13 @@ function BrandLockup({
           justify-center
           overflow-hidden
           rounded-2xl
-          bg-white
-          p-1.5
-          shadow-sm
+          p-1
         "
       >
         <img
-          src={waypointLogo}
+          src={
+            waypointLogo
+          }
           alt="Waypoint"
           className="h-full w-full object-contain"
         />
@@ -801,6 +838,7 @@ function BrandLockup({
         >
           WAYPOINT
         </p>
+
 
         <p
           className={`
@@ -824,6 +862,10 @@ function BrandLockup({
 }
 
 
+// ============================================================
+// FEATURE BADGE
+// ============================================================
+
 function FeatureBadge({
   icon: Icon,
   text,
@@ -845,7 +887,9 @@ function FeatureBadge({
         text-white
       "
     >
-      <Icon size={17} />
+      <Icon
+        size={17}
+      />
 
       {text}
     </div>

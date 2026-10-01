@@ -20,7 +20,7 @@ import {
 
 import ThemeToggle from "../common/ThemeToggle";
 
-import logo from "../../assets/nexora-logo.jpeg";
+import logo from "../../assets/waypoint-logo.png";
 
 
 const mobileLinks = [

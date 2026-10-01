@@ -1,15 +1,15 @@
 import {
-  authenticateUser,
-  changeAuthenticatedUserPassword,
-  serializeAuthenticatedUser,
-} from "../services/authService.js";
+  requestPasswordReset,
+  resetPasswordWithToken,
+  verifyPasswordResetOtp,
+} from "../services/passwordResetService.js";
 
 
 // ============================================================
-// LOGIN
+// FORGOT PASSWORD
 // ============================================================
 
-export async function login(
+export async function forgotPassword(
   req,
   res,
   next
@@ -17,7 +17,58 @@ export async function login(
   try {
     const {
       identifier,
-      password,
+    } = req.body;
+
+
+    if (
+      typeof identifier !==
+        "string" ||
+      identifier.trim().length ===
+        0
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+
+          message:
+            "User ID or email is required.",
+        });
+    }
+
+
+    await requestPasswordReset({
+      identifier,
+    });
+
+
+    return res
+      .status(200)
+      .json({
+        success: true,
+
+        message:
+          "If a matching account exists, a verification code has been sent to its registered email.",
+      });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+// ============================================================
+// VERIFY RESET OTP
+// ============================================================
+
+export async function verifyResetOtp(
+  req,
+  res,
+  next
+) {
+  try {
+    const {
+      identifier,
+      otp,
     } = req.body;
 
 
@@ -39,9 +90,8 @@ export async function login(
 
 
     if (
-      typeof password !==
-        "string" ||
-      password.length === 0
+      typeof otp !== "string" ||
+      !/^\d{6}$/.test(otp)
     ) {
       return res
         .status(400)
@@ -49,41 +99,29 @@ export async function login(
           success: false,
 
           message:
-            "Password is required.",
+            "Enter a valid 6-digit verification code.",
         });
     }
 
 
     const result =
-      await authenticateUser({
+      await verifyPasswordResetOtp({
         identifier,
-        password,
+        otp,
       });
 
 
     if (!result.success) {
-      if (
-        result.reason ===
-        "ACCOUNT_INACTIVE"
-      ) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-
-            message:
-              "This account is inactive. Contact an administrator.",
-          });
-      }
-
-
       return res
-        .status(401)
+        .status(400)
         .json({
           success: false,
 
+          code:
+            "OTP_REJECTED",
+
           message:
-            "Invalid User ID, email, or password.",
+            "The verification code is invalid, expired, or no longer available. Request a new code if necessary.",
         });
     }
 
@@ -94,13 +132,10 @@ export async function login(
         success: true,
 
         message:
-          "Login successful.",
+          "Verification successful.",
 
-        token:
-          result.token,
-
-        user:
-          result.user,
+        resetToken:
+          result.resetToken,
       });
   } catch (error) {
     next(error);
@@ -109,61 +144,38 @@ export async function login(
 
 
 // ============================================================
-// CURRENT USER
+// RESET PASSWORD
 // ============================================================
 
-export async function getCurrentUser(
-  req,
-  res,
-  next
-) {
-  try {
-    return res
-      .status(200)
-      .json({
-        success: true,
-
-        user:
-          serializeAuthenticatedUser(
-            req.user
-          ),
-      });
-  } catch (error) {
-    next(error);
-  }
-}
-
-
-// ============================================================
-// CHANGE PASSWORD
-// ============================================================
-
-export async function changePassword(
+export async function resetPassword(
   req,
   res,
   next
 ) {
   try {
     const {
-      currentPassword,
+      resetToken,
       newPassword,
       confirmPassword,
     } = req.body;
 
 
     if (
-      typeof currentPassword !==
+      typeof resetToken !==
         "string" ||
-      currentPassword.length ===
+      resetToken.trim().length ===
         0
     ) {
       return res
-        .status(400)
+        .status(401)
         .json({
           success: false,
 
+          code:
+            "INVALID_RESET_TOKEN",
+
           message:
-            "Current password is required.",
+            "Your password-reset session is invalid or expired. Request a new verification code.",
         });
     }
 
@@ -187,8 +199,7 @@ export async function changePassword(
     if (
       typeof confirmPassword !==
         "string" ||
-      confirmPassword.length ===
-        0
+      confirmPassword.length === 0
     ) {
       return res
         .status(400)
@@ -217,28 +228,29 @@ export async function changePassword(
 
 
     const result =
-      await changeAuthenticatedUserPassword(
-        {
-          userDatabaseId:
-            req.user.id,
+      await resetPasswordWithToken({
+        resetToken:
+          resetToken.trim(),
 
-          currentPassword,
-
-          newPassword,
-        }
-      );
+        newPassword,
+      });
 
 
     if (!result.success) {
-      switch (result.reason) {
-        case "CURRENT_PASSWORD_INCORRECT":
+      switch (
+        result.reason
+      ) {
+        case "INVALID_RESET_TOKEN":
           return res
             .status(401)
             .json({
               success: false,
 
+              code:
+                "INVALID_RESET_TOKEN",
+
               message:
-                "Current password is incorrect.",
+                "Your password-reset session is invalid, expired, or has already been used. Request a new verification code.",
             });
 
 
@@ -277,12 +289,12 @@ export async function changePassword(
 
         default:
           return res
-            .status(401)
+            .status(400)
             .json({
               success: false,
 
               message:
-                "Unable to change password.",
+                "Unable to reset password.",
             });
       }
     }
@@ -294,10 +306,7 @@ export async function changePassword(
         success: true,
 
         message:
-          "Password changed successfully.",
-
-        user:
-          result.user,
+          "Password reset successfully. You can now sign in with your new password.",
       });
   } catch (error) {
     next(error);

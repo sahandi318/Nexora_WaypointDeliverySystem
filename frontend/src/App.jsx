@@ -9,11 +9,18 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import useAuth from "./hooks/useAuth";
 
 import AdminLoginPage from "./pages/AdminLoginPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
-
+import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+
+import {
+  getPasswordResetToken,
+} from "./services/passwordResetSession";
 
 import {
   getRoleHomePath,
@@ -23,7 +30,9 @@ import {
 function App() {
   return (
     <Routes>
-      {/* PUBLIC LANDING PAGE */}
+      {/* =====================================================
+          PUBLIC LANDING PAGE
+          ===================================================== */}
 
       <Route
         path="/"
@@ -33,7 +42,9 @@ function App() {
       />
 
 
-      {/* STAFF LOGIN */}
+      {/* =====================================================
+          STAFF LOGIN
+          ===================================================== */}
 
       <Route
         path="/login"
@@ -43,7 +54,9 @@ function App() {
       />
 
 
-      {/* ADMIN LOGIN */}
+      {/* =====================================================
+          ADMIN LOGIN
+          ===================================================== */}
 
       <Route
         path="/admin/login"
@@ -53,7 +66,53 @@ function App() {
       />
 
 
-      {/* STORE MANAGER */}
+      {/* =====================================================
+          PASSWORD RECOVERY
+          ===================================================== */}
+
+      <Route
+        path="/forgot-password"
+        element={
+          <RecoveryRoute>
+            <ForgotPasswordPage />
+          </RecoveryRoute>
+        }
+      />
+
+
+      <Route
+        path="/verify-reset-otp"
+        element={
+          <RecoveryRoute>
+            <VerifyResetOtpPage />
+          </RecoveryRoute>
+        }
+      />
+
+
+      <Route
+        path="/reset-password"
+        element={
+          <ResetPasswordRoute />
+        }
+      />
+
+
+      {/* =====================================================
+          FIRST LOGIN PASSWORD CHANGE
+          ===================================================== */}
+
+      <Route
+        path="/change-password"
+        element={
+          <PasswordChangeRoute />
+        }
+      />
+
+
+      {/* =====================================================
+          STORE MANAGER
+          ===================================================== */}
 
       <Route
         path="/store-manager/dashboard"
@@ -69,7 +128,9 @@ function App() {
       />
 
 
-      {/* ADMIN */}
+      {/* =====================================================
+          ADMIN
+          ===================================================== */}
 
       <Route
         path="/admin/*"
@@ -85,7 +146,9 @@ function App() {
       />
 
 
-      {/* DISPATCHER */}
+      {/* =====================================================
+          DISPATCHER
+          ===================================================== */}
 
       <Route
         path="/dispatcher/*"
@@ -101,7 +164,9 @@ function App() {
       />
 
 
-      {/* LOADER */}
+      {/* =====================================================
+          LOADER
+          ===================================================== */}
 
       <Route
         path="/loader/*"
@@ -117,7 +182,9 @@ function App() {
       />
 
 
-      {/* DRIVER */}
+      {/* =====================================================
+          DRIVER
+          ===================================================== */}
 
       <Route
         path="/driver/*"
@@ -149,6 +216,10 @@ function App() {
 }
 
 
+// ============================================================
+// STAFF LOGIN ROUTE
+// ============================================================
+
 function LoginRoute() {
   const {
     user,
@@ -164,6 +235,18 @@ function LoginRoute() {
 
 
   if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
     return (
       <Navigate
         to={getRoleHomePath(
@@ -175,9 +258,15 @@ function LoginRoute() {
   }
 
 
-  return <LoginPage />;
+  return (
+    <LoginPage />
+  );
 }
 
+
+// ============================================================
+// ADMIN LOGIN ROUTE
+// ============================================================
 
 function AdminLoginRoute() {
   const {
@@ -194,6 +283,18 @@ function AdminLoginRoute() {
 
 
   if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
     return (
       <Navigate
         to={getRoleHomePath(
@@ -205,9 +306,173 @@ function AdminLoginRoute() {
   }
 
 
-  return <AdminLoginPage />;
+  return (
+    <AdminLoginPage />
+  );
 }
 
+
+// ============================================================
+// PUBLIC PASSWORD RECOVERY ROUTE
+// ============================================================
+
+function RecoveryRoute({
+  children,
+}) {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return children;
+}
+
+
+// ============================================================
+// RESET PASSWORD ROUTE
+// ============================================================
+
+function ResetPasswordRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  const resetToken =
+    getPasswordResetToken();
+
+
+  if (!resetToken) {
+    return (
+      <Navigate
+        to="/forgot-password"
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <ResetPasswordPage />
+  );
+}
+
+
+// ============================================================
+// FIRST-LOGIN PASSWORD CHANGE
+// ============================================================
+
+function PasswordChangeRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+
+  if (
+    !user.mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <ChangePasswordPage />
+  );
+}
+
+
+// ============================================================
+// AUTHENTICATION LOADER
+// ============================================================
 
 function AuthenticationLoader() {
   return (

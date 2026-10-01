@@ -6,7 +6,7 @@ import {
   Store,
 } from "lucide-react";
 
-import logo from "../../assets/nexora-logo.jpeg";
+import logo from "../../assets/waypoint-logo.png";
 
 
 const footerLinks = [

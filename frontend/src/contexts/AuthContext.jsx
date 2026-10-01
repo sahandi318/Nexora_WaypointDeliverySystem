@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -8,14 +7,22 @@ import api, {
   ACCESS_TOKEN_KEY,
 } from "../services/api";
 
+import {
+  clearPasswordResetSession,
+  savePasswordResetIdentifier,
+  savePasswordResetToken,
+} from "../services/passwordResetSession";
+
 import AuthContext from "./AuthContextCore";
 
 
 export function AuthProvider({
   children,
 }) {
-  const [user, setUser] =
-    useState(null);
+  const [
+    user,
+    setUser,
+  ] = useState(null);
 
   const [
     isInitializing,
@@ -24,11 +31,12 @@ export function AuthProvider({
 
 
   // ==========================================================
-  // INITIAL SESSION RESTORE
+  // RESTORE SESSION
   // ==========================================================
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted =
+      true;
 
 
     async function restoreSession() {
@@ -40,7 +48,9 @@ export function AuthProvider({
 
       if (!token) {
         if (isMounted) {
-          setIsInitializing(false);
+          setIsInitializing(
+            false
+          );
         }
 
         return;
@@ -64,12 +74,15 @@ export function AuthProvider({
           ACCESS_TOKEN_KEY
         );
 
+
         if (isMounted) {
           setUser(null);
         }
       } finally {
         if (isMounted) {
-          setIsInitializing(false);
+          setIsInitializing(
+            false
+          );
         }
       }
     }
@@ -89,14 +102,14 @@ export function AuthProvider({
   // ==========================================================
 
   async function login({
-    userId,
+    identifier,
     password,
   }) {
     const response =
       await api.post(
         "/auth/login",
         {
-          userId,
+          identifier,
           password,
         }
       );
@@ -119,6 +132,9 @@ export function AuthProvider({
     }
 
 
+    clearPasswordResetSession();
+
+
     sessionStorage.setItem(
       ACCESS_TOKEN_KEY,
       token
@@ -135,6 +151,152 @@ export function AuthProvider({
 
 
   // ==========================================================
+  // FIRST LOGIN PASSWORD CHANGE
+  // ==========================================================
+
+  async function changePassword({
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  }) {
+    const response =
+      await api.post(
+        "/auth/change-password",
+        {
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }
+      );
+
+
+    const updatedUser =
+      response.data.user;
+
+
+    if (!updatedUser) {
+      throw new Error(
+        "The server returned an invalid password-change response."
+      );
+    }
+
+
+    setUser(
+      updatedUser
+    );
+
+
+    return updatedUser;
+  }
+
+
+  // ==========================================================
+  // REQUEST PASSWORD RESET
+  // ==========================================================
+
+  async function requestPasswordReset({
+    identifier,
+  }) {
+    const cleanedIdentifier =
+      identifier.trim();
+
+
+    const response =
+      await api.post(
+        "/auth/forgot-password",
+        {
+          identifier:
+            cleanedIdentifier,
+        }
+      );
+
+
+    savePasswordResetIdentifier(
+      cleanedIdentifier
+    );
+
+
+    /*
+     * A new OTP request invalidates the browser's
+     * previously stored reset authorization.
+     */
+    savePasswordResetToken(
+      null
+    );
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
+  // VERIFY RESET OTP
+  // ==========================================================
+
+  async function verifyPasswordResetOtp({
+    identifier,
+    otp,
+  }) {
+    const response =
+      await api.post(
+        "/auth/verify-reset-otp",
+        {
+          identifier:
+            identifier.trim(),
+
+          otp,
+        }
+      );
+
+
+    const resetToken =
+      response.data.resetToken;
+
+
+    if (!resetToken) {
+      throw new Error(
+        "The server returned an invalid reset authorization."
+      );
+    }
+
+
+    savePasswordResetToken(
+      resetToken
+    );
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
+  // RESET FORGOTTEN PASSWORD
+  // ==========================================================
+
+  async function resetForgottenPassword({
+    resetToken,
+    newPassword,
+    confirmPassword,
+  }) {
+    const response =
+      await api.post(
+        "/auth/reset-password",
+        {
+          resetToken,
+          newPassword,
+          confirmPassword,
+        }
+      );
+
+
+    clearPasswordResetSession();
+
+
+    return response.data;
+  }
+
+
+  // ==========================================================
   // LOGOUT
   // ==========================================================
 
@@ -143,12 +305,14 @@ export function AuthProvider({
       ACCESS_TOKEN_KEY
     );
 
+    clearPasswordResetSession();
+
     setUser(null);
   }
 
 
   // ==========================================================
-  // REFRESH CURRENT USER
+  // REFRESH USER
   // ==========================================================
 
   async function refreshUser() {
@@ -157,31 +321,37 @@ export function AuthProvider({
         "/auth/me"
       );
 
+
     setUser(
       response.data.user
     );
+
 
     return response.data.user;
   }
 
 
-  const value =
-    useMemo(
-      () => ({
-        user,
-        isAuthenticated:
-          Boolean(user),
-        isInitializing,
-        login,
-        logout,
-        refreshUser,
-      }),
+  const value = {
+    user,
 
-      [
-        user,
-        isInitializing,
-      ]
-    );
+    isAuthenticated:
+      Boolean(user),
+
+    isInitializing,
+
+    login,
+    logout,
+
+    changePassword,
+
+    requestPasswordReset,
+
+    verifyPasswordResetOtp,
+
+    resetForgottenPassword,
+
+    refreshUser,
+  };
 
 
   return (

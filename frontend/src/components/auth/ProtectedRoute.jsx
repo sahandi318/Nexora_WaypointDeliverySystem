@@ -62,6 +62,22 @@ function ProtectedRoute({
   }
 
 
+  // ==========================================================
+  // MANDATORY PASSWORD CHANGE
+  // ==========================================================
+
+  if (
+    user.mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
+
   if (
     Array.isArray(
       allowedRoles
