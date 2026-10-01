@@ -10,11 +10,14 @@
 // issues and notifications will be added in later migrations.
 // ============================================================
 
+
 generator client {
-  provider     = "prisma-client"
-  output       = "../generated/prisma"
-  moduleFormat = "esm"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
 }
+
 
 datasource db {
   provider = "mysql"
