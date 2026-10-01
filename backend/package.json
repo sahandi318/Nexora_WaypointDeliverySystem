@@ -7,9 +7,15 @@
   "scripts": {
     "dev": "tsx watch server.js",
     "start": "tsx server.js",
+
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+
+    "data:import-outlets": "tsx src/scripts/importOrganizerOutlets.js",
+    "seed:store-manager": "tsx src/scripts/seedStoreManager.js",
+    "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager",
+
     "test": "echo \"Tests will be configured in a later stage\""
   },
   "keywords": [
