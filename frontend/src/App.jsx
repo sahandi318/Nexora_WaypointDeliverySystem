@@ -8,8 +8,9 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import useAuth from "./hooks/useAuth";
 
+import AdminLoginPage from "./pages/AdminLoginPage";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
-
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
 
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
@@ -22,22 +23,32 @@ import {
 function App() {
   return (
     <Routes>
-      {/* ROOT */}
+      {/* PUBLIC LANDING PAGE */}
 
       <Route
         path="/"
         element={
-          <RootRedirect />
+          <LandingPage />
         }
       />
 
 
-      {/* LOGIN */}
+      {/* STAFF LOGIN */}
 
       <Route
         path="/login"
         element={
           <LoginRoute />
+        }
+      />
+
+
+      {/* ADMIN LOGIN */}
+
+      <Route
+        path="/admin/login"
+        element={
+          <AdminLoginRoute />
         }
       />
 
@@ -58,7 +69,7 @@ function App() {
       />
 
 
-      {/* OTHER SHARED ROLES */}
+      {/* ADMIN */}
 
       <Route
         path="/admin/*"
@@ -74,6 +85,8 @@ function App() {
       />
 
 
+      {/* DISPATCHER */}
+
       <Route
         path="/dispatcher/*"
         element={
@@ -88,6 +101,8 @@ function App() {
       />
 
 
+      {/* LOADER */}
+
       <Route
         path="/loader/*"
         element={
@@ -101,6 +116,8 @@ function App() {
         }
       />
 
+
+      {/* DRIVER */}
 
       <Route
         path="/driver/*"
@@ -132,41 +149,6 @@ function App() {
 }
 
 
-function RootRedirect() {
-  const {
-    user,
-    isInitializing,
-  } = useAuth();
-
-
-  if (isInitializing) {
-    return (
-      <AuthenticationLoader />
-    );
-  }
-
-
-  if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-  }
-
-
-  return (
-    <Navigate
-      to={getRoleHomePath(
-        user.role
-      )}
-      replace
-    />
-  );
-}
-
-
 function LoginRoute() {
   const {
     user,
@@ -194,6 +176,36 @@ function LoginRoute() {
 
 
   return <LoginPage />;
+}
+
+
+function AdminLoginRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return <AdminLoginPage />;
 }
 
 

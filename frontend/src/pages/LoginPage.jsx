@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 
 import {
+  Link,
   useNavigate,
 } from "react-router-dom";
 
-import ThemeToggle from "../components/common/ThemeToggle";
+import LoginUtilityBar from "../components/common/LoginUtilityBar";
 
 import useAuth from "../hooks/useAuth";
 
@@ -129,17 +130,62 @@ function LoginPage() {
 
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
-      {/* Theme control */}
-      <div className="absolute right-5 top-5 z-20 sm:right-8 sm:top-8">
-        <ThemeToggle />
-      </div>
+    <main
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        bg-[var(--color-bg)]
+        text-[var(--color-text)]
+        transition-colors
+        duration-300
+      "
+    >
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -left-28
+          top-10
+          h-72
+          w-72
+          rounded-full
+          bg-[var(--color-primary)]
+          opacity-[0.06]
+          blur-3xl
+          sm:h-96
+          sm:w-96
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -bottom-36
+          right-0
+          h-80
+          w-80
+          rounded-full
+          bg-[var(--color-accent)]
+          opacity-[0.07]
+          blur-3xl
+          sm:h-[30rem]
+          sm:w-[30rem]
+        "
+      />
 
 
-      <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
-        {/* ==================================================
-            BRAND PANEL
-            ================================================== */}
+      <div
+        className="
+          relative
+          z-10
+          grid
+          min-h-screen
+          lg:grid-cols-[1.05fr_0.95fr]
+        "
+      >
+        {/* BRAND PANEL */}
 
         <section
           className="
@@ -176,6 +222,16 @@ function LoginPage() {
               h-96
               w-96
               rounded-full
+              bg-white/5
+            "
+          />
+
+          <div
+            className="
+              absolute
+              inset-x-0
+              top-1/2
+              h-px
               bg-white/5
             "
           />
@@ -244,8 +300,8 @@ function LoginPage() {
               Secure access for
               store managers,
               dispatchers, loaders,
-              drivers and
-              administrators.
+              drivers and authorized
+              operations personnel.
             </p>
 
 
@@ -278,9 +334,7 @@ function LoginPage() {
         </section>
 
 
-        {/* ==================================================
-            LOGIN PANEL
-            ================================================== */}
+        {/* LOGIN PANEL */}
 
         <section
           className="
@@ -288,46 +342,63 @@ function LoginPage() {
             min-h-screen
             items-center
             justify-center
-            px-5
-            py-20
+            px-4
+            py-10
             sm:px-8
+            sm:py-14
             lg:px-12
+            lg:py-16
           "
         >
           <div className="w-full max-w-md">
-            <div className="mb-10 lg:hidden">
+            <LoginUtilityBar />
+
+
+            <div className="mb-7 mt-6 lg:hidden">
               <BrandLockup />
             </div>
 
 
             <div
               className="
+                mt-6
                 rounded-[26px]
                 border
                 border-[var(--color-border)]
                 bg-[var(--color-surface)]
-                p-6
+                p-5
                 shadow-[var(--shadow-lg)]
+                transition-colors
+                duration-300
                 sm:p-8
               "
             >
               <div>
-                <p
+                <div
                   className="
-                    text-sm
-                    font-semibold
+                    mb-4
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-full
+                    bg-[var(--color-surface-soft)]
+                    px-3
+                    py-1.5
+                    text-xs
+                    font-bold
                     text-[var(--color-primary)]
                   "
                 >
-                  Welcome back
-                </p>
+                  <UserRound size={14} />
+                  Staff access
+                </div>
 
                 <h2
                   className="
-                    mt-2
-                    text-3xl
+                    text-2xl
                     font-bold
                     tracking-[-0.035em]
+                    sm:text-3xl
                   "
                 >
                   Sign in to Waypoint
@@ -349,13 +420,11 @@ function LoginPage() {
 
 
               <form
-                className="mt-8 space-y-5"
+                className="mt-7 space-y-5 sm:mt-8"
                 onSubmit={
                   handleSubmit
                 }
               >
-                {/* USER ID */}
-
                 <div>
                   <label
                     htmlFor="userId"
@@ -426,8 +495,6 @@ function LoginPage() {
                   </div>
                 </div>
 
-
-                {/* PASSWORD */}
 
                 <div>
                   <label
@@ -553,8 +620,6 @@ function LoginPage() {
                 </div>
 
 
-                {/* ERROR */}
-
                 {errorMessage && (
                   <div
                     role="alert"
@@ -584,8 +649,6 @@ function LoginPage() {
                   </div>
                 )}
 
-
-                {/* SUBMIT */}
 
                 <button
                   type="submit"
@@ -644,12 +707,40 @@ function LoginPage() {
                   )}
                 </button>
               </form>
+
+
+              <div
+                className="
+                  mt-6
+                  border-t
+                  border-[var(--color-border)]
+                  pt-5
+                  text-center
+                "
+              >
+                <Link
+                  to="/admin/login"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    text-xs
+                    font-semibold
+                    text-[var(--color-text-muted)]
+                    transition
+                    hover:text-[var(--color-primary)]
+                  "
+                >
+                  <ShieldCheck size={14} />
+                  Administrator access
+                </Link>
+              </div>
             </div>
 
 
             <p
               className="
-                mt-6
+                mt-5
                 text-center
                 text-xs
                 leading-5
