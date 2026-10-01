@@ -1,111 +1,278 @@
+@import "tailwindcss";
+
+/* =========================================================
+   NEXORA WAYPOINT DESIGN SYSTEM
+   Emerald Green — Modern & Vibrant
+   ========================================================= */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  font-family:
+    "Inter Variable",
+    Inter,
+    "Segoe UI",
+    Arial,
+    sans-serif;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* LIGHT MODE */
+
+  --color-bg: #f8f9f1;
+
+  --color-surface: #ffffff;
+  --color-surface-soft: #effaf4;
+  --color-surface-strong: #c9f0da;
+
+  --color-sidebar: #075a43;
+  --color-sidebar-hover: #0a7555;
+  --color-sidebar-active: #0fa968;
+  --color-sidebar-text: #effff8;
+  --color-sidebar-muted: #bfe9d7;
+
+  --color-primary: #0fa968;
+  --color-primary-hover: #0c9159;
+  --color-primary-strong: #08784e;
+  --color-primary-soft: #c9f0da;
+
+  --color-accent: #3ccb8f;
+  --color-accent-soft: #8df0b6;
+
+  --color-text: #12241d;
+  --color-text-secondary: #53665e;
+  --color-text-muted: #778981;
+
+  --color-border: #dce9e2;
+  --color-border-strong: #bdd7ca;
+
+  --color-input: #ffffff;
+  --color-input-hover: #fbfefc;
+
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
+
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
+
+  --shadow-xs: 0 1px 2px rgba(15, 71, 52, 0.04);
+
+  --shadow-sm:
+    0 1px 3px rgba(15, 71, 52, 0.07),
+    0 1px 2px rgba(15, 71, 52, 0.04);
+
+  --shadow-md:
+    0 8px 24px rgba(15, 71, 52, 0.08),
+    0 2px 8px rgba(15, 71, 52, 0.04);
+
+  --shadow-lg:
+    0 18px 45px rgba(15, 71, 52, 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* =========================================================
+   DARK MODE
+   ========================================================= */
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+html[data-theme="dark"] {
+  --color-bg: #07261e;
+
+  --color-surface: #0b3027;
+  --color-surface-soft: #0e3d31;
+  --color-surface-strong: #134e3e;
+
+  --color-sidebar: #062a21;
+  --color-sidebar-hover: #0c4939;
+  --color-sidebar-active: #0f6b4f;
+  --color-sidebar-text: #f3fff9;
+  --color-sidebar-muted: #9fcbb9;
+
+  --color-primary: #16a572;
+  --color-primary-hover: #24bb82;
+  --color-primary-strong: #0f8d60;
+  --color-primary-soft: #134a3a;
+
+  --color-accent: #2bc58d;
+  --color-accent-soft: #5de0b2;
+
+  --color-text: #f4fff9;
+  --color-text-secondary: #c1d9d0;
+  --color-text-muted: #91ada2;
+
+  --color-border: #1c4e40;
+  --color-border-strong: #2a6754;
+
+  --color-input: #0d372c;
+  --color-input-hover: #104236;
+
+  --color-success: #4ade80;
+  --color-success-soft: #123f2a;
+
+  --color-warning: #fbbf24;
+  --color-warning-soft: #493713;
+
+  --color-danger: #f87171;
+  --color-danger-soft: #4e2020;
+
+  --color-info: #38bdf8;
+  --color-info-soft: #12394b;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.12);
+
+  --shadow-sm:
+    0 2px 5px rgba(0, 0, 0, 0.18);
+
+  --shadow-md:
+    0 10px 30px rgba(0, 0, 0, 0.2);
+
+  --shadow-lg:
+    0 20px 50px rgba(0, 0, 0, 0.28);
+
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--color-bg);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(
+        in srgb,
+        var(--color-primary) 7%,
+        transparent
+      ),
+      transparent 30rem
+    ),
+    var(--color-bg);
+
+  color: var(--color-text);
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 #root {
-  width: 1126px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
   max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+::selection {
+  background: var(--color-primary);
+  color: #ffffff;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+/* =========================================================
+   REUSABLE NEXORA STYLES
+   ========================================================= */
+
+.nexora-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.nexora-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.nexora-focus {
+  outline: none;
+}
+
+.nexora-focus:focus-visible {
+  box-shadow:
+    0 0 0 3px
+    color-mix(
+      in srgb,
+      var(--color-primary) 25%,
+      transparent
+    );
+}
+
+.nexora-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.nexora-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.nexora-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nexora-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
+}
+
+.nexora-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
