@@ -8,14 +8,9 @@ import {
 
 
 // ============================================================
-// AUTHENTICATION MIDDLEWARE
+// JWT AUTHENTICATION
 // ============================================================
 
-/**
- * Expected request header:
- *
- * Authorization: Bearer <JWT>
- */
 export async function authenticateToken(
   req,
   res,
@@ -32,12 +27,14 @@ export async function authenticateToken(
         "Bearer "
       )
     ) {
-      return res.status(401).json({
-        success: false,
+      return res
+        .status(401)
+        .json({
+          success: false,
 
-        message:
-          "Authentication required.",
-      });
+          message:
+            "Authentication required.",
+        });
     }
 
 
@@ -48,18 +45,16 @@ export async function authenticateToken(
 
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
+      return res
+        .status(401)
+        .json({
+          success: false,
 
-        message:
-          "Authentication required.",
-      });
+          message:
+            "Authentication required.",
+        });
     }
 
-
-    // --------------------------------------------------------
-    // Verify JWT
-    // --------------------------------------------------------
 
     let decodedToken;
 
@@ -70,17 +65,21 @@ export async function authenticateToken(
           token
         );
     } catch {
-      return res.status(401).json({
-        success: false,
+      return res
+        .status(401)
+        .json({
+          success: false,
 
-        message:
-          "Invalid or expired authentication token.",
-      });
+          message:
+            "Invalid or expired authentication token.",
+        });
     }
 
 
     const numericUserId =
-      Number(decodedToken.sub);
+      Number(
+        decodedToken.sub
+      );
 
 
     if (
@@ -89,18 +88,16 @@ export async function authenticateToken(
       ) ||
       numericUserId <= 0
     ) {
-      return res.status(401).json({
-        success: false,
+      return res
+        .status(401)
+        .json({
+          success: false,
 
-        message:
-          "Invalid authentication token.",
-      });
+          message:
+            "Invalid authentication token.",
+        });
     }
 
-
-    // --------------------------------------------------------
-    // Load current user from database
-    // --------------------------------------------------------
 
     const user =
       await getAuthenticatedUserById(
@@ -109,34 +106,29 @@ export async function authenticateToken(
 
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
+      return res
+        .status(401)
+        .json({
+          success: false,
 
-        message:
-          "Authenticated user no longer exists.",
-      });
+          message:
+            "Authenticated user no longer exists.",
+        });
     }
 
 
     if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
+      return res
+        .status(403)
+        .json({
+          success: false,
 
-        message:
-          "This account is inactive.",
-      });
+          message:
+            "This account is inactive.",
+        });
     }
 
 
-    /**
-     * Attach the current database user to the request.
-     *
-     * Future authorization middleware will use:
-     *
-     * req.user.role
-     * req.user.outletId
-     * req.user.depotId
-     */
     req.user =
       user;
 
@@ -145,4 +137,53 @@ export async function authenticateToken(
   } catch (error) {
     return next(error);
   }
+}
+
+
+// ============================================================
+// PASSWORD-CHANGE REQUIREMENT
+// ============================================================
+
+/**
+ * Add this middleware to operational routes.
+ *
+ * Users with temporary passwords remain authenticated,
+ * but cannot access normal application functionality until
+ * their required password change is completed.
+ */
+export function requirePasswordChangeCompleted(
+  req,
+  res,
+  next
+) {
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({
+        success: false,
+
+        message:
+          "Authentication required.",
+      });
+  }
+
+
+  if (
+    req.user.mustChangePassword
+  ) {
+    return res
+      .status(403)
+      .json({
+        success: false,
+
+        code:
+          "PASSWORD_CHANGE_REQUIRED",
+
+        message:
+          "You must change your temporary password before accessing this resource.",
+      });
+  }
+
+
+  return next();
 }

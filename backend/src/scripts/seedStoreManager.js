@@ -8,10 +8,6 @@ import prisma, {
 } from "../config/database.js";
 
 
-// ============================================================
-// DEVELOPMENT STORE MANAGER CONFIGURATION
-// ============================================================
-
 const STORE_MANAGER_USER_ID =
   "SM001";
 
@@ -26,48 +22,71 @@ const PASSWORD_HASH_ROUNDS =
 
 
 // ============================================================
-// ENVIRONMENT VALIDATION
+// ENVIRONMENT HELPERS
 // ============================================================
 
-/**
- * Read the development Store Manager password from the
- * environment.
- *
- * The password is never hardcoded into the database script
- * and is never printed to the terminal.
- */
+function getStoreManagerEmail() {
+  const email =
+    process.env
+      .STORE_MANAGER_SEED_EMAIL
+      ?.trim()
+      .toLowerCase();
+
+
+  if (!email) {
+    throw new Error(
+      "STORE_MANAGER_SEED_EMAIL is missing."
+    );
+  }
+
+
+  const emailPattern =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+  if (
+    !emailPattern.test(
+      email
+    )
+  ) {
+    throw new Error(
+      "STORE_MANAGER_SEED_EMAIL is not a valid email address."
+    );
+  }
+
+
+  return email;
+}
+
+
 function getStoreManagerPassword() {
   const password =
     process.env
       .STORE_MANAGER_SEED_PASSWORD;
 
+
   if (!password) {
     throw new Error(
-      "STORE_MANAGER_SEED_PASSWORD is missing."
+      "STORE_MANAGER_SEED_PASSWORD is required only when creating SM001 for the first time."
     );
   }
 
-  if (password.length < 8) {
-    throw new Error(
-      "STORE_MANAGER_SEED_PASSWORD must contain at least 8 characters."
-    );
-  }
 
   return password;
 }
 
 
 // ============================================================
-// STORE MANAGER SEED
+// SEED STORE MANAGER
 // ============================================================
 
 async function seedStoreManager() {
-  const password =
-    getStoreManagerPassword();
+  const email =
+    getStoreManagerEmail();
 
 
   // ----------------------------------------------------------
-  // Find the official organizer outlet
+  // Find organizer outlet
   // ----------------------------------------------------------
 
   const outlet =
@@ -86,131 +105,170 @@ async function seedStoreManager() {
 
   if (!outlet) {
     throw new Error(
-      `Organizer outlet ${STORE_MANAGER_OUTLET_CODE} was not found. Run the organizer outlet importer first.`
+      `Organizer outlet ${STORE_MANAGER_OUTLET_CODE} was not found.`
     );
   }
 
 
   // ----------------------------------------------------------
-  // Hash development password
+  // Check whether SM001 already exists
   // ----------------------------------------------------------
 
-  const passwordHash =
-    await bcrypt.hash(
-      password,
-      PASSWORD_HASH_ROUNDS
-    );
-
-
-  // ----------------------------------------------------------
-  // Create or update SM001
-  // ----------------------------------------------------------
-  //
-  // Upsert makes this script safe to run repeatedly.
-  //
-  // If SM001 already exists:
-  //   - account information is updated
-  //   - password hash is refreshed
-  //   - outlet assignment is corrected
-  //
-  // No duplicate user is created.
-  // ----------------------------------------------------------
-
-  const storeManager =
-    await prisma.user.upsert({
+  const existingUser =
+    await prisma.user.findUnique({
       where: {
         userId:
           STORE_MANAGER_USER_ID,
       },
-
-      update: {
-        fullName:
-          STORE_MANAGER_FULL_NAME,
-
-        passwordHash,
-
-        role:
-          "STORE_MANAGER",
-
-        outletId:
-          outlet.id,
-
-        /**
-         * The Store Manager belongs directly to an outlet.
-         *
-         * The outlet itself already points to its depot,
-         * therefore a duplicate direct depot assignment is
-         * unnecessary for this role.
-         */
-        depotId:
-          null,
-
-        isActive:
-          true,
-      },
-
-      create: {
-        userId:
-          STORE_MANAGER_USER_ID,
-
-        fullName:
-          STORE_MANAGER_FULL_NAME,
-
-        email:
-          null,
-
-        phone:
-          null,
-
-        passwordHash,
-
-        role:
-          "STORE_MANAGER",
-
-        outletId:
-          outlet.id,
-
-        depotId:
-          null,
-
-        isActive:
-          true,
-      },
-
-      include: {
-        outlet: {
-          include: {
-            depot:
-              true,
-          },
-        },
-      },
     });
 
 
-  // ==========================================================
-  // VERIFY PASSWORD HASH
-  // ==========================================================
-
-  const passwordIsValid =
-    await bcrypt.compare(
-      password,
-      storeManager.passwordHash
-    );
+  let storeManager;
+  let passwordStatus;
 
 
-  if (!passwordIsValid) {
-    throw new Error(
-      "The stored password hash could not be verified."
-    );
+  if (existingUser) {
+    // ========================================================
+    // EXISTING USER
+    // ========================================================
+    //
+    // Important:
+    // - preserve password
+    // - preserve mustChangePassword
+    // - preserve lastLoginAt
+    //
+    // Only update account/profile assignment information.
+    // ========================================================
+
+    storeManager =
+      await prisma.user.update({
+        where: {
+          id:
+            existingUser.id,
+        },
+
+        data: {
+          fullName:
+            STORE_MANAGER_FULL_NAME,
+
+          email,
+
+          role:
+            "STORE_MANAGER",
+
+          outletId:
+            outlet.id,
+
+          depotId:
+            null,
+
+          isActive:
+            true,
+        },
+
+        include: {
+          outlet: {
+            include: {
+              depot:
+                true,
+            },
+          },
+
+          depot:
+            true,
+        },
+      });
+
+
+    passwordStatus =
+      "existing password preserved";
+  } else {
+    // ========================================================
+    // NEW USER
+    // ========================================================
+
+    const temporaryPassword =
+      getStoreManagerPassword();
+
+
+    const passwordHash =
+      await bcrypt.hash(
+        temporaryPassword,
+        PASSWORD_HASH_ROUNDS
+      );
+
+
+    storeManager =
+      await prisma.user.create({
+        data: {
+          userId:
+            STORE_MANAGER_USER_ID,
+
+          fullName:
+            STORE_MANAGER_FULL_NAME,
+
+          email,
+
+          phone:
+            null,
+
+          passwordHash,
+
+          role:
+            "STORE_MANAGER",
+
+          outletId:
+            outlet.id,
+
+          depotId:
+            null,
+
+          isActive:
+            true,
+
+          mustChangePassword:
+            true,
+        },
+
+        include: {
+          outlet: {
+            include: {
+              depot:
+                true,
+            },
+          },
+
+          depot:
+            true,
+        },
+      });
+
+
+    const passwordVerified =
+      await bcrypt.compare(
+        temporaryPassword,
+        storeManager.passwordHash
+      );
+
+
+    if (!passwordVerified) {
+      throw new Error(
+        "Store Manager password hash verification failed."
+      );
+    }
+
+
+    passwordStatus =
+      "temporary password created and bcrypt verified";
   }
 
 
   // ==========================================================
-  // RESULT
+  // OUTPUT
   // ==========================================================
 
   console.log("");
+
   console.log(
     "=========================================="
   );
@@ -224,42 +282,47 @@ async function seedStoreManager() {
   );
 
   console.log(
-    `User ID  : ${storeManager.userId}`
+    `User ID       : ${storeManager.userId}`
   );
 
   console.log(
-    `Name     : ${storeManager.fullName}`
+    `Email         : ${storeManager.email}`
   );
 
   console.log(
-    `Role     : ${storeManager.role}`
+    `Name          : ${storeManager.fullName}`
   );
 
   console.log(
-    `Outlet   : ${storeManager.outlet.outletCode}`
+    `Role          : ${storeManager.role}`
   );
 
   console.log(
-    `Brand    : ${storeManager.outlet.brand}`
+    `Outlet        : ${storeManager.outlet?.outletCode ?? "Not assigned"}`
   );
 
   console.log(
-    `District : ${storeManager.outlet.district}`
+    `Brand         : ${storeManager.outlet?.brand ?? "Not available"}`
   );
 
   console.log(
-    `Depot    : ${
-      storeManager.outlet.depot?.name ??
-      "Not assigned"
-    }`
+    `District      : ${storeManager.outlet?.district ?? "Not available"}`
   );
 
   console.log(
-    `Active   : ${storeManager.isActive}`
+    `Depot         : ${storeManager.outlet?.depot?.name ?? "Not assigned"}`
   );
 
   console.log(
-    `Password : bcrypt hash verified successfully`
+    `Active        : ${storeManager.isActive}`
+  );
+
+  console.log(
+    `Change passwd : ${storeManager.mustChangePassword}`
+  );
+
+  console.log(
+    `Password      : ${passwordStatus}`
   );
 
   console.log(
@@ -271,7 +334,7 @@ async function seedStoreManager() {
 
 
 // ============================================================
-// SCRIPT ENTRY POINT
+// ENTRY POINT
 // ============================================================
 
 async function main() {
@@ -280,13 +343,13 @@ async function main() {
 
     await seedStoreManager();
   } catch (error) {
-    console.error("");
-
     console.error(
       "✗ Store Manager seed failed."
     );
 
-    console.error(error);
+    console.error(
+      error
+    );
 
     process.exitCode = 1;
   } finally {

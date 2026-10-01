@@ -8,10 +8,9 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import useAuth from "./hooks/useAuth";
 
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import LoginPage from "./pages/LoginPage";
-
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
-
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
 
 import {
@@ -22,8 +21,6 @@ import {
 function App() {
   return (
     <Routes>
-      {/* ROOT */}
-
       <Route
         path="/"
         element={
@@ -31,8 +28,6 @@ function App() {
         }
       />
 
-
-      {/* LOGIN */}
 
       <Route
         path="/login"
@@ -42,7 +37,13 @@ function App() {
       />
 
 
-      {/* STORE MANAGER */}
+      <Route
+        path="/change-password"
+        element={
+          <PasswordChangeRoute />
+        }
+      />
+
 
       <Route
         path="/store-manager/dashboard"
@@ -57,8 +58,6 @@ function App() {
         }
       />
 
-
-      {/* OTHER SHARED ROLES */}
 
       <Route
         path="/admin/*"
@@ -116,8 +115,6 @@ function App() {
       />
 
 
-      {/* UNKNOWN FRONTEND ROUTE */}
-
       <Route
         path="*"
         element={
@@ -131,6 +128,10 @@ function App() {
   );
 }
 
+
+// ============================================================
+// ROOT REDIRECT
+// ============================================================
 
 function RootRedirect() {
   const {
@@ -156,6 +157,18 @@ function RootRedirect() {
   }
 
 
+  if (
+    user.mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
+
   return (
     <Navigate
       to={getRoleHomePath(
@@ -166,6 +179,10 @@ function RootRedirect() {
   );
 }
 
+
+// ============================================================
+// LOGIN ROUTE
+// ============================================================
 
 function LoginRoute() {
   const {
@@ -182,6 +199,18 @@ function LoginRoute() {
 
 
   if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
     return (
       <Navigate
         to={getRoleHomePath(
@@ -196,6 +225,58 @@ function LoginRoute() {
   return <LoginPage />;
 }
 
+
+// ============================================================
+// PASSWORD CHANGE ROUTE
+// ============================================================
+
+function PasswordChangeRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+
+  if (
+    !user.mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <ChangePasswordPage />
+  );
+}
+
+
+// ============================================================
+// LOADER
+// ============================================================
 
 function AuthenticationLoader() {
   return (

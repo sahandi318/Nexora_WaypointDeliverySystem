@@ -1,15 +1,7 @@
 // ============================================================
 // Nexora Waypoint Delivery System
-// Core Database Schema
+// Database Schema
 // ============================================================
-//
-// This first migration establishes the shared authentication,
-// depot and outlet foundation.
-//
-// Store Manager orders, products, deliveries, receipts,
-// issues and notifications will be added in later migrations.
-// ============================================================
-
 
 generator client {
   provider            = "prisma-client"
@@ -18,11 +10,9 @@ generator client {
   importFileExtension = "ts"
 }
 
-
 datasource db {
   provider = "mysql"
 }
-
 
 // ============================================================
 // USER ROLES
@@ -36,12 +26,8 @@ enum UserRole {
   DRIVER
 }
 
-
 // ============================================================
 // DEPOT
-// ============================================================
-//
-// Represents an operational distribution depot.
 // ============================================================
 
 model Depot {
@@ -56,41 +42,30 @@ model Depot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   outlets Outlet[]
   users   User[]
 
   @@map("depots")
 }
 
-
 // ============================================================
 // OUTLET
-// ============================================================
-//
-// Outlet records will later be populated using the official
-// competition organizer dataset.
 // ============================================================
 
 model Outlet {
   id Int @id @default(autoincrement())
 
-  // Organizer-provided outlet identifier.
   outletCode String @unique @db.VarChar(30)
 
   brand    String @db.VarChar(120)
   district String @db.VarChar(100)
 
-  // Assigned distribution depot.
   depotId Int?
   depot   Depot? @relation(fields: [depotId], references: [id])
 
-  // Organizer-provided operational constraints.
-  dockType String? @db.VarChar(100)
-
+  dockType          String? @db.VarChar(100)
   parkingConstraint String? @db.Text
-
-  mallWindow String? @db.VarChar(100)
+  mallWindow        String? @db.VarChar(100)
 
   windowOpenTime  String? @db.VarChar(20)
   windowCloseTime String? @db.VarChar(20)
@@ -100,34 +75,20 @@ model Outlet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Store Managers assigned to this outlet.
   users User[]
 
   @@index([depotId])
   @@index([district])
-
   @@map("outlets")
 }
 
-
 // ============================================================
 // USER
-// ============================================================
-//
-// One authentication table is shared by all application roles.
-//
-// Login requires only:
-//   - User ID
-//   - Password
-//
-// The user's role, outlet and depot are determined from the
-// database after successful authentication.
 // ============================================================
 
 model User {
   id Int @id @default(autoincrement())
 
-  // Human-readable login identifier, e.g. SM001.
   userId String @unique @db.VarChar(50)
 
   fullName String @db.VarChar(150)
@@ -135,29 +96,64 @@ model User {
   email String? @unique @db.VarChar(180)
   phone String? @db.VarChar(30)
 
-  // Only a bcrypt hash is stored. Never store plain passwords.
   passwordHash String @db.VarChar(255)
 
   role UserRole
 
-  // Store Managers can be linked to one outlet.
   outletId Int?
   outlet   Outlet? @relation(fields: [outletId], references: [id])
 
-  // Depot-oriented roles can be linked to a depot.
   depotId Int?
   depot   Depot? @relation(fields: [depotId], references: [id])
 
   isActive Boolean @default(true)
+
+  mustChangePassword Boolean @default(true)
 
   lastLoginAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  passwordResetOtps PasswordResetOtp[]
+
   @@index([role])
   @@index([outletId])
   @@index([depotId])
-
   @@map("users")
+}
+
+// ============================================================
+// PASSWORD RESET OTP
+// ============================================================
+//
+// The real six-digit OTP is never stored.
+// Only a cryptographic HMAC hash is stored.
+//
+// Stage 5.5D will use:
+// - expiration
+// - attempt limits
+// - one-time use protection
+//
+// ============================================================
+
+model PasswordResetOtp {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  otpHash String @db.VarChar(64)
+
+  expiresAt DateTime
+
+  attempts Int @default(0)
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@map("password_reset_otps")
 }

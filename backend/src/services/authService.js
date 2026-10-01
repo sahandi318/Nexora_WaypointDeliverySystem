@@ -7,6 +7,10 @@ import {
 } from "../utils/jwt.js";
 
 
+const PASSWORD_HASH_ROUNDS =
+  12;
+
+
 // ============================================================
 // USER QUERY
 // ============================================================
@@ -26,12 +30,6 @@ const authenticationUserInclude = {
 // SAFE USER RESPONSE
 // ============================================================
 
-/**
- * Convert a Prisma User object into data that is safe to send
- * to the frontend.
- *
- * passwordHash is intentionally never returned.
- */
 export function serializeAuthenticatedUser(
   user
 ) {
@@ -56,6 +54,9 @@ export function serializeAuthenticatedUser(
 
     isActive:
       user.isActive,
+
+    mustChangePassword:
+      user.mustChangePassword,
 
     outlet:
       user.outlet
@@ -130,43 +131,141 @@ export function serializeAuthenticatedUser(
 
 
 // ============================================================
-// LOGIN
+// FIND USER BY USER ID OR EMAIL
 // ============================================================
 
-export async function authenticateUser({
-  userId,
-  password,
-}) {
-  const normalizedUserId =
-    userId
-      .trim()
-      .toUpperCase();
+async function findUserByIdentifier(
+  identifier
+) {
+  const cleanedIdentifier =
+    identifier.trim();
 
 
-  const user =
-    await prisma.user.findUnique({
+  /**
+   * Email addresses are normalized to lowercase.
+   * User IDs are normalized to uppercase.
+   */
+  if (
+    cleanedIdentifier.includes(
+      "@"
+    )
+  ) {
+    return prisma.user.findUnique({
       where: {
-        userId:
-          normalizedUserId,
+        email:
+          cleanedIdentifier
+            .toLowerCase(),
       },
 
       include:
         authenticationUserInclude,
     });
+  }
 
 
-  /**
-   * Do not reveal whether the User ID exists.
-   *
-   * The same authentication failure is returned for:
-   *
-   * - unknown User ID
-   * - incorrect password
-   */
+  return prisma.user.findUnique({
+    where: {
+      userId:
+        cleanedIdentifier
+          .toUpperCase(),
+    },
+
+    include:
+      authenticationUserInclude,
+  });
+}
+
+
+// ============================================================
+// PASSWORD POLICY
+// ============================================================
+
+export function validatePasswordPolicy(
+  password
+) {
+  if (
+    typeof password !== "string" ||
+    password.length < 10
+  ) {
+    return {
+      valid: false,
+
+      message:
+        "Password must contain at least 10 characters.",
+    };
+  }
+
+
+  if (!/[A-Z]/.test(password)) {
+    return {
+      valid: false,
+
+      message:
+        "Password must contain at least one uppercase letter.",
+    };
+  }
+
+
+  if (!/[a-z]/.test(password)) {
+    return {
+      valid: false,
+
+      message:
+        "Password must contain at least one lowercase letter.",
+    };
+  }
+
+
+  if (!/[0-9]/.test(password)) {
+    return {
+      valid: false,
+
+      message:
+        "Password must contain at least one number.",
+    };
+  }
+
+
+  if (
+    !/[^A-Za-z0-9]/.test(
+      password
+    )
+  ) {
+    return {
+      valid: false,
+
+      message:
+        "Password must contain at least one special character.",
+    };
+  }
+
+
+  return {
+    valid: true,
+  };
+}
+
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+export async function authenticateUser({
+  identifier,
+  password,
+}) {
+  const user =
+    await findUserByIdentifier(
+      identifier
+    );
+
+
   if (!user) {
     return {
       success: false,
-      reason: "INVALID_CREDENTIALS",
+
+      reason:
+        "INVALID_CREDENTIALS",
     };
   }
 
@@ -181,7 +280,9 @@ export async function authenticateUser({
   if (!passwordMatches) {
     return {
       success: false,
-      reason: "INVALID_CREDENTIALS",
+
+      reason:
+        "INVALID_CREDENTIALS",
     };
   }
 
@@ -189,14 +290,12 @@ export async function authenticateUser({
   if (!user.isActive) {
     return {
       success: false,
-      reason: "ACCOUNT_INACTIVE",
+
+      reason:
+        "ACCOUNT_INACTIVE",
     };
   }
 
-
-  // ----------------------------------------------------------
-  // Successful login
-  // ----------------------------------------------------------
 
   const updatedUser =
     await prisma.user.update({
@@ -235,17 +334,38 @@ export async function authenticateUser({
 
 
 // ============================================================
-// CURRENT USER
+// CURRENT AUTHENTICATED USER
 // ============================================================
 
 export async function getAuthenticatedUserById(
-  userId
+  userDatabaseId
 ) {
+  return prisma.user.findUnique({
+    where: {
+      id:
+        userDatabaseId,
+    },
+
+    include:
+      authenticationUserInclude,
+  });
+}
+
+
+// ============================================================
+// CHANGE PASSWORD
+// ============================================================
+
+export async function changeAuthenticatedUserPassword({
+  userDatabaseId,
+  currentPassword,
+  newPassword,
+}) {
   const user =
     await prisma.user.findUnique({
       where: {
         id:
-          userId,
+          userDatabaseId,
       },
 
       include:
@@ -253,5 +373,128 @@ export async function getAuthenticatedUserById(
     });
 
 
-  return user;
+  if (!user) {
+    return {
+      success: false,
+
+      reason:
+        "USER_NOT_FOUND",
+    };
+  }
+
+
+  if (!user.isActive) {
+    return {
+      success: false,
+
+      reason:
+        "ACCOUNT_INACTIVE",
+    };
+  }
+
+
+  // ----------------------------------------------------------
+  // Verify current password
+  // ----------------------------------------------------------
+
+  const currentPasswordMatches =
+    await bcrypt.compare(
+      currentPassword,
+      user.passwordHash
+    );
+
+
+  if (!currentPasswordMatches) {
+    return {
+      success: false,
+
+      reason:
+        "CURRENT_PASSWORD_INCORRECT",
+    };
+  }
+
+
+  // ----------------------------------------------------------
+  // Prevent password reuse
+  // ----------------------------------------------------------
+
+  const sameAsCurrentPassword =
+    await bcrypt.compare(
+      newPassword,
+      user.passwordHash
+    );
+
+
+  if (sameAsCurrentPassword) {
+    return {
+      success: false,
+
+      reason:
+        "PASSWORD_REUSE",
+    };
+  }
+
+
+  // ----------------------------------------------------------
+  // Validate new password
+  // ----------------------------------------------------------
+
+  const passwordPolicy =
+    validatePasswordPolicy(
+      newPassword
+    );
+
+
+  if (!passwordPolicy.valid) {
+    return {
+      success: false,
+
+      reason:
+        "WEAK_PASSWORD",
+
+      message:
+        passwordPolicy.message,
+    };
+  }
+
+
+  // ----------------------------------------------------------
+  // Hash and store new password
+  // ----------------------------------------------------------
+
+  const newPasswordHash =
+    await bcrypt.hash(
+      newPassword,
+      PASSWORD_HASH_ROUNDS
+    );
+
+
+  const updatedUser =
+    await prisma.user.update({
+      where: {
+        id:
+          user.id,
+      },
+
+      data: {
+        passwordHash:
+          newPasswordHash,
+
+        mustChangePassword:
+          false,
+      },
+
+      include:
+        authenticationUserInclude,
+    });
+
+
+  return {
+    success: true,
+
+    user:
+      serializeAuthenticatedUser(
+        updatedUser
+      ),
+  };
 }

@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -14,8 +13,10 @@ import AuthContext from "./AuthContextCore";
 export function AuthProvider({
   children,
 }) {
-  const [user, setUser] =
-    useState(null);
+  const [
+    user,
+    setUser,
+  ] = useState(null);
 
   const [
     isInitializing,
@@ -24,11 +25,12 @@ export function AuthProvider({
 
 
   // ==========================================================
-  // INITIAL SESSION RESTORE
+  // RESTORE SESSION
   // ==========================================================
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted =
+      true;
 
 
     async function restoreSession() {
@@ -40,7 +42,9 @@ export function AuthProvider({
 
       if (!token) {
         if (isMounted) {
-          setIsInitializing(false);
+          setIsInitializing(
+            false
+          );
         }
 
         return;
@@ -64,12 +68,15 @@ export function AuthProvider({
           ACCESS_TOKEN_KEY
         );
 
+
         if (isMounted) {
           setUser(null);
         }
       } finally {
         if (isMounted) {
-          setIsInitializing(false);
+          setIsInitializing(
+            false
+          );
         }
       }
     }
@@ -89,14 +96,14 @@ export function AuthProvider({
   // ==========================================================
 
   async function login({
-    userId,
+    identifier,
     password,
   }) {
     const response =
       await api.post(
         "/auth/login",
         {
-          userId,
+          identifier,
           password,
         }
       );
@@ -135,6 +142,46 @@ export function AuthProvider({
 
 
   // ==========================================================
+  // CHANGE PASSWORD
+  // ==========================================================
+
+  async function changePassword({
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  }) {
+    const response =
+      await api.post(
+        "/auth/change-password",
+        {
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }
+      );
+
+
+    const updatedUser =
+      response.data.user;
+
+
+    if (!updatedUser) {
+      throw new Error(
+        "The server returned an invalid password-change response."
+      );
+    }
+
+
+    setUser(
+      updatedUser
+    );
+
+
+    return updatedUser;
+  }
+
+
+  // ==========================================================
   // LOGOUT
   // ==========================================================
 
@@ -148,7 +195,7 @@ export function AuthProvider({
 
 
   // ==========================================================
-  // REFRESH CURRENT USER
+  // REFRESH USER
   // ==========================================================
 
   async function refreshUser() {
@@ -157,31 +204,29 @@ export function AuthProvider({
         "/auth/me"
       );
 
+
     setUser(
       response.data.user
     );
+
 
     return response.data.user;
   }
 
 
-  const value =
-    useMemo(
-      () => ({
-        user,
-        isAuthenticated:
-          Boolean(user),
-        isInitializing,
-        login,
-        logout,
-        refreshUser,
-      }),
+  const value = {
+    user,
 
-      [
-        user,
-        isInitializing,
-      ]
-    );
+    isAuthenticated:
+      Boolean(user),
+
+    isInitializing,
+
+    login,
+    logout,
+    changePassword,
+    refreshUser,
+  };
 
 
   return (
