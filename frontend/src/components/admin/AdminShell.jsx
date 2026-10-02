@@ -25,9 +25,6 @@ import {
 
 import waypointLogo from "../../assets/waypoint-logo.png";
 import useAuth from "../../hooks/useAuth";
-import ThemeToggle from "../common/ThemeToggle";
-
-
 const STAFF_REGISTRATION_LINKS = [
   {
     label:
@@ -206,9 +203,9 @@ function AdminShell({
               flex
               items-center
               gap-1.5
-              pr-14
+              pr-24
               sm:gap-2
-              sm:pr-14
+              sm:pr-24
             "
           >
             <AdminNavLink
@@ -239,9 +236,7 @@ function AdminShell({
               label="Profile"
             />
 
-            <ThemeToggle />
-
-            <button
+<button
               type="button"
               onClick={handleLogout}
               className="
@@ -268,6 +263,12 @@ function AdminShell({
             </button>
           </nav>
         </div>
+
+        <AdminProfileAvatar
+          user={
+            user
+          }
+        />
       </header>
 
 
@@ -634,6 +635,100 @@ function RegisterRoleMenu({
       )}
     </div>
   );
+}
+
+
+function AdminProfileAvatar({
+  user,
+}) {
+  const photo =
+    user?.profilePhotoData ||
+    null;
+
+  const initials =
+    getInitials(
+      user?.fullName ||
+      user?.userId
+    );
+
+
+  return (
+    <Link
+      to="/admin/profile"
+      aria-label="Open administrator profile"
+      title="Administrator profile"
+      className="
+        nexora-focus
+        fixed
+        right-14
+        top-3
+        z-[190]
+        flex
+        h-9
+        w-9
+        items-center
+        justify-center
+        overflow-hidden
+        rounded-full
+        border-2
+        border-[var(--color-surface)]
+        bg-[var(--color-primary)]
+        text-[11px]
+        font-extrabold
+        text-white
+        shadow-md
+        ring-1
+        ring-[var(--color-border-strong)]
+        transition
+        hover:scale-105
+        hover:ring-[var(--color-primary)]
+        sm:right-[60px]
+        sm:top-4
+      "
+    >
+      {photo ? (
+        <img
+          src={
+            photo
+          }
+          alt={`${user?.fullName || "Administrator"} profile`}
+          className="
+            h-full
+            w-full
+            object-cover
+          "
+        />
+      ) : (
+        <span>
+          {initials}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+
+function getInitials(
+  value
+) {
+  if (!value) {
+    return "AD";
+  }
+
+
+  return String(
+    value
+  )
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) =>
+      part.charAt(0)
+    )
+    .join("")
+    .toUpperCase() ||
+    "AD";
 }
 
 

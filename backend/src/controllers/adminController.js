@@ -6,6 +6,7 @@ import {
   registerAdministrator,
   registerStaffMember,
   updateAdministratorProfile,
+  updateAdministratorProfilePhoto,
 } from "../services/adminService.js";
 
 
@@ -14,6 +15,13 @@ const EMAIL_PATTERN =
 
 const USER_ID_PATTERN =
   /^[A-Za-z0-9_-]{3,50}$/;
+
+
+const PROFILE_PHOTO_PATTERN =
+  /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+
+const MAX_PROFILE_PHOTO_LENGTH =
+  900_000;
 
 
 // ============================================================
@@ -180,6 +188,21 @@ export async function registerAdmin(
 
             message:
               "The administrator secret key is invalid.",
+          });
+      }
+
+
+      if (
+        result.reason ===
+        "INVALID_USER_ID_FORMAT"
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+
+            message:
+              "Administrator User IDs must start with ADMIN followed by numbers only.",
           });
       }
 
@@ -487,6 +510,107 @@ export async function updateAdminProfile(
 
 
 // ============================================================
+// UPDATE ADMIN PROFILE PHOTO
+// ============================================================
+
+export async function updateAdminProfilePhoto(
+  req,
+  res,
+  next
+) {
+  try {
+    const {
+      profilePhotoData,
+    } = req.body;
+
+
+    const wantsToRemovePhoto =
+      profilePhotoData ===
+      null;
+
+
+    if (
+      !wantsToRemovePhoto &&
+      (
+        typeof profilePhotoData !==
+          "string" ||
+        profilePhotoData.length ===
+          0 ||
+        profilePhotoData.length >
+          MAX_PROFILE_PHOTO_LENGTH ||
+        !PROFILE_PHOTO_PATTERN.test(
+          profilePhotoData
+        )
+      )
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+
+          message:
+            "Upload a valid JPG, PNG or WebP profile photo.",
+        });
+    }
+
+
+    const result =
+      await updateAdministratorProfilePhoto({
+        userDatabaseId:
+          req.user.id,
+
+        profilePhotoData:
+          wantsToRemovePhoto
+            ? null
+            : profilePhotoData,
+      });
+
+
+    if (!result.success) {
+      if (
+        result.reason ===
+        "USER_NOT_FOUND"
+      ) {
+        return res
+          .status(404)
+          .json({
+            success: false,
+
+            message:
+              "Administrator profile was not found.",
+          });
+      }
+
+
+      return res
+        .status(400)
+        .json({
+          success: false,
+
+          message:
+            "Unable to update the administrator profile photo.",
+        });
+    }
+
+
+    return res
+      .status(200)
+      .json({
+        success: true,
+
+        message:
+          "Administrator profile photo updated successfully.",
+
+        profile:
+          result.profile,
+      });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+
+// ============================================================
 // ACCOUNT DIRECTORY
 // ============================================================
 
@@ -729,6 +853,12 @@ function createStaffRegistrationHandler({
 
       if (!result.success) {
         const responseByReason = {
+          INVALID_USER_ID_FORMAT: {
+            status: 400,
+            message:
+              "The User ID prefix does not match the selected staff role.",
+          },
+
           USER_ID_EXISTS: {
             status: 409,
             message:

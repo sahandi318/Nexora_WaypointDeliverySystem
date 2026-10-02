@@ -776,3 +776,246 @@ html[data-theme="dark"] .landing-footer-surface::before {
     display: none;
   }
 }
+
+/* =========================================================
+   LANDING HERO — THEME-AWARE HEADQUARTERS IMAGE
+
+   One single source image is used for both themes.
+   This guarantees that the architecture, camera angle,
+   landscaping and logo position never change between modes.
+   Only lighting/color treatment changes.
+   ========================================================= */
+
+.landing-hero-hq {
+  isolation: isolate;
+
+  background:
+    #dfeee8;
+}
+
+.landing-hero-hq-image {
+  transform:
+    scale(1.012);
+
+  object-position:
+    54% center;
+
+  filter:
+    brightness(1.08)
+    contrast(0.96)
+    saturate(0.90)
+    temperature(1);
+
+  transition:
+    filter 0.45s ease,
+    transform 0.7s ease;
+}
+
+/*
+  Light mode:
+  keep the building bright and naturally sunlit.
+  The pale overlay softens remaining warm/artificial highlights
+  without altering the building geometry.
+*/
+.landing-hero-hq-lighting {
+  z-index: 1;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(207, 234, 249, 0.13) 0%,
+      rgba(255, 255, 255, 0.07) 44%,
+      rgba(246, 255, 250, 0.12) 100%
+    );
+}
+
+.landing-hero-hq-fade {
+  z-index: 2;
+
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        var(--color-bg) 84%,
+        transparent
+      ) 0%,
+      color-mix(
+        in srgb,
+        var(--color-bg) 49%,
+        transparent
+      ) 9%,
+      transparent 27%
+    );
+}
+
+.landing-hero-hq-brand-glow {
+  z-index: 3;
+
+  opacity: 0.08;
+
+  background:
+    radial-gradient(
+      circle at 61% 30%,
+      rgba(20, 184, 122, 0.18),
+      transparent 21%
+    );
+
+  transition:
+    opacity 0.45s ease;
+}
+
+.landing-hero-hq-status-dot {
+  background:
+    #8de7bd;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(141, 231, 189, 0.16);
+}
+
+.landing-hero-hq-night-copy {
+  display: none;
+}
+
+
+/* DARK MODE — SAME BUILDING, NIGHT LIGHTING ONLY */
+
+html[data-theme="dark"] .landing-hero-hq {
+  background:
+    #041d18;
+}
+
+html[data-theme="dark"] .landing-hero-hq-image {
+  filter:
+    brightness(0.50)
+    contrast(1.20)
+    saturate(1.16)
+    hue-rotate(-3deg);
+}
+
+html[data-theme="dark"] .landing-hero-hq-lighting {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(3, 18, 26, 0.60) 0%,
+      rgba(4, 31, 26, 0.31) 35%,
+      rgba(2, 18, 15, 0.18) 62%,
+      rgba(2, 20, 16, 0.43) 100%
+    ),
+    radial-gradient(
+      circle at 62% 30%,
+      rgba(24, 232, 157, 0.18),
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 51% 68%,
+      rgba(255, 201, 125, 0.13),
+      transparent 30%
+    );
+}
+
+html[data-theme="dark"] .landing-hero-hq-fade {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        var(--color-bg) 92%,
+        transparent
+      ) 0%,
+      color-mix(
+        in srgb,
+        var(--color-bg) 62%,
+        transparent
+      ) 11%,
+      transparent 31%
+    );
+}
+
+html[data-theme="dark"] .landing-hero-hq-brand-glow {
+  opacity: 1;
+
+  background:
+    radial-gradient(
+      circle at 60% 30%,
+      rgba(34, 255, 177, 0.28),
+      transparent 13%
+    ),
+    radial-gradient(
+      circle at 59% 33%,
+      rgba(9, 168, 113, 0.18),
+      transparent 25%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 60%,
+      rgba(16, 220, 148, 0.06) 100%
+    );
+
+  mix-blend-mode:
+    screen;
+}
+
+html[data-theme="dark"] .landing-hero-hq-status-dot {
+  background:
+    #2de39b;
+
+  box-shadow:
+    0 0 8px
+    rgba(45, 227, 155, 0.95),
+    0 0 0 4px
+    rgba(45, 227, 155, 0.14);
+}
+
+html[data-theme="dark"] .landing-hero-hq-day-copy {
+  display: none;
+}
+
+html[data-theme="dark"] .landing-hero-hq-night-copy {
+  display: inline;
+}
+
+
+@media (max-width: 1023px) {
+  .landing-hero-hq-image {
+    object-position:
+      55% center;
+  }
+
+  .landing-hero-hq-fade {
+    background:
+      linear-gradient(
+        180deg,
+        transparent 65%,
+        color-mix(
+          in srgb,
+          var(--color-bg) 20%,
+          transparent
+        ) 100%
+      );
+  }
+
+  html[data-theme="dark"] .landing-hero-hq-fade {
+    background:
+      linear-gradient(
+        180deg,
+        transparent 60%,
+        color-mix(
+          in srgb,
+          var(--color-bg) 42%,
+          transparent
+        ) 100%
+      );
+  }
+}
+
+
+@media (max-width: 639px) {
+  .landing-hero-hq-image {
+    object-position:
+      57% center;
+  }
+}
+
+/* END LANDING HERO HEADQUARTERS IMAGE */
