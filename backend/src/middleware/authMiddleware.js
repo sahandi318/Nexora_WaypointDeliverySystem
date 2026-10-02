@@ -145,11 +145,9 @@ export async function authenticateToken(
 // ============================================================
 
 /**
- * Add this middleware to operational routes.
- *
  * Users with temporary passwords remain authenticated,
- * but cannot access normal application functionality until
- * their required password change is completed.
+ * but cannot access protected application functionality
+ * until their required password change is completed.
  */
 export function requirePasswordChangeCompleted(
   req,
@@ -186,4 +184,63 @@ export function requirePasswordChangeCompleted(
 
 
   return next();
+}
+
+
+// ============================================================
+// ROLE-BASED ACCESS CONTROL
+// ============================================================
+
+/**
+ * Restricts a protected route to one or more user roles.
+ *
+ * Example:
+ *
+ * authorizeRoles("ADMIN")
+ *
+ * authorizeRoles(
+ *   "ADMIN",
+ *   "DISPATCHER"
+ * )
+ *
+ * This middleware must be used after authenticateToken.
+ */
+export function authorizeRoles(
+  ...allowedRoles
+) {
+  return (
+    req,
+    res,
+    next
+  ) => {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({
+          success: false,
+
+          message:
+            "Authentication required.",
+        });
+    }
+
+
+    if (
+      !allowedRoles.includes(
+        req.user.role
+      )
+    ) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+
+          message:
+            "You do not have permission to access this resource.",
+        });
+    }
+
+
+    return next();
+  };
 }

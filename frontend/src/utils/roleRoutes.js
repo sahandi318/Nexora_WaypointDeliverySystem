@@ -1,6 +1,6 @@
 export const ROLE_HOME_PATHS = {
   ADMIN:
-    "/admin",
+    "/admin/dashboard",
 
   STORE_MANAGER:
     "/store-manager/dashboard",

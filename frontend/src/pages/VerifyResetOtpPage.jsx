@@ -15,6 +15,7 @@ import {
   Link,
   Navigate,
   useNavigate,
+  useSearchParams,
 } from "react-router-dom";
 
 import ThemeToggle from "../components/common/ThemeToggle";
@@ -26,6 +27,11 @@ import {
   getPasswordResetToken,
 } from "../services/passwordResetSession";
 
+import {
+  getPortalFromSearchParams,
+  getRecoveryPath,
+} from "../utils/authPortal";
+
 import waypointLogo from "../assets/waypoint-logo.png";
 
 
@@ -36,6 +42,15 @@ const RESEND_SECONDS =
 function VerifyResetOtpPage() {
   const navigate =
     useNavigate();
+
+  const [
+    searchParams,
+  ] = useSearchParams();
+
+  const portal =
+    getPortalFromSearchParams(
+      searchParams
+    );
 
 
   const {
@@ -127,7 +142,10 @@ function VerifyResetOtpPage() {
   ) {
     return (
       <Navigate
-        to="/reset-password"
+        to={getRecoveryPath(
+          "/reset-password",
+          portal
+        )}
         replace
       />
     );
@@ -137,7 +155,10 @@ function VerifyResetOtpPage() {
   if (!identifier) {
     return (
       <Navigate
-        to="/forgot-password"
+        to={getRecoveryPath(
+          "/forgot-password",
+          portal
+        )}
         replace
       />
     );
@@ -203,7 +224,10 @@ function VerifyResetOtpPage() {
 
 
       navigate(
-        "/reset-password",
+        getRecoveryPath(
+          "/reset-password",
+          portal
+        ),
         {
           replace: true,
         }
@@ -548,7 +572,10 @@ function VerifyResetOtpPage() {
               "
             >
               <Link
-                to="/forgot-password"
+                to={getRecoveryPath(
+                  "/forgot-password",
+                  portal
+                )}
                 className="
                   nexora-focus
                   inline-flex
