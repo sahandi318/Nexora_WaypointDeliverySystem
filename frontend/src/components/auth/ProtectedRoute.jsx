@@ -6,6 +6,12 @@ import {
 import useAuth from "../../hooks/useAuth";
 
 import {
+  getLoginPathForPortal,
+  ADMIN_PORTAL,
+  STAFF_PORTAL,
+} from "../../utils/authPortal";
+
+import {
   getRoleHomePath,
 } from "../../utils/roleRoutes";
 
@@ -49,9 +55,19 @@ function ProtectedRoute({
 
 
   if (!user) {
+    const portal =
+      location.pathname.startsWith(
+        "/admin"
+      )
+        ? ADMIN_PORTAL
+        : STAFF_PORTAL;
+
+
     return (
       <Navigate
-        to="/login"
+        to={getLoginPathForPortal(
+          portal
+        )}
         replace
         state={{
           from:

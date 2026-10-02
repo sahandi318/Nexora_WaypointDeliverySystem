@@ -3,6 +3,7 @@ import cors from "cors";
 
 import prisma from "./config/database.js";
 
+import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
 
@@ -135,6 +136,16 @@ app.get(
 app.use(
   "/api/auth",
   authRoutes
+);
+
+
+// ============================================================
+// ADMIN ROUTES
+// ============================================================
+
+app.use(
+  "/api/admin",
+  adminRoutes
 );
 
 

@@ -22,6 +22,10 @@ import ThemeToggle from "../components/common/ThemeToggle";
 import useAuth from "../hooks/useAuth";
 
 import {
+  getLoginPathForRole,
+} from "../utils/authPortal";
+
+import {
   getRoleHomePath,
 } from "../utils/roleRoutes";
 
@@ -199,7 +203,9 @@ function ChangePasswordPage() {
     logout();
 
     navigate(
-      "/login",
+      getLoginPathForRole(
+        user?.role
+      ),
       {
         replace: true,
       }
@@ -673,7 +679,7 @@ function Requirement({
         ${
           passed
             ? "text-[var(--color-success)]"
-            : "text-[var(--color-text-muted)]"
+            : "text-[var(--color-text)]"
         }
       `}
     >
@@ -688,7 +694,7 @@ function Requirement({
           ${
             passed
               ? "bg-[var(--color-success-soft)]"
-              : "bg-[var(--color-surface)]"
+              : "border border-[var(--color-border)] bg-[var(--color-surface)]"
           }
         `}
       >

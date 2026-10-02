@@ -11,6 +11,10 @@ import ThemeToggle from "../components/common/ThemeToggle";
 
 import useAuth from "../hooks/useAuth";
 
+import {
+  getLoginPathForRole,
+} from "../utils/authPortal";
+
 
 function RoleWorkspacePage() {
   const {
@@ -26,7 +30,9 @@ function RoleWorkspacePage() {
     logout();
 
     navigate(
-      "/login",
+      getLoginPathForRole(
+        user?.role
+      ),
       {
         replace: true,
       }

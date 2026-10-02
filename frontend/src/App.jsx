@@ -2,13 +2,22 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import useAuth from "./hooks/useAuth";
 
+import AdminChangePasswordPage from "./pages/AdminChangePasswordPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
+import AdminRegisterPage from "./pages/AdminRegisterPage";
+import DispatcherRegisterPage from "./pages/admin/DispatcherRegisterPage";
+import DriverRegisterPage from "./pages/admin/DriverRegisterPage";
+import LoaderRegisterPage from "./pages/admin/LoaderRegisterPage";
+import StoreManagerRegisterPage from "./pages/admin/StoreManagerRegisterPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LandingPage from "./pages/LandingPage";
@@ -55,13 +64,20 @@ function App() {
 
 
       {/* =====================================================
-          ADMIN LOGIN
+          ADMIN AUTHENTICATION
           ===================================================== */}
 
       <Route
         path="/admin/login"
         element={
           <AdminLoginRoute />
+        }
+      />
+
+      <Route
+        path="/admin/register"
+        element={
+          <AdminRegisterRoute />
         }
       />
 
@@ -129,8 +145,117 @@ function App() {
 
 
       {/* =====================================================
-          ADMIN
+          ADMIN WORKSPACE
           ===================================================== */}
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <Navigate
+              to="/admin/dashboard"
+              replace
+            />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <AdminDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/profile"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <AdminProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+
+      <Route
+        path="/admin/change-password"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <AdminChangePasswordPage />
+          </ProtectedRoute>
+        }
+      />
+
+
+      <Route
+        path="/admin/staff/store-managers/register"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <StoreManagerRegisterPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/staff/dispatchers/register"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <DispatcherRegisterPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/staff/loaders/register"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <LoaderRegisterPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/staff/drivers/register"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+            ]}
+          >
+            <DriverRegisterPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/admin/*"
@@ -140,7 +265,10 @@ function App() {
               "ADMIN",
             ]}
           >
-            <RoleWorkspacePage />
+            <Navigate
+              to="/admin/dashboard"
+              replace
+            />
           </ProtectedRoute>
         }
       />
@@ -265,6 +393,58 @@ function LoginRoute() {
 
 
 // ============================================================
+// ADMIN REGISTER ROUTE
+// ============================================================
+
+function AdminRegisterRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (
+    user?.mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
+
+  if (
+    user &&
+    user.role !==
+      "ADMIN"
+  ) {
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <AdminRegisterPage />
+  );
+}
+
+
+// ============================================================
 // ADMIN LOGIN ROUTE
 // ============================================================
 
@@ -370,6 +550,9 @@ function ResetPasswordRoute() {
     isInitializing,
   } = useAuth();
 
+  const location =
+    useLocation();
+
 
   if (isInitializing) {
     return (
@@ -409,7 +592,7 @@ function ResetPasswordRoute() {
   if (!resetToken) {
     return (
       <Navigate
-        to="/forgot-password"
+        to={`/forgot-password${location.search}`}
         replace
       />
     );
