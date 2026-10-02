@@ -146,8 +146,8 @@ model PasswordResetOtp {
   // or otherwise invalidated.
   usedAt DateTime?
 
-  // Set after Stage 5.5E successfully changes the password.
-  // This prevents the reset authorization from being reused.
+  // Set after a successful password reset.
+  // Prevents reset authorization from being reused.
   resetCompletedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -155,4 +155,40 @@ model PasswordResetOtp {
   @@index([userId, createdAt])
   @@index([expiresAt])
   @@map("password_reset_otps")
+}
+
+// ============================================================
+// TRANSLATION CACHE
+// ============================================================
+
+model TranslationCache {
+  id Int @id @default(autoincrement())
+
+  // SHA-256 key generated from:
+  //
+  // source language
+  // target language
+  // source text
+  //
+  // The same translation can therefore be reused without
+  // calling the external translation provider again.
+  cacheKey String @unique @db.VarChar(64)
+
+  sourceLanguage String @db.VarChar(10)
+  targetLanguage String @db.VarChar(10)
+
+  sourceText     String @db.Text
+  translatedText String @db.Text
+
+  // Examples:
+  // google
+  // manual
+  provider String @db.VarChar(40)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sourceLanguage, targetLanguage])
+  @@index([targetLanguage])
+  @@map("translation_cache")
 }
