@@ -7,8 +7,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import ThemeToggle from "../components/common/ThemeToggle";
-
 import useAuth from "../hooks/useAuth";
 
 import {
@@ -54,8 +52,7 @@ function RoleWorkspacePage() {
       "
     >
       <div className="absolute right-6 top-6">
-        <ThemeToggle />
-      </div>
+</div>
 
 
       <div

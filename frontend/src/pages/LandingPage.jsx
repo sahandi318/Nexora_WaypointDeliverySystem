@@ -1,8 +1,6 @@
 import AboutSection from "../components/landing/AboutSection";
 import FeatureStrip from "../components/landing/FeatureStrip";
-import Footer from "../components/landing/Footer";
 import HeroSection from "../components/landing/HeroSection";
-import LandingNavbar from "../components/landing/LandingNavbar";
 import StoreSection from "../components/landing/StoreSection";
 
 
@@ -19,16 +17,12 @@ function LandingPage() {
         duration-300
       "
     >
-      <LandingNavbar />
-
-      <main className="w-full overflow-x-hidden pt-16 sm:pt-20">
+      <main className="w-full overflow-x-hidden">
         <HeroSection />
         <FeatureStrip />
         <StoreSection />
         <AboutSection />
       </main>
-
-      <Footer />
     </div>
   );
 }

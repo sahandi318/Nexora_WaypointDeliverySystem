@@ -7,7 +7,6 @@ import {
   KeyRound,
   LockKeyhole,
   Mail,
-  Phone,
   ShieldCheck,
   UserPlus,
   UserRound,
@@ -22,14 +21,17 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import AdminShell from "../components/admin/AdminShell";
-import InternationalPhoneField from "../components/common/InternationalPhoneField";
-import LoginUtilityBar from "../components/common/LoginUtilityBar";
+import AdminShell from "../../components/admin/AdminShell";
+import InternationalPhoneField from "../../components/common/InternationalPhoneField";
+import LoginUtilityBar from "../../components/common/LoginUtilityBar";
+import PrefixedUserIdField, {
+  USER_ID_PREFIXES,
+} from "../../components/common/PrefixedUserIdField";
 import PasswordRequirements, {
   isPasswordStrong,
-} from "../components/common/PasswordRequirements";
-import useAuth from "../hooks/useAuth";
-import api from "../services/api";
+} from "../../components/common/PasswordRequirements";
+import useAuth from "../../hooks/useAuth";
+import api from "../../services/api";
 
 
 const INITIAL_FORM = {
@@ -223,6 +225,19 @@ function RegistrationCard({
 
 
     if (
+      !/^\d+$/.test(
+        form.userId
+      )
+    ) {
+      setErrorMessage(
+        "Enter only the numeric part of the administrator User ID."
+      );
+
+      return;
+    }
+
+
+    if (
       form.phone &&
       !phoneIsValid
     ) {
@@ -267,7 +282,7 @@ function RegistrationCard({
           "/admin/register",
           {
             userId:
-              form.userId.trim(),
+              `${USER_ID_PREFIXES.ADMIN}${form.userId.trim()}`,
 
             fullName:
               form.fullName.trim(),
@@ -434,19 +449,22 @@ function RegistrationCard({
               sm:grid-cols-2
             "
           >
-            <TextField
+            <PrefixedUserIdField
               id="adminRegisterUserId"
               label="Administrator User ID"
-              icon={UserRound}
-              value={form.userId}
+              prefix={
+                USER_ID_PREFIXES.ADMIN
+              }
+              value={
+                form.userId
+              }
               onChange={(value) =>
                 updateField(
                   "userId",
                   value
                 )
               }
-              placeholder="e.g. ADMIN002"
-              autoComplete="username"
+              placeholder="001"
               required
             />
 

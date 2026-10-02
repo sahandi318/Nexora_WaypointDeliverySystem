@@ -43,6 +43,25 @@ const PASSWORD_FILTERS = new Set([
 ]);
 
 
+const USER_ID_PREFIX_BY_ROLE =
+  Object.freeze({
+    ADMIN:
+      "ADMIN",
+
+    STORE_MANAGER:
+      "SM",
+
+    DISPATCHER:
+      "DSP",
+
+    LOADER:
+      "LD",
+
+    DRIVER:
+      "DR",
+  });
+
+
 // ============================================================
 // SHARED HELPERS
 // ============================================================
@@ -53,6 +72,29 @@ function normalizeUserId(
   return value
     .trim()
     .toUpperCase();
+}
+
+
+function userIdMatchesRole(
+  userId,
+  role
+) {
+  const prefix =
+    USER_ID_PREFIX_BY_ROLE[
+      role
+    ];
+
+
+  if (!prefix) {
+    return false;
+  }
+
+
+  return new RegExp(
+    `^${prefix}\\d+$`
+  ).test(
+    userId
+  );
 }
 
 
@@ -130,6 +172,10 @@ function serializeAccount(
     phone:
       user.phone,
 
+    profilePhotoData:
+      user.profilePhotoData ||
+      null,
+
     role:
       user.role,
 
@@ -206,6 +252,22 @@ export async function registerAdministrator({
     normalizeUserId(
       userId
     );
+
+
+  if (
+    !userIdMatchesRole(
+      normalizedUserId,
+      "ADMIN"
+    )
+  ) {
+    return {
+      success: false,
+
+      reason:
+        "INVALID_USER_ID_FORMAT",
+    };
+  }
+
 
   const normalizedEmail =
     normalizeEmail(
@@ -442,6 +504,67 @@ export async function updateAdministratorProfile({
 
         phone:
           phone?.trim() ||
+          null,
+      },
+
+      include: {
+        outlet:
+          true,
+
+        depot:
+          true,
+      },
+    });
+
+
+  return {
+    success: true,
+
+    profile:
+      serializeAccount(
+        updatedAdmin
+      ),
+  };
+}
+
+
+// ============================================================
+// UPDATE ADMIN PROFILE PHOTO
+// ============================================================
+
+export async function updateAdministratorProfilePhoto({
+  userDatabaseId,
+  profilePhotoData,
+}) {
+  const existingAdmin =
+    await prisma.user.findUnique({
+      where: {
+        id:
+          userDatabaseId,
+      },
+    });
+
+
+  if (!existingAdmin) {
+    return {
+      success: false,
+
+      reason:
+        "USER_NOT_FOUND",
+    };
+  }
+
+
+  const updatedAdmin =
+    await prisma.user.update({
+      where: {
+        id:
+          userDatabaseId,
+      },
+
+      data: {
+        profilePhotoData:
+          profilePhotoData ||
           null,
       },
 
@@ -825,6 +948,22 @@ export async function registerStaffMember({
     normalizeUserId(
       userId
     );
+
+
+  if (
+    !userIdMatchesRole(
+      normalizedUserId,
+      role
+    )
+  ) {
+    return {
+      success: false,
+
+      reason:
+        "INVALID_USER_ID_FORMAT",
+    };
+  }
+
 
   const normalizedEmail =
     normalizeEmail(

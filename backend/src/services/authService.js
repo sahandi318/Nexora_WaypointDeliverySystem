@@ -49,6 +49,10 @@ export function serializeAuthenticatedUser(
     phone:
       user.phone,
 
+    profilePhotoData:
+      user.profilePhotoData ||
+      null,
+
     role:
       user.role,
 
