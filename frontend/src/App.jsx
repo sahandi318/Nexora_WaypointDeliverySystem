@@ -26,6 +26,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
 import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 
 import {
   getPasswordResetToken,
@@ -275,18 +276,23 @@ function App() {
 
 
       {/* =====================================================
-          DISPATCHER
-          ===================================================== */}
+       DISPATCHER
+       ===================================================== */}
+
+      <Route
+        path="/dispatcher/reports"
+        element={
+          <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+            <ReportsCapacity />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/dispatcher/*"
         element={
-          <ProtectedRoute
-            allowedRoles={[
-              "DISPATCHER",
-            ]}
-          >
-            <RoleWorkspacePage />
+          <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+              <RoleWorkspacePage />
           </ProtectedRoute>
         }
       />
