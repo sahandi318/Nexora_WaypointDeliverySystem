@@ -118,7 +118,7 @@ function StoreManagerDashboardPage() {
 
           {/* HEADER ACTIONS */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-14">
             <ThemeToggle />
 
 

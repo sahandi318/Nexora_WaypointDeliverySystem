@@ -23,7 +23,11 @@ import {
 } from "react-router-dom";
 
 import AdminShell from "../components/admin/AdminShell";
+import InternationalPhoneField from "../components/common/InternationalPhoneField";
 import LoginUtilityBar from "../components/common/LoginUtilityBar";
+import PasswordRequirements, {
+  isPasswordStrong,
+} from "../components/common/PasswordRequirements";
 import useAuth from "../hooks/useAuth";
 import api from "../services/api";
 
@@ -173,6 +177,12 @@ function RegistrationCard({
   ] = useState("");
 
 
+  const [
+    phoneIsValid,
+    setPhoneIsValid,
+  ] = useState(true);
+
+
   function updateField(
     name,
     value
@@ -206,6 +216,31 @@ function RegistrationCard({
     ) {
       setErrorMessage(
         "Complete all required fields before registering the administrator."
+      );
+
+      return;
+    }
+
+
+    if (
+      form.phone &&
+      !phoneIsValid
+    ) {
+      setErrorMessage(
+        "Enter a valid phone number for the selected country."
+      );
+
+      return;
+    }
+
+
+    if (
+      !isPasswordStrong(
+        form.password
+      )
+    ) {
+      setErrorMessage(
+        "Password does not meet all security requirements."
       );
 
       return;
@@ -448,11 +483,9 @@ function RegistrationCard({
               required
             />
 
-            <TextField
+            <InternationalPhoneField
               id="adminRegisterPhone"
               label="Phone"
-              icon={Phone}
-              type="tel"
               value={form.phone}
               onChange={(value) =>
                 updateField(
@@ -460,8 +493,9 @@ function RegistrationCard({
                   value
                 )
               }
-              placeholder="Optional phone number"
-              autoComplete="tel"
+              onValidityChange={
+                setPhoneIsValid
+              }
             />
 
             <SecretField
@@ -486,6 +520,14 @@ function RegistrationCard({
               placeholder="Create a strong password"
               required
             />
+
+            <div className="sm:col-span-2">
+              <PasswordRequirements
+                password={
+                  form.password
+                }
+              />
+            </div>
 
             <SecretField
               id="adminRegisterConfirmPassword"
@@ -535,24 +577,6 @@ function RegistrationCard({
               placeholder="Enter the private admin registration key"
               required
             />
-          </div>
-
-
-          <div
-            className="
-              mt-4
-              rounded-xl
-              border
-              border-[var(--color-border)]
-              bg-[var(--color-surface-soft)]
-              px-4
-              py-3
-              text-xs
-              leading-5
-              text-[var(--color-text-secondary)]
-            "
-          >
-            Passwords must contain at least 10 characters, including uppercase, lowercase, a number and a special character.
           </div>
 
 

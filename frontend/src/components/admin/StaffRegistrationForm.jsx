@@ -18,6 +18,10 @@ import {
   useState,
 } from "react";
 
+import InternationalPhoneField from "../common/InternationalPhoneField";
+import PasswordRequirements, {
+  isPasswordStrong,
+} from "../common/PasswordRequirements";
 import api from "../../services/api";
 
 
@@ -74,6 +78,12 @@ function StaffRegistrationForm({
     successMessage,
     setSuccessMessage,
   ] = useState("");
+
+
+  const [
+    phoneIsValid,
+    setPhoneIsValid,
+  ] = useState(true);
 
 
   const isOutletAssignment =
@@ -215,6 +225,31 @@ function StaffRegistrationForm({
     ) {
       setErrorMessage(
         "Complete all required fields before registering the account."
+      );
+
+      return;
+    }
+
+
+    if (
+      form.phone &&
+      !phoneIsValid
+    ) {
+      setErrorMessage(
+        "Enter a valid phone number for the selected country."
+      );
+
+      return;
+    }
+
+
+    if (
+      !isPasswordStrong(
+        form.password
+      )
+    ) {
+      setErrorMessage(
+        "Temporary password does not meet all security requirements."
       );
 
       return;
@@ -440,19 +475,30 @@ function StaffRegistrationForm({
             </FormField>
 
 
-            <FormField
+            <InternationalPhoneField
+              id={`${role.toLowerCase()}Phone`}
               label="Phone"
-            >
-              <InputWithIcon
-                icon={Phone}
-                name="phone"
-                value={form.phone}
-                onChange={updateField}
-                placeholder="Optional phone number"
-                autoComplete="tel"
-                disabled={isSubmitting}
-              />
-            </FormField>
+              value={form.phone}
+              onChange={(value) => {
+                setForm(
+                  (current) => ({
+                    ...current,
+
+                    phone:
+                      value,
+                  })
+                );
+
+                setErrorMessage("");
+                setSuccessMessage("");
+              }}
+              onValidityChange={
+                setPhoneIsValid
+              }
+              disabled={
+                isSubmitting
+              }
+            />
 
 
             <FormField
@@ -542,6 +588,15 @@ function StaffRegistrationForm({
                 disabled={isSubmitting}
               />
             </FormField>
+
+
+            <div className="md:col-span-2">
+              <PasswordRequirements
+                password={
+                  form.password
+                }
+              />
+            </div>
 
 
             <FormField
@@ -708,21 +763,6 @@ function StaffRegistrationForm({
           The staff member signs in with the temporary password and must create a new password before using protected operational features.
         </p>
 
-        <div
-          className="
-            mt-4
-            rounded-xl
-            border
-            border-[var(--color-border)]
-            bg-[var(--color-surface)]
-            p-4
-            text-xs
-            leading-5
-            text-[var(--color-text-muted)]
-          "
-        >
-          Passwords require at least 10 characters with uppercase, lowercase, number and special character.
-        </div>
       </aside>
     </div>
   );
