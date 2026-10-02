@@ -8,7 +8,6 @@ import {
   KeyRound,
   Mail,
   MapPin,
-  Phone,
   UserRound,
 } from "lucide-react";
 
@@ -19,6 +18,9 @@ import {
 } from "react";
 
 import InternationalPhoneField from "../common/InternationalPhoneField";
+import PrefixedUserIdField, {
+  USER_ID_PREFIXES,
+} from "../common/PrefixedUserIdField";
 import PasswordRequirements, {
   isPasswordStrong,
 } from "../common/PasswordRequirements";
@@ -99,6 +101,12 @@ function StaffRegistrationForm({
     isOutletAssignment
       ? "/admin/outlets"
       : "/admin/depots";
+
+
+  const userIdPrefix =
+    USER_ID_PREFIXES[
+      role
+    ];
 
 
   useEffect(() => {
@@ -232,6 +240,19 @@ function StaffRegistrationForm({
 
 
     if (
+      !/^\d+$/.test(
+        form.userId
+      )
+    ) {
+      setErrorMessage(
+        "Enter only the numeric part of the User ID."
+      );
+
+      return;
+    }
+
+
+    if (
       form.phone &&
       !phoneIsValid
     ) {
@@ -276,7 +297,7 @@ function StaffRegistrationForm({
 
       const payload = {
         userId:
-          form.userId.trim(),
+          `${userIdPrefix}${form.userId.trim()}`,
 
         fullName:
           form.fullName.trim(),
@@ -426,20 +447,34 @@ function StaffRegistrationForm({
               md:grid-cols-2
             "
           >
-            <FormField
+            <PrefixedUserIdField
+              id={`${role.toLowerCase()}UserId`}
               label="User ID"
+              prefix={
+                userIdPrefix
+              }
+              value={
+                form.userId
+              }
+              onChange={(value) => {
+                setForm(
+                  (current) => ({
+                    ...current,
+
+                    userId:
+                      value,
+                  })
+                );
+
+                setErrorMessage("");
+                setSuccessMessage("");
+              }}
+              placeholder="001"
+              disabled={
+                isSubmitting
+              }
               required
-            >
-              <InputWithIcon
-                icon={UserRound}
-                name="userId"
-                value={form.userId}
-                onChange={updateField}
-                placeholder="e.g. SM002"
-                autoComplete="off"
-                disabled={isSubmitting}
-              />
-            </FormField>
+            />
 
 
             <FormField

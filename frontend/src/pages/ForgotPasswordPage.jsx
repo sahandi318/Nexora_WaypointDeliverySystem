@@ -17,8 +17,6 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import ThemeToggle from "../components/common/ThemeToggle";
-
 import useAuth from "../hooks/useAuth";
 
 import {
@@ -136,8 +134,7 @@ function ForgotPasswordPage() {
   return (
     <main className="relative min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <div className="absolute right-5 top-5 sm:right-8 sm:top-8">
-        <ThemeToggle />
-      </div>
+</div>
 
 
       <div

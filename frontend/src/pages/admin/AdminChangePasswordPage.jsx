@@ -15,11 +15,11 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import AdminShell from "../components/admin/AdminShell";
+import AdminShell from "../../components/admin/AdminShell";
 import PasswordRequirements, {
   isPasswordStrong,
-} from "../components/common/PasswordRequirements";
-import useAuth from "../hooks/useAuth";
+} from "../../components/common/PasswordRequirements";
+import useAuth from "../../hooks/useAuth";
 
 
 function AdminChangePasswordPage() {

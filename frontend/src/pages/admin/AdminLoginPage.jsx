@@ -22,15 +22,15 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import LoginUtilityBar from "../components/common/LoginUtilityBar";
+import LoginUtilityBar from "../../components/common/LoginUtilityBar";
 
-import useAuth from "../hooks/useAuth";
+import useAuth from "../../hooks/useAuth";
 
 import {
   getRoleHomePath,
-} from "../utils/roleRoutes";
+} from "../../utils/roleRoutes";
 
-import waypointLogo from "../assets/waypoint-logo.png";
+import waypointLogo from "../../assets/waypoint-logo.png";
 
 
 function AdminLoginPage() {

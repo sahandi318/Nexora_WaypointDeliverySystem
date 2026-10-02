@@ -19,8 +19,8 @@ import {
   useState,
 } from "react";
 
-import AdminShell from "../components/admin/AdminShell";
-import api from "../services/api";
+import AdminShell from "../../components/admin/AdminShell";
+import api from "../../services/api";
 
 
 const INITIAL_FILTERS = {

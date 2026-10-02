@@ -6,14 +6,17 @@ import {
 } from "react-router-dom";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ThemeToggle from "./components/common/ThemeToggle";
+import Footer from "./components/landing/Footer";
+import LandingNavbar from "./components/landing/LandingNavbar";
 
 import useAuth from "./hooks/useAuth";
 
-import AdminChangePasswordPage from "./pages/AdminChangePasswordPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
-import AdminLoginPage from "./pages/AdminLoginPage";
-import AdminProfilePage from "./pages/AdminProfilePage";
-import AdminRegisterPage from "./pages/AdminRegisterPage";
+import AdminChangePasswordPage from "./pages/admin/AdminChangePasswordPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
+import AdminRegisterPage from "./pages/admin/AdminRegisterPage";
 import DispatcherRegisterPage from "./pages/admin/DispatcherRegisterPage";
 import DriverRegisterPage from "./pages/admin/DriverRegisterPage";
 import LoaderRegisterPage from "./pages/admin/LoaderRegisterPage";
@@ -37,8 +40,44 @@ import {
 
 
 function App() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  const showPublicNavbar =
+    !isInitializing &&
+    !user;
+
+
   return (
-    <Routes>
+    <div
+      className="
+        flex
+        min-h-screen
+        flex-col
+        bg-[var(--color-bg)]
+        text-[var(--color-text)]
+      "
+    >
+      <ThemeToggle />
+
+      {showPublicNavbar && (
+        <LandingNavbar />
+      )}
+
+      <div
+        className={`
+          flex-1
+          ${
+            showPublicNavbar
+              ? "pt-16 sm:pt-20"
+              : ""
+          }
+        `}
+      >
+        <Routes>
       {/* =====================================================
           PUBLIC LANDING PAGE
           ===================================================== */}
@@ -339,7 +378,11 @@ function App() {
           />
         }
       />
-    </Routes>
+        </Routes>
+      </div>
+
+      <Footer />
+    </div>
   );
 }
 

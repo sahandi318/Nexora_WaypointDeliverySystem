@@ -18,30 +18,28 @@ import {
   Link,
 } from "react-router-dom";
 
-import ThemeToggle from "../common/ThemeToggle";
-
 import logo from "../../assets/waypoint-logo.png";
 
 
 const mobileLinks = [
   {
     label: "Home",
-    href: "#home",
+    href: "/#home",
     icon: Home,
   },
   {
     label: "Stores",
-    href: "#stores",
+    href: "/#stores",
     icon: MapPin,
   },
   {
     label: "About",
-    href: "#about",
+    href: "/#about",
     icon: Info,
   },
   {
     label: "Contact",
-    href: "#contact",
+    href: "/#contact",
     icon: Phone,
   },
 ];
@@ -49,6 +47,7 @@ const mobileLinks = [
 
 function LandingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
 
 
   useEffect(() => {
@@ -104,7 +103,7 @@ function LandingNavbar() {
         {/* BRAND */}
 
         <a
-          href="#home"
+          href="/#home"
           onClick={closeMenu}
           className="
             flex
@@ -171,7 +170,7 @@ function LandingNavbar() {
           "
         >
           <a
-            href="#home"
+            href="/#home"
             className="
               text-sm
               font-semibold
@@ -184,7 +183,7 @@ function LandingNavbar() {
           </a>
 
           <a
-            href="#stores"
+            href="/#stores"
             className="
               text-sm
               font-semibold
@@ -197,7 +196,7 @@ function LandingNavbar() {
           </a>
 
           <a
-            href="#about"
+            href="/#about"
             className="
               text-sm
               font-semibold
@@ -210,7 +209,7 @@ function LandingNavbar() {
           </a>
 
           <a
-            href="#contact"
+            href="/#contact"
             className="
               text-sm
               font-semibold
@@ -227,7 +226,6 @@ function LandingNavbar() {
         {/* ACTIONS */}
 
         <div className="flex shrink-0 items-center gap-2 pr-12 sm:pr-14">
-          <ThemeToggle />
 
 
           {/* Subtle administrator entry — intentionally secondary */}
