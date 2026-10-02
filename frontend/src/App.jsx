@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import OfflineSyncManager from "./components/OfflineSyncManager";
 
 import useAuth from "./hooks/useAuth";
 
@@ -14,10 +15,12 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
 import AdminRegisterPage from "./pages/AdminRegisterPage";
+
 import DispatcherRegisterPage from "./pages/admin/DispatcherRegisterPage";
 import DriverRegisterPage from "./pages/admin/DriverRegisterPage";
 import LoaderRegisterPage from "./pages/admin/LoaderRegisterPage";
 import StoreManagerRegisterPage from "./pages/admin/StoreManagerRegisterPage";
+
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LandingPage from "./pages/LandingPage";
@@ -25,7 +28,22 @@ import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
 import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
+
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+
+// ============================================================
+// DRIVER PAGES
+// ============================================================
+
+import DriverDashboard from "./pages/driver/DriverDashboard";
+import TripOverview from "./pages/driver/TripOverview";
+import StopDetails from "./pages/driver/StopDetails";
+import NavigationPage from "./pages/driver/NavigationPage";
+import DeliveryOutcome from "./pages/driver/DeliveryOutcome";
+import ProofOfDelivery from "./pages/driver/ProofOfDelivery";
+import DeliveryException from "./pages/driver/DeliveryException";
+import SyncCenter from "./pages/driver/SyncCenter";
+import TripComplete from "./pages/driver/TripComplete";
 
 import {
   getPasswordResetToken,
@@ -35,6 +53,9 @@ import {
   getRoleHomePath,
 } from "./utils/roleRoutes";
 
+// ============================================================
+// APP ROUTES
+// ============================================================
 
 function App() {
   return (
@@ -45,23 +66,17 @@ function App() {
 
       <Route
         path="/"
-        element={
-          <LandingPage />
-        }
+        element={<LandingPage />}
       />
 
-
       {/* =====================================================
-          STAFF LOGIN
+          SHARED STAFF LOGIN
           ===================================================== */}
 
       <Route
         path="/login"
-        element={
-          <LoginRoute />
-        }
+        element={<LoginRoute />}
       />
-
 
       {/* =====================================================
           ADMIN AUTHENTICATION
@@ -69,18 +84,13 @@ function App() {
 
       <Route
         path="/admin/login"
-        element={
-          <AdminLoginRoute />
-        }
+        element={<AdminLoginRoute />}
       />
 
       <Route
         path="/admin/register"
-        element={
-          <AdminRegisterRoute />
-        }
+        element={<AdminRegisterRoute />}
       />
-
 
       {/* =====================================================
           PASSWORD RECOVERY
@@ -95,7 +105,6 @@ function App() {
         }
       />
 
-
       <Route
         path="/verify-reset-otp"
         element={
@@ -105,14 +114,10 @@ function App() {
         }
       />
 
-
       <Route
         path="/reset-password"
-        element={
-          <ResetPasswordRoute />
-        }
+        element={<ResetPasswordRoute />}
       />
-
 
       {/* =====================================================
           FIRST LOGIN PASSWORD CHANGE
@@ -120,11 +125,8 @@ function App() {
 
       <Route
         path="/change-password"
-        element={
-          <PasswordChangeRoute />
-        }
+        element={<PasswordChangeRoute />}
       />
-
 
       {/* =====================================================
           STORE MANAGER
@@ -142,7 +144,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
       {/* =====================================================
           ADMIN WORKSPACE
@@ -190,7 +191,6 @@ function App() {
         }
       />
 
-
       <Route
         path="/admin/change-password"
         element={
@@ -203,7 +203,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
       <Route
         path="/admin/staff/store-managers/register"
@@ -273,7 +272,6 @@ function App() {
         }
       />
 
-
       {/* =====================================================
           DISPATCHER
           ===================================================== */}
@@ -290,7 +288,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
       {/* =====================================================
           LOADER
@@ -309,11 +306,92 @@ function App() {
         }
       />
 
-
       {/* =====================================================
           DRIVER
           ===================================================== */}
 
+      <Route
+        path="/driver"
+        element={
+          <DriverProtectedPage>
+            <DriverDashboard />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId"
+        element={
+          <DriverProtectedPage>
+            <TripOverview />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/stops/:stopId"
+        element={
+          <DriverProtectedPage>
+            <StopDetails />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/stops/:stopId/navigation"
+        element={
+          <DriverProtectedPage>
+            <NavigationPage />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/stops/:stopId/outcome"
+        element={
+          <DriverProtectedPage>
+            <DeliveryOutcome />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/stops/:stopId/pod"
+        element={
+          <DriverProtectedPage>
+            <ProofOfDelivery />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/stops/:stopId/exception"
+        element={
+          <DriverProtectedPage>
+            <DeliveryException />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/sync"
+        element={
+          <DriverProtectedPage>
+            <SyncCenter />
+          </DriverProtectedPage>
+        }
+      />
+
+      <Route
+        path="/driver/trips/:tripId/complete"
+        element={
+          <DriverProtectedPage>
+            <TripComplete />
+          </DriverProtectedPage>
+        }
+      />
+
+      {/* Unknown Driver URL */}
       <Route
         path="/driver/*"
         element={
@@ -322,13 +400,17 @@ function App() {
               "DRIVER",
             ]}
           >
-            <RoleWorkspacePage />
+            <Navigate
+              to="/driver"
+              replace
+            />
           </ProtectedRoute>
         }
       />
 
-
-      {/* UNKNOWN FRONTEND ROUTE */}
+      {/* =====================================================
+          UNKNOWN FRONTEND ROUTE
+          ===================================================== */}
 
       <Route
         path="*"
@@ -343,6 +425,34 @@ function App() {
   );
 }
 
+// ============================================================
+// DRIVER PROTECTED PAGE
+// ============================================================
+
+/**
+ * Uses the TEAM'S shared authentication system.
+ *
+ * The Driver does not have a separate login or a separate
+ * localStorage token check.
+ *
+ * OfflineSyncManager is mounted only while the Driver is
+ * inside the Driver workspace.
+ */
+function DriverProtectedPage({
+  children,
+}) {
+  return (
+    <ProtectedRoute
+      allowedRoles={[
+        "DRIVER",
+      ]}
+    >
+      <OfflineSyncManager />
+
+      {children}
+    </ProtectedRoute>
+  );
+}
 
 // ============================================================
 // STAFF LOGIN ROUTE
@@ -354,13 +464,11 @@ function LoginRoute() {
     isInitializing,
   } = useAuth();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (user) {
     if (
@@ -374,7 +482,6 @@ function LoginRoute() {
       );
     }
 
-
     return (
       <Navigate
         to={getRoleHomePath(
@@ -385,12 +492,10 @@ function LoginRoute() {
     );
   }
 
-
   return (
     <LoginPage />
   );
 }
-
 
 // ============================================================
 // ADMIN REGISTER ROUTE
@@ -402,13 +507,11 @@ function AdminRegisterRoute() {
     isInitializing,
   } = useAuth();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (
     user?.mustChangePassword
@@ -420,7 +523,6 @@ function AdminRegisterRoute() {
       />
     );
   }
-
 
   if (
     user &&
@@ -437,12 +539,10 @@ function AdminRegisterRoute() {
     );
   }
 
-
   return (
     <AdminRegisterPage />
   );
 }
-
 
 // ============================================================
 // ADMIN LOGIN ROUTE
@@ -454,13 +554,11 @@ function AdminLoginRoute() {
     isInitializing,
   } = useAuth();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (user) {
     if (
@@ -474,7 +572,6 @@ function AdminLoginRoute() {
       );
     }
 
-
     return (
       <Navigate
         to={getRoleHomePath(
@@ -485,12 +582,10 @@ function AdminLoginRoute() {
     );
   }
 
-
   return (
     <AdminLoginPage />
   );
 }
-
 
 // ============================================================
 // PUBLIC PASSWORD RECOVERY ROUTE
@@ -504,13 +599,11 @@ function RecoveryRoute({
     isInitializing,
   } = useAuth();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (user) {
     if (
@@ -524,7 +617,6 @@ function RecoveryRoute({
       );
     }
 
-
     return (
       <Navigate
         to={getRoleHomePath(
@@ -535,10 +627,8 @@ function RecoveryRoute({
     );
   }
 
-
   return children;
 }
-
 
 // ============================================================
 // RESET PASSWORD ROUTE
@@ -553,13 +643,11 @@ function ResetPasswordRoute() {
   const location =
     useLocation();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (user) {
     if (
@@ -573,7 +661,6 @@ function ResetPasswordRoute() {
       );
     }
 
-
     return (
       <Navigate
         to={getRoleHomePath(
@@ -584,10 +671,8 @@ function ResetPasswordRoute() {
     );
   }
 
-
   const resetToken =
     getPasswordResetToken();
-
 
   if (!resetToken) {
     return (
@@ -598,12 +683,10 @@ function ResetPasswordRoute() {
     );
   }
 
-
   return (
     <ResetPasswordPage />
   );
 }
-
 
 // ============================================================
 // FIRST-LOGIN PASSWORD CHANGE
@@ -615,13 +698,11 @@ function PasswordChangeRoute() {
     isInitializing,
   } = useAuth();
 
-
   if (isInitializing) {
     return (
       <AuthenticationLoader />
     );
   }
-
 
   if (!user) {
     return (
@@ -631,7 +712,6 @@ function PasswordChangeRoute() {
       />
     );
   }
-
 
   if (
     !user.mustChangePassword
@@ -646,12 +726,10 @@ function PasswordChangeRoute() {
     );
   }
 
-
   return (
     <ChangePasswordPage />
   );
 }
-
 
 // ============================================================
 // AUTHENTICATION LOADER
@@ -689,6 +767,5 @@ function AuthenticationLoader() {
     </div>
   );
 }
-
 
 export default App;

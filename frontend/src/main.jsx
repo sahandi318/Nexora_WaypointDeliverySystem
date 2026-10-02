@@ -13,6 +13,7 @@ import {
 import "@fontsource-variable/inter";
 
 import "./index.css";
+import "./styles.css";
 
 import App from "./App.jsx";
 
@@ -23,7 +24,6 @@ import {
 import {
   ThemeProvider,
 } from "./contexts/ThemeContext.jsx";
-
 
 createRoot(
   document.getElementById(

@@ -9,15 +9,11 @@ import {
   disconnectDatabase,
 } from "./src/config/database.js";
 
+const PORT = Number(process.env.PORT) || 5000;
 
-const PORT =
-  Number(process.env.PORT) || 5000;
-
-const server =
-  http.createServer(app);
+const server = http.createServer(app);
 
 let isShuttingDown = false;
-
 
 // ============================================================
 // SERVER STARTUP
@@ -91,7 +87,6 @@ async function startServer() {
   }
 }
 
-
 // ============================================================
 // GRACEFUL SHUTDOWN
 // ============================================================
@@ -145,7 +140,6 @@ async function shutdown(signal) {
   });
 }
 
-
 process.on(
   "SIGINT",
   () => shutdown("SIGINT")
@@ -155,7 +149,6 @@ process.on(
   "SIGTERM",
   () => shutdown("SIGTERM")
 );
-
 
 // ============================================================
 // START APPLICATION
