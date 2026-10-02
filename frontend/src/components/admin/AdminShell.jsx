@@ -206,7 +206,9 @@ function AdminShell({
               flex
               items-center
               gap-1.5
+              pr-14
               sm:gap-2
+              sm:pr-14
             "
           >
             <AdminNavLink

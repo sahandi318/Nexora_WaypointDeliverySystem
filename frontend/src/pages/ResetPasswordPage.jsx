@@ -644,7 +644,7 @@ function Requirement({
         ${
           passed
             ? "text-[var(--color-success)]"
-            : "text-[var(--color-text-muted)]"
+            : "text-[var(--color-text)]"
         }
       `}
     >
@@ -659,7 +659,7 @@ function Requirement({
           ${
             passed
               ? "bg-[var(--color-success-soft)]"
-              : "bg-[var(--color-surface)]"
+              : "border border-[var(--color-border)] bg-[var(--color-surface)]"
           }
         `}
       >

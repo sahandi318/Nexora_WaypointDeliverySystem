@@ -74,7 +74,8 @@ function LandingNavbar() {
   return (
     <header
       className="
-        sticky
+        fixed
+        inset-x-0
         top-0
         z-50
         border-b
@@ -225,7 +226,7 @@ function LandingNavbar() {
 
         {/* ACTIONS */}
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 pr-12 sm:pr-14">
           <ThemeToggle />
 
 

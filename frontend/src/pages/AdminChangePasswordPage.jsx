@@ -16,6 +16,9 @@ import {
 } from "react-router-dom";
 
 import AdminShell from "../components/admin/AdminShell";
+import PasswordRequirements, {
+  isPasswordStrong,
+} from "../components/common/PasswordRequirements";
 import useAuth from "../hooks/useAuth";
 
 
@@ -91,6 +94,19 @@ function AdminChangePasswordPage() {
     if (!newPassword) {
       setErrorMessage(
         "Enter a new password."
+      );
+
+      return;
+    }
+
+
+    if (
+      !isPasswordStrong(
+        newPassword
+      )
+    ) {
+      setErrorMessage(
+        "Your new password does not meet all security requirements."
       );
 
       return;
@@ -282,6 +298,13 @@ function AdminChangePasswordPage() {
               }
               autoComplete="new-password"
             />
+
+            <PasswordRequirements
+              password={
+                newPassword
+              }
+            />
+
 
             <PasswordField
               id="adminConfirmPassword"
