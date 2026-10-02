@@ -14,6 +14,7 @@ import {
   registerLoader,
   registerStoreManager,
   updateAdminProfile,
+  updateAdminProfilePhoto,
 } from "../controllers/adminController.js";
 
 import {
@@ -80,6 +81,12 @@ router.get(
 router.patch(
   "/profile",
   updateAdminProfile
+);
+
+
+router.patch(
+  "/profile/photo",
+  updateAdminProfilePhoto
 );
 
 

@@ -12,17 +12,17 @@ import logo from "../../assets/waypoint-logo.png";
 const footerLinks = [
   {
     label: "Home",
-    href: "#home",
+    href: "/#home",
     icon: Home,
   },
   {
     label: "Stores",
-    href: "#stores",
+    href: "/#stores",
     icon: Store,
   },
   {
     label: "About",
-    href: "#about",
+    href: "/#about",
     icon: Info,
   },
 ];

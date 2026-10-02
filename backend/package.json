@@ -15,7 +15,8 @@
     "seed:admin": "tsx src/scripts/seedAdmin.js",
     "test:email": "tsx src/scripts/testEmailConnection.js",
     "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager",
-    "test": "echo \"Tests will be configured in a later stage\""
+    "test": "npm run test:store-manager-http",
+    "test:store-manager-http": "tsx src/scripts/testStoreManagerHttpSecurity.js"
   },
   "keywords": [
     "nexora",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^7.0.0"
+    "prisma": "^7.0.0",
+    "supertest": "^7.3.0"
   }
 }
