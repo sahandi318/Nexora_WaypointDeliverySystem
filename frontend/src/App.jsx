@@ -8,8 +8,10 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import useAuth from "./hooks/useAuth";
 
+import AdminLoginPage from "./pages/AdminLoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
@@ -28,13 +30,21 @@ import {
 function App() {
   return (
     <Routes>
+      {/* =====================================================
+          PUBLIC LANDING PAGE
+          ===================================================== */}
+
       <Route
         path="/"
         element={
-          <RootRedirect />
+          <LandingPage />
         }
       />
 
+
+      {/* =====================================================
+          STAFF LOGIN
+          ===================================================== */}
 
       <Route
         path="/login"
@@ -43,6 +53,22 @@ function App() {
         }
       />
 
+
+      {/* =====================================================
+          ADMIN LOGIN
+          ===================================================== */}
+
+      <Route
+        path="/admin/login"
+        element={
+          <AdminLoginRoute />
+        }
+      />
+
+
+      {/* =====================================================
+          PASSWORD RECOVERY
+          ===================================================== */}
 
       <Route
         path="/forgot-password"
@@ -72,6 +98,10 @@ function App() {
       />
 
 
+      {/* =====================================================
+          FIRST LOGIN PASSWORD CHANGE
+          ===================================================== */}
+
       <Route
         path="/change-password"
         element={
@@ -79,6 +109,10 @@ function App() {
         }
       />
 
+
+      {/* =====================================================
+          STORE MANAGER
+          ===================================================== */}
 
       <Route
         path="/store-manager/dashboard"
@@ -94,6 +128,10 @@ function App() {
       />
 
 
+      {/* =====================================================
+          ADMIN
+          ===================================================== */}
+
       <Route
         path="/admin/*"
         element={
@@ -107,6 +145,10 @@ function App() {
         }
       />
 
+
+      {/* =====================================================
+          DISPATCHER
+          ===================================================== */}
 
       <Route
         path="/dispatcher/*"
@@ -122,6 +164,10 @@ function App() {
       />
 
 
+      {/* =====================================================
+          LOADER
+          ===================================================== */}
+
       <Route
         path="/loader/*"
         element={
@@ -136,6 +182,10 @@ function App() {
       />
 
 
+      {/* =====================================================
+          DRIVER
+          ===================================================== */}
+
       <Route
         path="/driver/*"
         element={
@@ -149,6 +199,8 @@ function App() {
         }
       />
 
+
+      {/* UNKNOWN FRONTEND ROUTE */}
 
       <Route
         path="*"
@@ -165,58 +217,7 @@ function App() {
 
 
 // ============================================================
-// ROOT REDIRECT
-// ============================================================
-
-function RootRedirect() {
-  const {
-    user,
-    isInitializing,
-  } = useAuth();
-
-
-  if (isInitializing) {
-    return (
-      <AuthenticationLoader />
-    );
-  }
-
-
-  if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-  }
-
-
-  if (
-    user.mustChangePassword
-  ) {
-    return (
-      <Navigate
-        to="/change-password"
-        replace
-      />
-    );
-  }
-
-
-  return (
-    <Navigate
-      to={getRoleHomePath(
-        user.role
-      )}
-      replace
-    />
-  );
-}
-
-
-// ============================================================
-// LOGIN ROUTE
+// STAFF LOGIN ROUTE
 // ============================================================
 
 function LoginRoute() {
@@ -264,7 +265,55 @@ function LoginRoute() {
 
 
 // ============================================================
-// PUBLIC RECOVERY ROUTE
+// ADMIN LOGIN ROUTE
+// ============================================================
+
+function AdminLoginRoute() {
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
+
+
+  if (isInitializing) {
+    return (
+      <AuthenticationLoader />
+    );
+  }
+
+
+  if (user) {
+    if (
+      user.mustChangePassword
+    ) {
+      return (
+        <Navigate
+          to="/change-password"
+          replace
+        />
+      );
+    }
+
+
+    return (
+      <Navigate
+        to={getRoleHomePath(
+          user.role
+        )}
+        replace
+      />
+    );
+  }
+
+
+  return (
+    <AdminLoginPage />
+  );
+}
+
+
+// ============================================================
+// PUBLIC PASSWORD RECOVERY ROUTE
 // ============================================================
 
 function RecoveryRoute({
@@ -422,7 +471,7 @@ function PasswordChangeRoute() {
 
 
 // ============================================================
-// LOADER
+// AUTHENTICATION LOADER
 // ============================================================
 
 function AuthenticationLoader() {
