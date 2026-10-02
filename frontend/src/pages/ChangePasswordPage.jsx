@@ -22,6 +22,10 @@ import ThemeToggle from "../components/common/ThemeToggle";
 import useAuth from "../hooks/useAuth";
 
 import {
+  getLoginPathForRole,
+} from "../utils/authPortal";
+
+import {
   getRoleHomePath,
 } from "../utils/roleRoutes";
 
@@ -199,7 +203,9 @@ function ChangePasswordPage() {
     logout();
 
     navigate(
-      "/login",
+      getLoginPathForRole(
+        user?.role
+      ),
       {
         replace: true,
       }

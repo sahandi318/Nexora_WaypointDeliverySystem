@@ -5,6 +5,7 @@ import {
 import {
   AlertCircle,
   ArrowRight,
+  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
@@ -17,6 +18,7 @@ import {
 
 import {
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -35,6 +37,14 @@ function AdminLoginPage() {
   const navigate =
     useNavigate();
 
+  const location =
+    useLocation();
+
+  const registrationSuccess =
+    location.state
+      ?.registrationSuccess ||
+    "";
+
   const auth =
     useAuth();
 
@@ -43,7 +53,7 @@ function AdminLoginPage() {
   } = auth;
 
 
-  const [userId, setUserId] =
+  const [identifier, setIdentifier] =
     useState("");
 
   const [
@@ -73,13 +83,13 @@ function AdminLoginPage() {
     event.preventDefault();
 
 
-    const cleanedUserId =
-      userId.trim();
+    const cleanedIdentifier =
+      identifier.trim();
 
 
-    if (!cleanedUserId) {
+    if (!cleanedIdentifier) {
       setErrorMessage(
-        "Enter your administrator User ID."
+        "Enter your administrator User ID or email."
       );
 
       return;
@@ -102,8 +112,8 @@ function AdminLoginPage() {
 
       const authenticatedUser =
         await login({
-          userId:
-            cleanedUserId,
+          identifier:
+            cleanedIdentifier,
 
           password,
         });
@@ -117,11 +127,25 @@ function AdminLoginPage() {
           typeof auth.logout ===
           "function"
         ) {
-          await auth.logout();
+          auth.logout();
         }
 
         setErrorMessage(
           "This portal is reserved for administrator accounts."
+        );
+
+        return;
+      }
+
+
+      if (
+        authenticatedUser.mustChangePassword
+      ) {
+        navigate(
+          "/change-password",
+          {
+            replace: true,
+          }
         );
 
         return;
@@ -338,7 +362,7 @@ function AdminLoginPage() {
                 >
                   <div>
                     <label
-                      htmlFor="adminUserId"
+                      htmlFor="adminIdentifier"
                       className="
                         mb-2
                         block
@@ -346,7 +370,7 @@ function AdminLoginPage() {
                         font-semibold
                       "
                     >
-                      Administrator User ID
+                      Administrator User ID or Email
                     </label>
 
 
@@ -364,24 +388,24 @@ function AdminLoginPage() {
                       />
 
                       <input
-                        id="adminUserId"
-                        name="adminUserId"
+                        id="adminIdentifier"
+                        name="adminIdentifier"
                         type="text"
                         autoComplete="username"
-                        autoCapitalize="characters"
-                        value={userId}
+                        autoCapitalize="none"
+                        value={identifier}
                         disabled={
                           isSubmitting
                         }
                         onChange={(
                           event
                         ) =>
-                          setUserId(
+                          setIdentifier(
                             event.target
                               .value
                           )
                         }
-                        placeholder="Enter administrator User ID"
+                        placeholder="Enter administrator User ID or email"
                         className="
                           nexora-focus
                           h-12
@@ -531,6 +555,54 @@ function AdminLoginPage() {
                   </div>
 
 
+                  <div className="flex justify-end">
+                    <Link
+                      to="/forgot-password?portal=admin"
+                      className="
+                        nexora-focus
+                        rounded-md
+                        text-sm
+                        font-semibold
+                        text-[var(--color-primary)]
+                        transition
+                        hover:text-[var(--color-primary-hover)]
+                        hover:underline
+                      "
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+
+
+                  {registrationSuccess && (
+                    <div
+                      role="status"
+                      className="
+                        flex
+                        items-start
+                        gap-3
+                        rounded-xl
+                        border
+                        border-[var(--color-success)]
+                        bg-[var(--color-success-soft)]
+                        px-4
+                        py-3
+                        text-sm
+                        text-[var(--color-success)]
+                      "
+                    >
+                      <CheckCircle2
+                        size={18}
+                        className="mt-0.5 shrink-0"
+                      />
+
+                      <span>
+                        {registrationSuccess}
+                      </span>
+                    </div>
+                  )}
+
+
                   {errorMessage && (
                     <div
                       role="alert"
@@ -626,25 +698,39 @@ function AdminLoginPage() {
                     border-t
                     border-[var(--color-border)]
                     pt-5
-                    text-center
                   "
                 >
-                  <Link
-                    to="/login"
-                    className="
-                      inline-flex
-                      items-center
-                      gap-2
-                      text-xs
-                      font-semibold
-                      text-[var(--color-text-muted)]
-                      transition
-                      hover:text-[var(--color-primary)]
-                    "
-                  >
-                    <UserRound size={14} />
-                    Return to Staff Login
-                  </Link>
+                  <div className="flex justify-center">
+                    <Link
+                      to="/admin/register"
+                      className="
+                        nexora-focus
+                        inline-flex
+                        min-h-11
+                        items-center
+                        justify-center
+                        gap-2.5
+                        rounded-xl
+                        border
+                        border-[var(--color-primary)]
+                        bg-[var(--color-surface-soft)]
+                        px-5
+                        py-2.5
+                        text-sm
+                        font-bold
+                        text-[var(--color-primary)]
+                        transition
+                        duration-200
+                        hover:-translate-y-0.5
+                        hover:bg-[var(--color-primary)]
+                        hover:text-white
+                        hover:shadow-[var(--shadow-sm)]
+                      "
+                    >
+                      <UserCog size={17} />
+                      Register Administrator
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

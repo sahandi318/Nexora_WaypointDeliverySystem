@@ -1,6 +1,15 @@
 import nodemailer from "nodemailer";
 
 
+const EMAIL_DELIVERY_MODES = {
+  CONSOLE:
+    "console",
+
+  SMTP:
+    "smtp",
+};
+
+
 // ============================================================
 // ENVIRONMENT HELPERS
 // ============================================================
@@ -9,7 +18,8 @@ function requireEnvironmentVariable(
   name
 ) {
   const value =
-    process.env[name];
+    process.env[name]
+      ?.trim();
 
 
   if (!value) {
@@ -20,6 +30,53 @@ function requireEnvironmentVariable(
 
 
   return value;
+}
+
+
+export function getEmailDeliveryMode() {
+  const configuredMode =
+    process.env
+      .EMAIL_DELIVERY_MODE
+      ?.trim()
+      .toLowerCase();
+
+
+  const mode =
+    configuredMode ||
+    (
+      process.env.NODE_ENV ===
+      "production"
+        ? EMAIL_DELIVERY_MODES.SMTP
+        : EMAIL_DELIVERY_MODES.CONSOLE
+    );
+
+
+  if (
+    !Object.values(
+      EMAIL_DELIVERY_MODES
+    ).includes(
+      mode
+    )
+  ) {
+    throw new Error(
+      "EMAIL_DELIVERY_MODE must be either 'console' or 'smtp'."
+    );
+  }
+
+
+  if (
+    process.env.NODE_ENV ===
+      "production" &&
+    mode ===
+      EMAIL_DELIVERY_MODES.CONSOLE
+  ) {
+    throw new Error(
+      "Console email delivery is disabled in production."
+    );
+  }
+
+
+  return mode;
 }
 
 
@@ -74,6 +131,7 @@ function createMailTransporter() {
 
     auth: {
       user,
+
       pass:
         password,
     },
@@ -82,15 +140,76 @@ function createMailTransporter() {
 
 
 // ============================================================
-// VERIFY SMTP
+// VERIFY EMAIL DELIVERY
 // ============================================================
 
 export async function verifyMailConnection() {
+  const mode =
+    getEmailDeliveryMode();
+
+
+  if (
+    mode ===
+    EMAIL_DELIVERY_MODES.CONSOLE
+  ) {
+    return {
+      mode,
+    };
+  }
+
+
   const transporter =
     createMailTransporter();
 
 
   await transporter.verify();
+
+
+  return {
+    mode,
+  };
+}
+
+
+// ============================================================
+// DEVELOPMENT CONSOLE DELIVERY
+// ============================================================
+
+function writeOtpToDevelopmentConsole({
+  to,
+  fullName,
+  otp,
+  expiresInMinutes,
+}) {
+  console.log("");
+  console.log(
+    "=========================================="
+  );
+  console.log(
+    " Waypoint Demo Password Reset Email"
+  );
+  console.log(
+    "=========================================="
+  );
+  console.log(
+    `To       : ${to}`
+  );
+  console.log(
+    `Name     : ${fullName}`
+  );
+  console.log(
+    `OTP      : ${otp}`
+  );
+  console.log(
+    `Expires  : ${expiresInMinutes} minute(s)`
+  );
+  console.log(
+    "Mode     : console (no external email sent)"
+  );
+  console.log(
+    "=========================================="
+  );
+  console.log("");
 }
 
 
@@ -104,12 +223,39 @@ export async function sendPasswordResetOtp({
   otp,
   expiresInMinutes,
 }) {
+  const mode =
+    getEmailDeliveryMode();
+
+
+  if (
+    mode ===
+    EMAIL_DELIVERY_MODES.CONSOLE
+  ) {
+    writeOtpToDevelopmentConsole({
+      to,
+      fullName,
+      otp,
+      expiresInMinutes,
+    });
+
+
+    return {
+      messageId:
+        `console-${Date.now()}`,
+
+      mode,
+    };
+  }
+
+
   const transporter =
     createMailTransporter();
 
   const sender =
-    process.env.SMTP_FROM ||
-    process.env.SMTP_USER;
+    process.env.SMTP_FROM?.trim() ||
+    requireEnvironmentVariable(
+      "SMTP_USER"
+    );
 
 
   const result =
@@ -191,5 +337,7 @@ Waypoint Delivery Operations
   return {
     messageId:
       result.messageId,
+
+    mode,
   };
 }

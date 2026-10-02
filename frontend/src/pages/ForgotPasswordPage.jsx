@@ -14,11 +14,18 @@ import {
 import {
   Link,
   useNavigate,
+  useSearchParams,
 } from "react-router-dom";
 
 import ThemeToggle from "../components/common/ThemeToggle";
 
 import useAuth from "../hooks/useAuth";
+
+import {
+  getLoginPathForPortal,
+  getPortalFromSearchParams,
+  getRecoveryPath,
+} from "../utils/authPortal";
 
 import waypointLogo from "../assets/waypoint-logo.png";
 
@@ -26,6 +33,24 @@ import waypointLogo from "../assets/waypoint-logo.png";
 function ForgotPasswordPage() {
   const navigate =
     useNavigate();
+
+  const [
+    searchParams,
+  ] = useSearchParams();
+
+  const portal =
+    getPortalFromSearchParams(
+      searchParams
+    );
+
+  const loginPath =
+    getLoginPathForPortal(
+      portal
+    );
+
+  const isAdminRecovery =
+    portal ===
+    "admin";
 
   const {
     requestPasswordReset,
@@ -35,7 +60,12 @@ function ForgotPasswordPage() {
   const [
     identifier,
     setIdentifier,
-  ] = useState("");
+  ] = useState(
+    searchParams.get(
+      "identifier"
+    )?.trim() ||
+    ""
+  );
 
   const [
     isSubmitting,
@@ -60,7 +90,9 @@ function ForgotPasswordPage() {
 
     if (!cleanedIdentifier) {
       setErrorMessage(
-        "Enter your User ID or registered email."
+        isAdminRecovery
+          ? "Enter your registered administrator email."
+          : "Enter your User ID or registered email."
       );
 
       return;
@@ -80,7 +112,10 @@ function ForgotPasswordPage() {
 
 
       navigate(
-        "/verify-reset-otp",
+        getRecoveryPath(
+          "/verify-reset-otp",
+          portal
+        ),
         {
           replace: false,
         }
@@ -170,22 +205,23 @@ function ForgotPasswordPage() {
 
 
             <p className="mt-6 text-sm font-semibold text-[var(--color-primary)]">
-              Account recovery
+              {isAdminRecovery
+                ? "Administrator recovery"
+                : "Account recovery"}
             </p>
 
 
             <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em]">
-              Forgot your password?
+              {isAdminRecovery
+                ? "Verify your administrator email"
+                : "Forgot your password?"}
             </h1>
 
 
             <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-              Enter your User ID or
-              registered email. If a
-              matching account exists,
-              we will send a verification
-              code to its registered
-              email address.
+              {isAdminRecovery
+                ? "Confirm the administrator email below, then send a verification code to continue securely."
+                : "Enter your User ID or registered email. If a matching account exists, we will send a verification code to its registered email address."}
             </p>
 
 
@@ -200,7 +236,9 @@ function ForgotPasswordPage() {
                   htmlFor="identifier"
                   className="mb-2 block text-sm font-semibold"
                 >
-                  User ID or Email
+                  {isAdminRecovery
+                    ? "Administrator Email"
+                    : "User ID or Email"}
                 </label>
 
 
@@ -237,7 +275,11 @@ function ForgotPasswordPage() {
                           .value
                       )
                     }
-                    placeholder="Enter User ID or email"
+                    placeholder={
+                      isAdminRecovery
+                        ? "Enter administrator email"
+                        : "Enter User ID or email"
+                    }
                     className="
                       nexora-focus
                       h-12
@@ -367,7 +409,7 @@ function ForgotPasswordPage() {
 
 
             <Link
-              to="/login"
+              to={loginPath}
               className="
                 nexora-focus
                 mt-6

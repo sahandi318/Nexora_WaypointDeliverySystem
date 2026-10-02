@@ -12,6 +12,8 @@
     "prisma:studio": "prisma studio",
     "data:import-outlets": "tsx src/scripts/importOrganizerOutlets.js",
     "seed:store-manager": "tsx src/scripts/seedStoreManager.js",
+    "seed:admin": "tsx src/scripts/seedAdmin.js",
+    "test:email": "tsx src/scripts/testEmailConnection.js",
     "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager",
     "test": "echo \"Tests will be configured in a later stage\""
   },

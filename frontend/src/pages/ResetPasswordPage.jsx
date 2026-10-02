@@ -15,6 +15,7 @@ import {
 import {
   Link,
   Navigate,
+  useSearchParams,
 } from "react-router-dom";
 
 import ThemeToggle from "../components/common/ThemeToggle";
@@ -25,6 +26,12 @@ import {
   getPasswordResetToken,
 } from "../services/passwordResetSession";
 
+import {
+  getLoginPathForPortal,
+  getPortalFromSearchParams,
+  getRecoveryPath,
+} from "../utils/authPortal";
+
 import waypointLogo from "../assets/waypoint-logo.png";
 
 
@@ -32,6 +39,20 @@ function ResetPasswordPage() {
   const {
     resetForgottenPassword,
   } = useAuth();
+
+  const [
+    searchParams,
+  ] = useSearchParams();
+
+  const portal =
+    getPortalFromSearchParams(
+      searchParams
+    );
+
+  const loginPath =
+    getLoginPathForPortal(
+      portal
+    );
 
 
   const resetToken =
@@ -112,7 +133,10 @@ function ResetPasswordPage() {
   ) {
     return (
       <Navigate
-        to="/forgot-password"
+        to={getRecoveryPath(
+          "/forgot-password",
+          portal
+        )}
         replace
       />
     );
@@ -237,7 +261,9 @@ function ResetPasswordPage() {
             "
           >
             {resetComplete ? (
-              <ResetSuccess />
+              <ResetSuccess
+                loginPath={loginPath}
+              />
             ) : (
               <>
                 <div
@@ -653,7 +679,9 @@ function Requirement({
 // SUCCESS
 // ============================================================
 
-function ResetSuccess() {
+function ResetSuccess({
+  loginPath,
+}) {
   return (
     <div className="text-center">
       <div
@@ -694,8 +722,8 @@ function ResetSuccess() {
 
 
       <Link
-        to="/login"
-        replace="true"
+        to={loginPath}
+        replace
         className="
           nexora-focus
           mt-7

@@ -1,30 +1,51 @@
 import "dotenv/config";
 
 import {
+  getEmailDeliveryMode,
   verifyMailConnection,
 } from "../services/mailService.js";
 
 
 async function main() {
   try {
+    const mode =
+      getEmailDeliveryMode();
+
+
     console.log(
-      "Testing Waypoint SMTP connection..."
+      `Testing Waypoint email delivery (${mode})...`
     );
 
 
     await verifyMailConnection();
 
 
+    if (
+      mode ===
+      "console"
+    ) {
+      console.log(
+        "[OK] Development console email mode is ready."
+      );
+
+      console.log(
+        "[OK] Password reset OTPs will appear in the backend terminal."
+      );
+
+      return;
+    }
+
+
     console.log(
-      "✓ SMTP email connection verified."
+      "[OK] SMTP email connection verified."
     );
 
     console.log(
-      "✓ Email service is ready."
+      "[OK] Email service is ready."
     );
   } catch (error) {
     console.error(
-      "✗ SMTP connection test failed."
+      "[ERROR] Email delivery test failed."
     );
 
     console.error(

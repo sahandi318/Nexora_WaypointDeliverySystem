@@ -12,15 +12,6 @@ import {
 } from "../services/authService.js";
 
 
-const STORE_MANAGER_USER_ID =
-  "SM001";
-
-const STORE_MANAGER_FULL_NAME =
-  "Development Store Manager";
-
-const STORE_MANAGER_OUTLET_CODE =
-  "OUT001";
-
 const PASSWORD_HASH_ROUNDS =
   12;
 
@@ -29,19 +20,44 @@ const PASSWORD_HASH_ROUNDS =
 // ENVIRONMENT HELPERS
 // ============================================================
 
-function getStoreManagerEmail() {
-  const email =
-    process.env
-      .STORE_MANAGER_SEED_EMAIL
-      ?.trim()
-      .toLowerCase();
+function getRequiredEnvironmentValue(
+  key
+) {
+  const value =
+    process.env[key]
+      ?.trim();
 
 
-  if (!email) {
+  if (!value) {
     throw new Error(
-      "STORE_MANAGER_SEED_EMAIL is missing."
+      `${key} is required.`
     );
   }
+
+
+  return value;
+}
+
+
+function getAdminSeedUserId() {
+  return getRequiredEnvironmentValue(
+    "ADMIN_SEED_USER_ID"
+  ).toUpperCase();
+}
+
+
+function getAdminSeedFullName() {
+  return getRequiredEnvironmentValue(
+    "ADMIN_SEED_FULL_NAME"
+  );
+}
+
+
+function getAdminSeedEmail() {
+  const email =
+    getRequiredEnvironmentValue(
+      "ADMIN_SEED_EMAIL"
+    ).toLowerCase();
 
 
   const emailPattern =
@@ -54,7 +70,7 @@ function getStoreManagerEmail() {
     )
   ) {
     throw new Error(
-      "STORE_MANAGER_SEED_EMAIL is not a valid email address."
+      "ADMIN_SEED_EMAIL is not a valid email address."
     );
   }
 
@@ -63,15 +79,26 @@ function getStoreManagerEmail() {
 }
 
 
-function getStoreManagerPassword() {
+function getAdminSeedPhone() {
+  const phone =
+    process.env
+      .ADMIN_SEED_PHONE
+      ?.trim();
+
+
+  return phone || null;
+}
+
+
+function getAdminSeedPassword() {
   const password =
     process.env
-      .STORE_MANAGER_SEED_PASSWORD;
+      .ADMIN_SEED_PASSWORD;
 
 
   if (!password) {
     throw new Error(
-      "STORE_MANAGER_SEED_PASSWORD is required only when creating SM001 for the first time."
+      "ADMIN_SEED_PASSWORD is required when creating the administrator for the first time."
     );
   }
 
@@ -84,7 +111,7 @@ function getStoreManagerPassword() {
 
   if (!passwordPolicy.valid) {
     throw new Error(
-      `STORE_MANAGER_SEED_PASSWORD is invalid: ${passwordPolicy.message}`
+      `ADMIN_SEED_PASSWORD is invalid: ${passwordPolicy.message}`
     );
   }
 
@@ -94,118 +121,134 @@ function getStoreManagerPassword() {
 
 
 // ============================================================
-// SEED STORE MANAGER
+// ADMIN BOOTSTRAP
 // ============================================================
 
-async function seedStoreManager() {
+async function seedAdmin() {
+  const userId =
+    getAdminSeedUserId();
+
+  const fullName =
+    getAdminSeedFullName();
+
   const email =
-    getStoreManagerEmail();
+    getAdminSeedEmail();
+
+  const phone =
+    getAdminSeedPhone();
 
 
   // ----------------------------------------------------------
-  // Find organizer outlet
+  // Check for an account using the configured User ID
   // ----------------------------------------------------------
 
-  const outlet =
-    await prisma.outlet.findUnique({
+  const existingByUserId =
+    await prisma.user.findUnique({
       where: {
-        outletCode:
-          STORE_MANAGER_OUTLET_CODE,
-      },
-
-      include: {
-        depot:
-          true,
+        userId,
       },
     });
 
 
-  if (!outlet) {
+  if (
+    existingByUserId &&
+    existingByUserId.role !==
+      "ADMIN"
+  ) {
     throw new Error(
-      `Organizer outlet ${STORE_MANAGER_OUTLET_CODE} was not found.`
+      `User ID ${userId} already belongs to a non-admin account. Choose a different ADMIN_SEED_USER_ID.`
     );
   }
 
 
   // ----------------------------------------------------------
-  // Check whether SM001 already exists
+  // Check for an account using the configured email
   // ----------------------------------------------------------
 
-  const existingUser =
+  const existingByEmail =
     await prisma.user.findUnique({
       where: {
-        userId:
-          STORE_MANAGER_USER_ID,
+        email,
       },
     });
 
 
-  let storeManager;
+  if (
+    existingByEmail &&
+    existingByUserId &&
+    existingByEmail.id !==
+      existingByUserId.id
+  ) {
+    throw new Error(
+      `Email ${email} is already used by another account. Choose a different ADMIN_SEED_EMAIL.`
+    );
+  }
+
+
+  if (
+    existingByEmail &&
+    !existingByUserId
+  ) {
+    throw new Error(
+      `Email ${email} is already used by another account. Choose a different ADMIN_SEED_EMAIL.`
+    );
+  }
+
+
+  let admin;
   let passwordStatus;
 
 
-  if (existingUser) {
+  if (existingByUserId) {
     // ========================================================
-    // EXISTING USER
+    // EXISTING ADMIN
     // ========================================================
     //
-    // Important:
-    // - preserve password
-    // - preserve mustChangePassword
-    // - preserve lastLoginAt
+    // Security-sensitive values are intentionally preserved:
+    // - passwordHash
+    // - mustChangePassword
+    // - isActive
+    // - lastLoginAt
     //
-    // Only update account/profile assignment information.
+    // Running the bootstrap command again must not silently
+    // reset a password or reactivate a disabled administrator.
     // ========================================================
 
-    storeManager =
+    admin =
       await prisma.user.update({
         where: {
           id:
-            existingUser.id,
+            existingByUserId.id,
         },
 
         data: {
-          fullName:
-            STORE_MANAGER_FULL_NAME,
+          fullName,
 
           email,
 
+          phone,
+
           role:
-            "STORE_MANAGER",
+            "ADMIN",
 
           outletId:
-            outlet.id,
+            null,
 
           depotId:
             null,
-
-          isActive:
-            true,
-        },
-
-        include: {
-          outlet: {
-            include: {
-              depot:
-                true,
-            },
-          },
-
-          depot:
-            true,
         },
       });
 
 
     passwordStatus =
-      "existing password preserved";
+      "existing password and security state preserved";
   } else {
     // ========================================================
-    // NEW USER
+    // NEW ADMIN
     // ========================================================
 
     const temporaryPassword =
-      getStoreManagerPassword();
+      getAdminSeedPassword();
 
 
     const passwordHash =
@@ -215,27 +258,24 @@ async function seedStoreManager() {
       );
 
 
-    storeManager =
+    admin =
       await prisma.user.create({
         data: {
-          userId:
-            STORE_MANAGER_USER_ID,
+          userId,
 
-          fullName:
-            STORE_MANAGER_FULL_NAME,
+          fullName,
 
           email,
 
-          phone:
-            null,
+          phone,
 
           passwordHash,
 
           role:
-            "STORE_MANAGER",
+            "ADMIN",
 
           outletId:
-            outlet.id,
+            null,
 
           depotId:
             null,
@@ -246,31 +286,19 @@ async function seedStoreManager() {
           mustChangePassword:
             true,
         },
-
-        include: {
-          outlet: {
-            include: {
-              depot:
-                true,
-            },
-          },
-
-          depot:
-            true,
-        },
       });
 
 
     const passwordVerified =
       await bcrypt.compare(
         temporaryPassword,
-        storeManager.passwordHash
+        admin.passwordHash
       );
 
 
     if (!passwordVerified) {
       throw new Error(
-        "Store Manager password hash verification failed."
+        "Administrator password hash verification failed."
       );
     }
 
@@ -291,7 +319,7 @@ async function seedStoreManager() {
   );
 
   console.log(
-    " Nexora Store Manager Seed"
+    " Nexora Administrator Bootstrap"
   );
 
   console.log(
@@ -299,43 +327,35 @@ async function seedStoreManager() {
   );
 
   console.log(
-    `User ID       : ${storeManager.userId}`
+    `User ID       : ${admin.userId}`
   );
 
   console.log(
-    `Email         : ${storeManager.email}`
+    `Email         : ${admin.email}`
   );
 
   console.log(
-    `Name          : ${storeManager.fullName}`
+    `Name          : ${admin.fullName}`
   );
 
   console.log(
-    `Role          : ${storeManager.role}`
+    `Role          : ${admin.role}`
   );
 
   console.log(
-    `Outlet        : ${storeManager.outlet?.outletCode ?? "Not assigned"}`
+    `Outlet        : ${admin.outletId ?? "Not assigned"}`
   );
 
   console.log(
-    `Brand         : ${storeManager.outlet?.brand ?? "Not available"}`
+    `Depot         : ${admin.depotId ?? "Not assigned"}`
   );
 
   console.log(
-    `District      : ${storeManager.outlet?.district ?? "Not available"}`
+    `Active        : ${admin.isActive}`
   );
 
   console.log(
-    `Depot         : ${storeManager.outlet?.depot?.name ?? "Not assigned"}`
-  );
-
-  console.log(
-    `Active        : ${storeManager.isActive}`
-  );
-
-  console.log(
-    `Change passwd : ${storeManager.mustChangePassword}`
+    `Change passwd : ${admin.mustChangePassword}`
   );
 
   console.log(
@@ -358,10 +378,10 @@ async function main() {
   try {
     await connectDatabase();
 
-    await seedStoreManager();
+    await seedAdmin();
   } catch (error) {
     console.error(
-      "✗ Store Manager seed failed."
+      "Administrator bootstrap failed."
     );
 
     console.error(
