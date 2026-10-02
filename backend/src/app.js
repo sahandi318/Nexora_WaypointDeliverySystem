@@ -5,6 +5,7 @@ import prisma from "./config/database.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import storeManagerRoutes from "./routes/storeManagerRoutes.js";
 
 
 const app =
@@ -146,6 +147,16 @@ app.use(
 app.use(
   "/api/admin",
   adminRoutes
+);
+
+
+// ============================================================
+// STORE MANAGER ROUTES
+// ============================================================
+
+app.use(
+  "/api/store-manager",
+  storeManagerRoutes
 );
 
 
