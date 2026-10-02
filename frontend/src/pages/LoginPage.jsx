@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff,
   LockKeyhole,
+  MapPin,
   ShieldCheck,
   Truck,
   UserRound,
@@ -27,6 +28,7 @@ import {
 } from "../utils/roleRoutes";
 
 import waypointLogo from "../assets/waypoint-logo.png";
+import waypointLoginHero from "../assets/login/waypoint-login-hero.png";
 
 
 function LoginPage() {
@@ -64,6 +66,10 @@ function LoginPage() {
   ] = useState("");
 
 
+  // ==========================================================
+  // LOGIN
+  // ==========================================================
+
   async function handleSubmit(
     event
   ) {
@@ -94,6 +100,7 @@ function LoginPage() {
 
     try {
       setIsSubmitting(true);
+
       setErrorMessage("");
 
 
@@ -134,656 +141,834 @@ function LoginPage() {
   return (
     <main
       className="
-        relative
-        min-h-screen
-        overflow-hidden
+        min-h-dvh
         bg-[var(--color-bg)]
+        font-sans
         text-[var(--color-text)]
-        transition-colors
-        duration-300
+
+        lg:h-dvh
+        lg:min-h-0
+        lg:overflow-hidden
       "
     >
       <div
         className="
-          pointer-events-none
-          absolute
-          -left-28
-          top-10
-          h-72
-          w-72
-          rounded-full
-          bg-[var(--color-primary)]
-          opacity-[0.06]
-          blur-3xl
-          sm:h-96
-          sm:w-96
-        "
-      />
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -bottom-36
-          right-0
-          h-80
-          w-80
-          rounded-full
-          bg-[var(--color-accent)]
-          opacity-[0.07]
-          blur-3xl
-          sm:h-[30rem]
-          sm:w-[30rem]
-        "
-      />
-
-
-      <div
-        className="
-          relative
-          z-10
           grid
-          min-h-screen
-          lg:grid-cols-[1.05fr_0.95fr]
+          min-h-dvh
+
+          lg:h-full
+          lg:min-h-0
+          lg:grid-cols-[minmax(0,1.08fr)_minmax(450px,0.92fr)]
         "
       >
-        {/* BRAND PANEL */}
+        {/* ==================================================
+            IMAGE / BRAND PANEL
+            ================================================== */}
 
         <section
           className="
             relative
             hidden
+            min-h-0
             overflow-hidden
-            border-r
-            border-[var(--color-border)]
-            bg-[var(--color-sidebar)]
-            lg:flex
-            lg:flex-col
-            lg:justify-between
-            lg:p-12
-            xl:p-16
+
+            lg:block
+            lg:h-full
           "
         >
-          <div
-            className="
-              absolute
-              -left-24
-              -top-24
-              h-80
-              w-80
-              rounded-full
-              bg-white/5
-            "
-          />
+          {/* BACKGROUND IMAGE */}
 
-          <div
+          <img
+            src={
+              waypointLoginHero
+            }
+            alt=""
+            aria-hidden="true"
             className="
               absolute
-              -bottom-32
-              -right-28
-              h-96
-              w-96
-              rounded-full
-              bg-white/5
-            "
-          />
-
-          <div
-            className="
-              absolute
-              inset-x-0
-              top-1/2
-              h-px
-              bg-white/5
+              inset-0
+              h-full
+              w-full
+              object-cover
+              object-center
             "
           />
 
 
-          <div className="relative z-10">
-            <BrandLockup
-              inverse
-            />
-          </div>
+          {/* IMAGE OVERLAYS */}
+
+          <div
+            className="
+              absolute
+              inset-0
+              bg-[linear-gradient(180deg,rgba(3,38,29,0.11)_0%,rgba(3,46,35,0.22)_38%,rgba(3,42,32,0.72)_74%,rgba(2,33,25,0.95)_100%)]
+            "
+          />
 
 
-          <div className="relative z-10 max-w-xl">
-            <div
-              className="
-                mb-7
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                border
-                border-white/15
-                bg-white/10
-                px-4
-                py-2
-                text-sm
-                font-semibold
-                text-white
-              "
-            >
-              <Truck
-                size={17}
-              />
-
-              Delivery Operations
-            </div>
+          <div
+            className="
+              absolute
+              inset-0
+              bg-[linear-gradient(90deg,rgba(2,34,26,0.18)_0%,transparent_54%,rgba(2,34,26,0.05)_100%)]
+            "
+          />
 
 
-            <h1
-              className="
-                max-w-lg
-                text-5xl
-                font-bold
-                leading-[1.06]
-                tracking-[-0.045em]
-                text-white
-                xl:text-6xl
-              "
-            >
-              One platform for
-              smarter delivery
-              operations.
-            </h1>
+          {/* LEFT CONTENT */}
 
-
-            <p
-              className="
-                mt-6
-                max-w-lg
-                text-base
-                leading-7
-                text-[var(--color-sidebar-muted)]
-                xl:text-lg
-              "
-            >
-              Secure access for
-              store managers,
-              dispatchers, loaders,
-              drivers and authorized
-              operations personnel.
-            </p>
-
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <FeatureBadge
-                icon={ShieldCheck}
-                text="Role-based access"
-              />
-
-              <FeatureBadge
-                icon={LockKeyhole}
-                text="Secure operations"
-              />
-            </div>
-          </div>
-
-
-          <p
+          <div
             className="
               relative
               z-10
-              text-xs
-              font-medium
-              tracking-wide
-              text-[var(--color-sidebar-muted)]
+              flex
+              h-full
+              min-h-0
+              flex-col
+              px-[clamp(2.5rem,4vw,4rem)]
+              py-[clamp(2rem,4vh,3.5rem)]
             "
           >
-            Tech-Triathlon 2026
-          </p>
+            {/* LOGO */}
+
+            <BrandLockup
+              inverse
+            />
+
+
+            {/* HERO */}
+
+            <div
+              className="
+                mt-auto
+                max-w-[650px]
+                pb-[clamp(0.5rem,2vh,1.75rem)]
+              "
+            >
+              <div
+                className="
+                  mb-[clamp(1rem,2.2vh,1.5rem)]
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  border
+                  border-white/20
+                  bg-black/15
+                  px-4
+                  py-2
+                  text-[0.82rem]
+                  font-semibold
+                  text-white
+                  backdrop-blur-md
+                "
+              >
+                <Truck
+                  size={16}
+                  strokeWidth={1.9}
+                />
+
+                Delivery Operations
+              </div>
+
+
+              <h1
+                className="
+                  max-w-[620px]
+                  font-[750]
+                  leading-[1.03]
+                  tracking-[-0.047em]
+                  text-white
+                "
+                style={{
+                  fontSize:
+                    "clamp(2.75rem, 4vw, 4rem)",
+                }}
+              >
+                Smarter delivery
+                operations,
+
+                <span
+                  className="
+                    block
+                    text-[#8DE0B6]
+                  "
+                >
+                  from depot to store.
+                </span>
+              </h1>
+
+
+              <p
+                className="
+                  mt-[clamp(1rem,2.4vh,1.5rem)]
+                  max-w-[590px]
+                  text-[clamp(0.93rem,1vw,1.08rem)]
+                  leading-[1.65]
+                  text-white/88
+                "
+              >
+                Coordinate store orders,
+                dispatch, loading and
+                deliveries through one
+                connected Waypoint
+                operations network.
+              </p>
+
+
+              {/* FEATURE BADGES */}
+
+              <div
+                className="
+                  mt-[clamp(1rem,2.5vh,1.75rem)]
+                  flex
+                  flex-wrap
+                  gap-2
+                "
+              >
+                <FeatureBadge
+                  icon={
+                    ShieldCheck
+                  }
+                  text="Role-based access"
+                />
+
+                <FeatureBadge
+                  icon={
+                    LockKeyhole
+                  }
+                  text="Secure operations"
+                />
+
+                <FeatureBadge
+                  icon={
+                    Truck
+                  }
+                  text="Connected delivery network"
+                />
+              </div>
+
+
+              {/* NETWORK */}
+
+              <div
+                className="
+                  mt-[clamp(1rem,2.4vh,1.75rem)]
+                  flex
+                  items-center
+                  gap-2
+                  text-[0.82rem]
+                  font-semibold
+                  text-white/78
+                "
+              >
+                <MapPin
+                  size={16}
+                  strokeWidth={1.9}
+                />
+
+                Peliyagoda & Kandy
+                distribution network
+              </div>
+            </div>
+          </div>
         </section>
 
 
-        {/* LOGIN PANEL */}
+        {/* ==================================================
+            LOGIN SIDE
+            ================================================== */}
 
         <section
           className="
-            flex
-            min-h-screen
-            items-center
-            justify-center
-            px-4
-            py-10
-            sm:px-8
-            sm:py-14
-            lg:px-12
-            lg:py-16
+            relative
+            min-h-dvh
+            overflow-x-hidden
+            bg-[var(--color-bg)]
+
+            lg:h-full
+            lg:min-h-0
+            lg:overflow-y-auto
           "
         >
-          <div className="w-full max-w-md">
-            <LoginUtilityBar />
+          {/* SUBTLE BACKGROUND */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -right-40
+              -top-40
+              h-[30rem]
+              w-[30rem]
+              rounded-full
+              bg-[var(--color-primary)]
+              opacity-[0.04]
+              blur-3xl
+            "
+          />
 
 
-            <div className="mb-7 mt-6 lg:hidden">
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -bottom-40
+              -left-40
+              h-[28rem]
+              w-[28rem]
+              rounded-full
+              bg-[var(--color-accent)]
+              opacity-[0.04]
+              blur-3xl
+            "
+          />
+
+
+          <div
+            className="
+              relative
+              z-10
+              mx-auto
+              flex
+              min-h-dvh
+              w-full
+              max-w-[610px]
+              flex-col
+              px-5
+              py-[clamp(1rem,2.8vh,1.75rem)]
+
+              sm:px-8
+
+              lg:h-full
+              lg:min-h-0
+              lg:px-[clamp(2rem,3.2vw,3rem)]
+            "
+          >
+            {/* TOP NAVIGATION */}
+
+            <div className="shrink-0">
+              <LoginUtilityBar />
+            </div>
+
+
+            {/* MOBILE BRAND */}
+
+            <div
+              className="
+                mt-7
+                shrink-0
+
+                lg:hidden
+              "
+            >
               <BrandLockup />
             </div>
 
 
+            {/* FORM AREA */}
+
             <div
               className="
-                mt-6
-                rounded-[26px]
-                border
-                border-[var(--color-border)]
-                bg-[var(--color-surface)]
-                p-5
-                shadow-[var(--shadow-lg)]
-                transition-colors
-                duration-300
-                sm:p-8
+                flex
+                flex-1
+                items-center
+                justify-center
+                py-[clamp(1rem,3vh,2.5rem)]
               "
             >
-              <div>
+              <div
+                className="
+                  w-full
+                  max-w-[470px]
+                "
+              >
+                {/* LOGIN CARD */}
+
                 <div
                   className="
-                    mb-4
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-full
-                    bg-[var(--color-surface-soft)]
-                    px-3
-                    py-1.5
-                    text-xs
-                    font-bold
-                    text-[var(--color-primary)]
+                    rounded-[26px]
+                    border
+                    border-[var(--color-border)]
+                    bg-[var(--color-surface)]
+                    px-[clamp(1.5rem,2.5vw,2.25rem)]
+                    py-[clamp(1.5rem,3vh,2.25rem)]
+                    shadow-[var(--shadow-lg)]
+                    transition-colors
+                    duration-300
                   "
                 >
-                  <UserRound size={14} />
-                  Staff access
+                  {/* CARD HEADER */}
+
+                  <div>
+                    <div
+                      className="
+                        mb-[clamp(1rem,2vh,1.25rem)]
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-full
+                        bg-[var(--color-surface-soft)]
+                        px-3.5
+                        py-1.5
+                        text-xs
+                        font-bold
+                        tracking-[0.01em]
+                        text-[var(--color-primary)]
+                      "
+                    >
+                      <UserRound
+                        size={14}
+                        strokeWidth={2}
+                      />
+
+                      Secure staff access
+                    </div>
+
+
+                    <h2
+                      className="
+                        font-[750]
+                        leading-[1.12]
+                        tracking-[-0.04em]
+                        text-[var(--color-text)]
+                      "
+                      style={{
+                        fontSize:
+                          "clamp(1.85rem, 2.2vw, 2.25rem)",
+                      }}
+                    >
+                      Sign in to Waypoint
+                    </h2>
+
+
+                    <p
+                      className="
+                        mt-2.5
+                        max-w-md
+                        text-[0.92rem]
+                        leading-6
+                        text-[var(--color-text-secondary)]
+                      "
+                    >
+                      Use your assigned
+                      User ID or registered
+                      email and password to
+                      access your workspace.
+                    </p>
+                  </div>
+
+
+                  {/* FORM */}
+
+                  <form
+                    className="
+                      mt-[clamp(1.25rem,2.8vh,2rem)]
+                      space-y-[clamp(0.9rem,2vh,1.25rem)]
+                    "
+                    onSubmit={
+                      handleSubmit
+                    }
+                  >
+                    {/* USER ID */}
+
+                    <div>
+                      <label
+                        htmlFor="identifier"
+                        className="
+                          mb-2
+                          block
+                          text-sm
+                          font-semibold
+                          text-[var(--color-text)]
+                        "
+                      >
+                        User ID or Email
+                      </label>
+
+
+                      <div className="relative">
+                        <UserRound
+                          size={18}
+                          strokeWidth={1.8}
+                          className="
+                            pointer-events-none
+                            absolute
+                            left-4
+                            top-1/2
+                            -translate-y-1/2
+                            text-[var(--color-text-muted)]
+                          "
+                        />
+
+
+                        <input
+                          id="identifier"
+                          name="identifier"
+                          type="text"
+                          autoComplete="username"
+                          autoFocus
+                          value={
+                            identifier
+                          }
+                          disabled={
+                            isSubmitting
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            setIdentifier(
+                              event.target
+                                .value
+                            )
+                          }
+                          placeholder="Enter User ID or email"
+                          className="
+                            nexora-focus
+                            h-[52px]
+                            w-full
+                            rounded-[14px]
+                            border
+                            border-[var(--color-border)]
+                            bg-[var(--color-input)]
+                            pl-11
+                            pr-4
+                            text-[0.95rem]
+                            font-medium
+                            text-[var(--color-text)]
+                            outline-none
+                            transition
+                            duration-200
+                            placeholder:font-normal
+                            placeholder:text-[var(--color-text-muted)]
+                            hover:border-[var(--color-border-strong)]
+                            focus:border-[var(--color-primary)]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-60
+                          "
+                        />
+                      </div>
+                    </div>
+
+
+                    {/* PASSWORD */}
+
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="
+                          mb-2
+                          block
+                          text-sm
+                          font-semibold
+                          text-[var(--color-text)]
+                        "
+                      >
+                        Password
+                      </label>
+
+
+                      <div className="relative">
+                        <LockKeyhole
+                          size={18}
+                          strokeWidth={1.8}
+                          className="
+                            pointer-events-none
+                            absolute
+                            left-4
+                            top-1/2
+                            -translate-y-1/2
+                            text-[var(--color-text-muted)]
+                          "
+                        />
+
+
+                        <input
+                          id="password"
+                          name="password"
+                          type={
+                            showPassword
+                              ? "text"
+                              : "password"
+                          }
+                          autoComplete="current-password"
+                          value={
+                            password
+                          }
+                          disabled={
+                            isSubmitting
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            setPassword(
+                              event.target
+                                .value
+                            )
+                          }
+                          placeholder="Enter your password"
+                          className="
+                            nexora-focus
+                            h-[52px]
+                            w-full
+                            rounded-[14px]
+                            border
+                            border-[var(--color-border)]
+                            bg-[var(--color-input)]
+                            pl-11
+                            pr-12
+                            text-[0.95rem]
+                            font-medium
+                            text-[var(--color-text)]
+                            outline-none
+                            transition
+                            duration-200
+                            placeholder:font-normal
+                            placeholder:text-[var(--color-text-muted)]
+                            hover:border-[var(--color-border-strong)]
+                            focus:border-[var(--color-primary)]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-60
+                          "
+                        />
+
+
+                        <button
+                          type="button"
+                          disabled={
+                            isSubmitting
+                          }
+                          onClick={() =>
+                            setShowPassword(
+                              (current) =>
+                                !current
+                            )
+                          }
+                          className="
+                            nexora-focus
+                            absolute
+                            right-2.5
+                            top-1/2
+                            flex
+                            h-9
+                            w-9
+                            -translate-y-1/2
+                            items-center
+                            justify-center
+                            rounded-lg
+                            text-[var(--color-text-muted)]
+                            transition
+                            duration-200
+                            hover:bg-[var(--color-surface-soft)]
+                            hover:text-[var(--color-text)]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-60
+                          "
+                          aria-label={
+                            showPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff
+                              size={18}
+                              strokeWidth={1.8}
+                            />
+                          ) : (
+                            <Eye
+                              size={18}
+                              strokeWidth={1.8}
+                            />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+
+                    {/* FORGOT PASSWORD */}
+
+                    <div
+                      className="
+                        flex
+                        justify-end
+                      "
+                    >
+                      <Link
+                        to="/forgot-password"
+                        className="
+                          nexora-focus
+                          rounded-md
+                          text-sm
+                          font-semibold
+                          text-[var(--color-primary)]
+                          transition
+                          duration-200
+                          hover:text-[var(--color-primary-hover)]
+                          hover:underline
+                          hover:underline-offset-4
+                        "
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+
+
+                    {/* ERROR */}
+
+                    {errorMessage && (
+                      <div
+                        role="alert"
+                        aria-live="polite"
+                        className="
+                          flex
+                          items-start
+                          gap-3
+                          rounded-[14px]
+                          border
+                          border-[var(--color-danger)]
+                          bg-[var(--color-danger-soft)]
+                          px-4
+                          py-3
+                          text-sm
+                          leading-5
+                          text-[var(--color-danger)]
+                        "
+                      >
+                        <AlertCircle
+                          size={18}
+                          className="
+                            mt-0.5
+                            shrink-0
+                          "
+                        />
+
+                        <span>
+                          {errorMessage}
+                        </span>
+                      </div>
+                    )}
+
+
+                    {/* LOGIN BUTTON */}
+
+                    <button
+                      type="submit"
+                      disabled={
+                        isSubmitting
+                      }
+                      className="
+                        nexora-focus
+                        flex
+                        h-[52px]
+                        w-full
+                        items-center
+                        justify-center
+                        gap-2.5
+                        rounded-[14px]
+                        bg-[var(--color-primary)]
+                        px-5
+                        text-[0.95rem]
+                        font-bold
+                        text-white
+                        shadow-[var(--shadow-sm)]
+                        transition
+                        duration-200
+                        hover:-translate-y-px
+                        hover:bg-[var(--color-primary-hover)]
+                        hover:shadow-[var(--shadow-md)]
+                        disabled:translate-y-0
+                        disabled:cursor-not-allowed
+                        disabled:opacity-70
+                      "
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span
+                            className="
+                              h-4
+                              w-4
+                              animate-spin
+                              rounded-full
+                              border-2
+                              border-white/40
+                              border-t-white
+                            "
+                          />
+
+                          Signing in...
+                        </>
+                      ) : (
+                        <>
+                          Sign in
+
+                          <ArrowRight
+                            size={18}
+                            strokeWidth={2}
+                          />
+                        </>
+                      )}
+                    </button>
+                  </form>
+
+
+                  {/* ADMIN */}
+
+                  <div
+                    className="
+                      mt-[clamp(1.25rem,2.5vh,1.75rem)]
+                      border-t
+                      border-[var(--color-border)]
+                      pt-[clamp(1rem,2vh,1.25rem)]
+                      text-center
+                    "
+                  >
+                    <Link
+                      to="/admin/login"
+                      className="
+                        nexora-focus
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-2
+                        py-1
+                        text-xs
+                        font-semibold
+                        text-[var(--color-text-muted)]
+                        transition
+                        duration-200
+                        hover:text-[var(--color-primary)]
+                      "
+                    >
+                      <ShieldCheck
+                        size={14}
+                        strokeWidth={2}
+                      />
+
+                      Administrator access
+                    </Link>
+                  </div>
                 </div>
 
 
-                <h2
-                  className="
-                    text-2xl
-                    font-bold
-                    tracking-[-0.035em]
-                    sm:text-3xl
-                  "
-                >
-                  Sign in to Waypoint
-                </h2>
-
+                {/* SECURITY NOTE */}
 
                 <p
                   className="
-                    mt-3
-                    text-sm
-                    leading-6
-                    text-[var(--color-text-secondary)]
+                    mt-[clamp(0.75rem,1.8vh,1.25rem)]
+                    text-center
+                    text-[0.72rem]
+                    leading-5
+                    text-[var(--color-text-muted)]
                   "
                 >
-                  Use your User ID or
-                  registered email and
-                  password to access
-                  your account.
+                  Access is restricted to
+                  authorized Waypoint
+                  operations personnel.
                 </p>
               </div>
-
-
-              <form
-                className="mt-7 space-y-5 sm:mt-8"
-                onSubmit={
-                  handleSubmit
-                }
-              >
-                {/* USER ID OR EMAIL */}
-
-                <div>
-                  <label
-                    htmlFor="identifier"
-                    className="
-                      mb-2
-                      block
-                      text-sm
-                      font-semibold
-                    "
-                  >
-                    User ID or Email
-                  </label>
-
-
-                  <div className="relative">
-                    <UserRound
-                      size={18}
-                      className="
-                        pointer-events-none
-                        absolute
-                        left-4
-                        top-1/2
-                        -translate-y-1/2
-                        text-[var(--color-text-muted)]
-                      "
-                    />
-
-
-                    <input
-                      id="identifier"
-                      name="identifier"
-                      type="text"
-                      autoComplete="username"
-                      value={
-                        identifier
-                      }
-                      disabled={
-                        isSubmitting
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setIdentifier(
-                          event.target
-                            .value
-                        )
-                      }
-                      placeholder="Enter User ID or email"
-                      className="
-                        nexora-focus
-                        h-12
-                        w-full
-                        rounded-xl
-                        border
-                        border-[var(--color-border)]
-                        bg-[var(--color-input)]
-                        pl-11
-                        pr-4
-                        text-sm
-                        text-[var(--color-text)]
-                        outline-none
-                        transition
-                        placeholder:text-[var(--color-text-muted)]
-                        hover:border-[var(--color-border-strong)]
-                        focus:border-[var(--color-primary)]
-                        disabled:cursor-not-allowed
-                        disabled:opacity-60
-                      "
-                    />
-                  </div>
-                </div>
-
-
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="
-                      mb-2
-                      block
-                      text-sm
-                      font-semibold
-                    "
-                  >
-                    Password
-                  </label>
-
-
-                  <div className="relative">
-                    <LockKeyhole
-                      size={18}
-                      className="
-                        pointer-events-none
-                        absolute
-                        left-4
-                        top-1/2
-                        -translate-y-1/2
-                        text-[var(--color-text-muted)]
-                      "
-                    />
-
-
-                    <input
-                      id="password"
-                      name="password"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      autoComplete="current-password"
-                      value={
-                        password
-                      }
-                      disabled={
-                        isSubmitting
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setPassword(
-                          event.target
-                            .value
-                        )
-                      }
-                      placeholder="Enter your password"
-                      className="
-                        nexora-focus
-                        h-12
-                        w-full
-                        rounded-xl
-                        border
-                        border-[var(--color-border)]
-                        bg-[var(--color-input)]
-                        pl-11
-                        pr-12
-                        text-sm
-                        text-[var(--color-text)]
-                        outline-none
-                        transition
-                        placeholder:text-[var(--color-text-muted)]
-                        hover:border-[var(--color-border-strong)]
-                        focus:border-[var(--color-primary)]
-                        disabled:cursor-not-allowed
-                        disabled:opacity-60
-                      "
-                    />
-
-
-                    <button
-                      type="button"
-                      disabled={
-                        isSubmitting
-                      }
-                      onClick={() =>
-                        setShowPassword(
-                          (current) =>
-                            !current
-                        )
-                      }
-                      className="
-                        absolute
-                        right-2
-                        top-1/2
-                        flex
-                        h-9
-                        w-9
-                        -translate-y-1/2
-                        items-center
-                        justify-center
-                        rounded-lg
-                        text-[var(--color-text-muted)]
-                        transition
-                        hover:bg-[var(--color-surface-soft)]
-                        hover:text-[var(--color-text)]
-                        focus:outline-none
-                        focus:ring-2
-                        focus:ring-[var(--color-primary)]
-                        disabled:cursor-not-allowed
-                        disabled:opacity-60
-                      "
-                      aria-label={
-                        showPassword
-                          ? "Hide password"
-                          : "Show password"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff
-                          size={18}
-                        />
-                      ) : (
-                        <Eye
-                          size={18}
-                        />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-
-                {/* FORGOT PASSWORD */}
-
-                <div className="flex justify-end">
-                  <Link
-                    to="/forgot-password"
-                    className="
-                      nexora-focus
-                      rounded-md
-                      text-sm
-                      font-semibold
-                      text-[var(--color-primary)]
-                      transition
-                      hover:text-[var(--color-primary-hover)]
-                      hover:underline
-                    "
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
-
-                {errorMessage && (
-                  <div
-                    role="alert"
-                    aria-live="polite"
-                    className="
-                      flex
-                      items-start
-                      gap-3
-                      rounded-xl
-                      border
-                      border-[var(--color-danger)]
-                      bg-[var(--color-danger-soft)]
-                      px-4
-                      py-3
-                      text-sm
-                      text-[var(--color-danger)]
-                    "
-                  >
-                    <AlertCircle
-                      size={18}
-                      className="mt-0.5 shrink-0"
-                    />
-
-                    <span>
-                      {errorMessage}
-                    </span>
-                  </div>
-                )}
-
-
-                <button
-                  type="submit"
-                  disabled={
-                    isSubmitting
-                  }
-                  className="
-                    nexora-focus
-                    flex
-                    h-12
-                    w-full
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    bg-[var(--color-primary)]
-                    px-5
-                    text-sm
-                    font-bold
-                    text-white
-                    shadow-[var(--shadow-sm)]
-                    transition
-                    duration-200
-                    hover:-translate-y-0.5
-                    hover:bg-[var(--color-primary-hover)]
-                    hover:shadow-[var(--shadow-md)]
-                    disabled:translate-y-0
-                    disabled:cursor-not-allowed
-                    disabled:opacity-70
-                  "
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span
-                        className="
-                          h-4
-                          w-4
-                          animate-spin
-                          rounded-full
-                          border-2
-                          border-white/40
-                          border-t-white
-                        "
-                      />
-
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in
-
-                      <ArrowRight
-                        size={17}
-                      />
-                    </>
-                  )}
-                </button>
-              </form>
-
-
-              <div
-                className="
-                  mt-6
-                  border-t
-                  border-[var(--color-border)]
-                  pt-5
-                  text-center
-                "
-              >
-                <Link
-                  to="/admin/login"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    text-xs
-                    font-semibold
-                    text-[var(--color-text-muted)]
-                    transition
-                    hover:text-[var(--color-primary)]
-                  "
-                >
-                  <ShieldCheck size={14} />
-                  Administrator access
-                </Link>
-              </div>
             </div>
-
-
-            <p
-              className="
-                mt-5
-                text-center
-                text-xs
-                leading-5
-                text-[var(--color-text-muted)]
-              "
-            >
-              Access is restricted to
-              authorized Waypoint
-              operations personnel.
-            </p>
           </div>
         </section>
       </div>
@@ -800,25 +985,40 @@ function BrandLockup({
   inverse = false,
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div
+      className="
+        inline-flex
+        items-center
+        gap-3
+      "
+    >
       <div
-        className="
+        className={`
           flex
           h-12
           w-12
+          shrink-0
           items-center
           justify-center
           overflow-hidden
-          rounded-2xl
-          p-1
-        "
+          rounded-[14px]
+          ${
+            inverse
+              ? "bg-white/10 p-1 backdrop-blur-sm"
+              : "p-1"
+          }
+        `}
       >
         <img
           src={
             waypointLogo
           }
           alt="Waypoint"
-          className="h-full w-full object-contain"
+          className="
+            h-full
+            w-full
+            object-contain
+          "
         />
       </div>
 
@@ -826,9 +1026,9 @@ function BrandLockup({
       <div>
         <p
           className={`
-            text-base
+            text-[1.05rem]
             font-extrabold
-            tracking-[0.04em]
+            tracking-[0.045em]
             ${
               inverse
                 ? "text-white"
@@ -846,10 +1046,10 @@ function BrandLockup({
             text-[10px]
             font-bold
             uppercase
-            tracking-[0.16em]
+            tracking-[0.18em]
             ${
               inverse
-                ? "text-[var(--color-sidebar-muted)]"
+                ? "text-white/72"
                 : "text-[var(--color-text-muted)]"
             }
           `}
@@ -876,19 +1076,21 @@ function FeatureBadge({
         inline-flex
         items-center
         gap-2
-        rounded-xl
+        rounded-full
         border
-        border-white/15
-        bg-white/10
-        px-3.5
-        py-2.5
-        text-sm
-        font-medium
-        text-white
+        border-white/18
+        bg-black/15
+        px-3
+        py-1.5
+        text-[0.76rem]
+        font-semibold
+        text-white/90
+        backdrop-blur-md
       "
     >
       <Icon
-        size={17}
+        size={14}
+        strokeWidth={1.9}
       />
 
       {text}
