@@ -12,12 +12,16 @@
     "prisma:studio": "prisma studio",
     "data:import-outlets": "tsx src/scripts/importOrganizerOutlets.js",
     "seed:store-manager": "tsx src/scripts/seedStoreManager.js",
+    "seed:store-manager-catalog": "tsx src/scripts/seedStoreManagerCatalog.js",
     "seed:admin": "tsx src/scripts/seedAdmin.js",
     "test:email": "tsx src/scripts/testEmailConnection.js",
-    "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager",
+    "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager && npm run seed:store-manager-catalog",
     "test": "npm run test:store-manager-http",
     "test:store-manager-http": "tsx src/scripts/testStoreManagerHttpSecurity.js",
-    "translation:warmup": "tsx src/scripts/warmTranslationModel.js"
+    "test:store-manager-orders": "tsx src/scripts/testStoreManagerOrders.js",
+    "test:store-manager-catalog": "tsx src/scripts/testStoreManagerCatalogBranding.js",
+    "translation:warmup": "tsx src/scripts/warmTranslationModel.js",
+    "test:store-manager-catalog-advanced": "tsx src/scripts/testStoreManagerCatalogAdvanced.js"
   },
   "keywords": [
     "nexora",
