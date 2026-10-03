@@ -16,7 +16,8 @@
     "test:email": "tsx src/scripts/testEmailConnection.js",
     "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager",
     "test": "npm run test:store-manager-http",
-    "test:store-manager-http": "tsx src/scripts/testStoreManagerHttpSecurity.js"
+    "test:store-manager-http": "tsx src/scripts/testStoreManagerHttpSecurity.js",
+    "translation:warmup": "tsx src/scripts/warmTranslationModel.js"
   },
   "keywords": [
     "nexora",
@@ -29,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcryptjs": "^3.0.3",

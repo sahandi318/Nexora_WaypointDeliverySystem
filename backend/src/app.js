@@ -5,6 +5,7 @@ import prisma from "./config/database.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
+import translationRoutes from "./routes/translationRoutes.js";
 
 import {
   authenticateToken,
@@ -57,11 +58,13 @@ app.use(
  * from MySQL on every protected request, so Driver identity is
  * never taken from mock data or a separate Driver login.
  */
+
 const driverAccess = [
   authenticateToken,
   requirePasswordChangeCompleted,
   authorizeRoles("DRIVER"),
 ];
+
 
 // ============================================================
 // API ROOT
@@ -72,8 +75,10 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       name:
         "Nexora Waypoint API",
+
       message:
         "API is running.",
     });
@@ -89,10 +94,13 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       service:
         "Nexora Waypoint API",
+
       status:
         "running",
+
       timestamp:
         new Date().toISOString(),
     });
@@ -169,6 +177,15 @@ app.use(
 );
 
 // ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
 // DRIVER HELPERS
 // ============================================================
 
@@ -211,6 +228,7 @@ function stopView(
 ) {
   return {
     ...stop,
+
     totalStops:
       trip.stops.length,
   };
@@ -234,6 +252,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "COMPLETED",
+
       statusLabel:
         "Completed",
     };
@@ -246,6 +265,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "IN_PROGRESS",
+
       statusLabel:
         "In Progress",
     };
@@ -258,6 +278,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "VEHICLE_READY",
+
       statusLabel:
         "Vehicle Ready",
     };
@@ -270,6 +291,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "PLANNED",
+
       statusLabel:
         "Planned",
     };
@@ -278,6 +300,7 @@ function operationalTripStatus(
   return {
     statusKey:
       "WAITING",
+
     statusLabel:
       "Awaiting Plan",
   };
