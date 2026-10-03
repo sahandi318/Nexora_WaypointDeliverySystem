@@ -18,7 +18,10 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+import RecoveryAuthLayout from "../components/common/RecoveryAuthLayout";
+
 import useAuth from "../hooks/useAuth";
+import useTranslations from "../hooks/useTranslations";
 
 import {
   getPasswordResetToken,
@@ -30,13 +33,16 @@ import {
   getRecoveryPath,
 } from "../utils/authPortal";
 
-import waypointLogo from "../assets/waypoint-logo.png";
-
-
 function ResetPasswordPage() {
   const {
     resetForgottenPassword,
   } = useAuth();
+
+  const {
+    t,
+    language,
+    translateDynamicText,
+  } = useTranslations();
 
   const [
     searchParams,
@@ -52,10 +58,8 @@ function ResetPasswordPage() {
       portal
     );
 
-
   const resetToken =
     getPasswordResetToken();
-
 
   const [
     newPassword,
@@ -92,10 +96,14 @@ function ResetPasswordPage() {
     setErrorMessage,
   ] = useState("");
 
+  // ==========================================================
+  // PASSWORD RULES
+  // ==========================================================
 
   const requirements = {
     length:
-      newPassword.length >= 10,
+      newPassword.length >=
+      10,
 
     uppercase:
       /[A-Z]/.test(
@@ -118,12 +126,14 @@ function ResetPasswordPage() {
       ),
   };
 
-
   const passwordIsStrong =
     Object.values(
       requirements
     ).every(Boolean);
 
+  // ==========================================================
+  // ROUTE GUARD
+  // ==========================================================
 
   if (
     !resetToken &&
@@ -140,360 +150,452 @@ function ResetPasswordPage() {
     );
   }
 
+  // ==========================================================
+  // ERROR
+  // ==========================================================
+
+  async function resolveError(
+    error
+  ) {
+    const backendMessage =
+      error.response?.data
+        ?.message ||
+      error.message;
+
+    if (!backendMessage) {
+      return t(
+        "recovery.resetFailed"
+      );
+    }
+
+    if (
+      language === "en"
+    ) {
+      return backendMessage;
+    }
+
+    try {
+      return await translateDynamicText(
+        backendMessage
+      );
+    } catch {
+      return t(
+        "recovery.resetFailed"
+      );
+    }
+  }
+
+  // ==========================================================
+  // SUBMIT
+  // ==========================================================
 
   async function handleSubmit(
     event
   ) {
     event.preventDefault();
 
-
-    setErrorMessage("");
-
+    setErrorMessage(
+      ""
+    );
 
     if (!passwordIsStrong) {
       setErrorMessage(
-        "Your new password does not meet all security requirements."
+        t(
+          "recovery.passwordWeak"
+        )
       );
 
       return;
     }
-
 
     if (
       newPassword !==
       confirmPassword
     ) {
       setErrorMessage(
-        "New password and confirmation do not match."
+        t(
+          "recovery.passwordMismatch"
+        )
       );
 
       return;
     }
 
-
     try {
-      setIsSubmitting(true);
-
+      setIsSubmitting(
+        true
+      );
 
       await resetForgottenPassword({
         resetToken,
-
         newPassword,
-
         confirmPassword,
       });
-
 
       setResetComplete(
         true
       );
 
+      setNewPassword(
+        ""
+      );
 
-      setNewPassword("");
-
-      setConfirmPassword("");
+      setConfirmPassword(
+        ""
+      );
     } catch (error) {
       setErrorMessage(
-        error.response?.data
-          ?.message ||
-        error.message ||
-        "Unable to reset your password."
+        await resolveError(
+          error
+        )
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(
+        false
+      );
     }
   }
 
+  const titleClass =
+    language === "en"
+      ? `
+          text-[2rem]
+          leading-[1.15]
+          tracking-[-0.035em]
+        `
+      : `
+          text-[1.7rem]
+          leading-[1.3]
+          tracking-[-0.015em]
+        `;
 
   return (
-    <main className="relative min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      <div className="absolute right-5 top-5 sm:right-8 sm:top-8">
-</div>
-
-
-      <div
+    <RecoveryAuthLayout
+      backTo={loginPath}
+    >
+      <section
         className="
-          mx-auto
-          flex
-          min-h-screen
-          max-w-6xl
-          items-center
-          justify-center
-          px-5
-          py-20
-          sm:px-8
+          w-full
+          rounded-2xl
+          border
+          border-[var(--color-border)]
+          bg-[var(--color-surface)]
+          p-6
+          shadow-[var(--shadow-lg)]
+          sm:p-8
         "
       >
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <img
-              src={
-                waypointLogo
-              }
-              alt="Waypoint"
-              className="h-12 w-12 object-contain"
-            />
-
-            <div>
-              <p className="font-extrabold tracking-[0.04em]">
-                WAYPOINT
-              </p>
-
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                Delivery Operations
-              </p>
-            </div>
-          </div>
-
-
-          <div
-            className="
-              rounded-[26px]
-              border
-              border-[var(--color-border)]
-              bg-[var(--color-surface)]
-              p-6
-              shadow-[var(--shadow-lg)]
-              sm:p-8
-            "
-          >
-            {resetComplete ? (
-              <ResetSuccess
-                loginPath={loginPath}
+        {resetComplete ? (
+          <ResetSuccess
+            loginPath={
+              loginPath
+            }
+            t={t}
+            titleClass={
+              titleClass
+            }
+          />
+        ) : (
+          <>
+            <div
+              className="
+                flex
+                h-11
+                w-11
+                items-center
+                justify-center
+                rounded-xl
+                bg-[var(--color-primary-soft)]
+                text-[var(--color-primary)]
+              "
+            >
+              <KeyRound
+                size={21}
               />
-            ) : (
-              <>
-                <div
+            </div>
+
+            <p
+              className="
+                mt-5
+                text-sm
+                font-semibold
+                text-[var(--color-primary)]
+              "
+            >
+              {t(
+                "recovery.secureReset"
+              )}
+            </p>
+
+            <h1
+              className={`
+                mt-2
+                font-bold
+                text-[var(--color-text)]
+                ${titleClass}
+              `}
+            >
+              {t(
+                "recovery.createPasswordTitle"
+              )}
+            </h1>
+
+            <p
+              className="
+                mt-3
+                text-sm
+                leading-6
+                text-[var(--color-text-secondary)]
+              "
+            >
+              {t(
+                "recovery.createPasswordDescription"
+              )}
+            </p>
+
+            <form
+              className="
+                mt-7
+                space-y-5
+              "
+              onSubmit={
+                handleSubmit
+              }
+            >
+              <PasswordField
+                id="newPassword"
+                label={t(
+                  "recovery.newPassword"
+                )}
+                value={
+                  newPassword
+                }
+                onChange={
+                  setNewPassword
+                }
+                visible={
+                  showNewPassword
+                }
+                onToggle={() =>
+                  setShowNewPassword(
+                    (current) =>
+                      !current
+                  )
+                }
+                disabled={
+                  isSubmitting
+                }
+                showLabel={t(
+                  "recovery.showPassword"
+                )}
+                hideLabel={t(
+                  "recovery.hidePassword"
+                )}
+              />
+
+              <div
+                className="
+                  rounded-xl
+                  border
+                  border-[var(--color-border)]
+                  bg-[var(--color-surface-soft)]
+                  p-4
+                "
+              >
+                <p
                   className="
-                    flex
-                    h-12
-                    w-12
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    bg-[var(--color-primary-soft)]
-                    text-[var(--color-primary)]
+                    mb-3
+                    text-xs
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-[var(--color-text-muted)]
                   "
                 >
-                  <KeyRound
-                    size={23}
+                  {t(
+                    "recovery.passwordRequirements"
+                  )}
+                </p>
+
+                <div
+                  className="
+                    grid
+                    gap-2
+                    sm:grid-cols-2
+                  "
+                >
+                  <Requirement
+                    passed={
+                      requirements.length
+                    }
+                    text={t(
+                      "recovery.requirementLength"
+                    )}
+                  />
+
+                  <Requirement
+                    passed={
+                      requirements.uppercase
+                    }
+                    text={t(
+                      "recovery.requirementUppercase"
+                    )}
+                  />
+
+                  <Requirement
+                    passed={
+                      requirements.lowercase
+                    }
+                    text={t(
+                      "recovery.requirementLowercase"
+                    )}
+                  />
+
+                  <Requirement
+                    passed={
+                      requirements.number
+                    }
+                    text={t(
+                      "recovery.requirementNumber"
+                    )}
+                  />
+
+                  <Requirement
+                    passed={
+                      requirements.special
+                    }
+                    text={t(
+                      "recovery.requirementSpecial"
+                    )}
                   />
                 </div>
+              </div>
 
+              <PasswordField
+                id="confirmPassword"
+                label={t(
+                  "recovery.confirmPassword"
+                )}
+                value={
+                  confirmPassword
+                }
+                onChange={
+                  setConfirmPassword
+                }
+                visible={
+                  showConfirmPassword
+                }
+                onToggle={() =>
+                  setShowConfirmPassword(
+                    (current) =>
+                      !current
+                  )
+                }
+                disabled={
+                  isSubmitting
+                }
+                showLabel={t(
+                  "recovery.showPassword"
+                )}
+                hideLabel={t(
+                  "recovery.hidePassword"
+                )}
+              />
 
-                <p className="mt-6 text-sm font-semibold text-[var(--color-primary)]">
-                  Secure password reset
-                </p>
-
-
-                <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em]">
-                  Create a new password
-                </h1>
-
-
-                <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  Your identity has been
-                  verified. Create a new
-                  password for your
-                  Waypoint account.
-                </p>
-
-
-                <form
-                  className="mt-8 space-y-5"
-                  onSubmit={
-                    handleSubmit
-                  }
+              {errorMessage && (
+                <div
+                  role="alert"
+                  className="
+                    flex
+                    items-start
+                    gap-3
+                    rounded-xl
+                    border
+                    border-[var(--color-danger)]
+                    bg-[var(--color-danger-soft)]
+                    px-4
+                    py-3
+                    text-sm
+                    leading-5
+                    text-[var(--color-danger)]
+                  "
                 >
-                  <PasswordField
-                    id="newPassword"
-                    label="New password"
-                    value={
-                      newPassword
-                    }
-                    onChange={
-                      setNewPassword
-                    }
-                    visible={
-                      showNewPassword
-                    }
-                    onToggle={() =>
-                      setShowNewPassword(
-                        (current) =>
-                          !current
-                      )
-                    }
-                    disabled={
-                      isSubmitting
-                    }
-                  />
-
-
-                  <div
+                  <AlertCircle
+                    size={18}
                     className="
-                      rounded-2xl
-                      border
-                      border-[var(--color-border)]
-                      bg-[var(--color-surface-soft)]
-                      p-4
+                      mt-0.5
+                      shrink-0
                     "
-                  >
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-                      Password requirements
-                    </p>
-
-
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Requirement
-                        passed={
-                          requirements.length
-                        }
-                        text="10+ characters"
-                      />
-
-                      <Requirement
-                        passed={
-                          requirements.uppercase
-                        }
-                        text="Uppercase letter"
-                      />
-
-                      <Requirement
-                        passed={
-                          requirements.lowercase
-                        }
-                        text="Lowercase letter"
-                      />
-
-                      <Requirement
-                        passed={
-                          requirements.number
-                        }
-                        text="Number"
-                      />
-
-                      <Requirement
-                        passed={
-                          requirements.special
-                        }
-                        text="Special character"
-                      />
-                    </div>
-                  </div>
-
-
-                  <PasswordField
-                    id="confirmPassword"
-                    label="Confirm new password"
-                    value={
-                      confirmPassword
-                    }
-                    onChange={
-                      setConfirmPassword
-                    }
-                    visible={
-                      showConfirmPassword
-                    }
-                    onToggle={() =>
-                      setShowConfirmPassword(
-                        (current) =>
-                          !current
-                      )
-                    }
-                    disabled={
-                      isSubmitting
-                    }
                   />
 
+                  {errorMessage}
+                </div>
+              )}
 
-                  {errorMessage && (
-                    <div
-                      role="alert"
+              <button
+                type="submit"
+                disabled={
+                  isSubmitting
+                }
+                className="
+                  nexora-focus
+                  flex
+                  min-h-[50px]
+                  w-full
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  bg-[var(--color-primary)]
+                  px-5
+                  py-3
+                  text-sm
+                  font-bold
+                  text-white
+                  transition
+                  duration-200
+                  hover:bg-[var(--color-primary-hover)]
+                  disabled:cursor-not-allowed
+                  disabled:opacity-70
+                "
+              >
+                {isSubmitting ? (
+                  <>
+                    <span
                       className="
-                        flex
-                        items-start
-                        gap-3
-                        rounded-xl
-                        border
-                        border-[var(--color-danger)]
-                        bg-[var(--color-danger-soft)]
-                        px-4
-                        py-3
-                        text-sm
-                        text-[var(--color-danger)]
+                        h-4
+                        w-4
+                        animate-spin
+                        rounded-full
+                        border-2
+                        border-white/40
+                        border-t-white
                       "
-                    >
-                      <AlertCircle
-                        size={18}
-                        className="mt-0.5 shrink-0"
-                      />
+                    />
 
-                      {errorMessage}
-                    </div>
-                  )}
-
-
-                  <button
-                    type="submit"
-                    disabled={
-                      isSubmitting
-                    }
-                    className="
-                      nexora-focus
-                      flex
-                      h-12
-                      w-full
-                      items-center
-                      justify-center
-                      gap-2
-                      rounded-xl
-                      bg-[var(--color-primary)]
-                      px-5
-                      text-sm
-                      font-bold
-                      text-white
-                      transition
-                      hover:bg-[var(--color-primary-hover)]
-                      disabled:cursor-not-allowed
-                      disabled:opacity-70
-                    "
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span
-                          className="
-                            h-4
-                            w-4
-                            animate-spin
-                            rounded-full
-                            border-2
-                            border-white/40
-                            border-t-white
-                          "
-                        />
-
-                        Resetting password...
-                      </>
-                    ) : (
-                      <>
-                        <KeyRound
-                          size={18}
-                        />
-
-                        Reset password
-                      </>
+                    {t(
+                      "recovery.resettingPassword"
                     )}
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </main>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound
+                      size={18}
+                    />
+
+                    {t(
+                      "recovery.resetPassword"
+                    )}
+                  </>
+                )}
+              </button>
+            </form>
+          </>
+        )}
+      </section>
+    </RecoveryAuthLayout>
   );
 }
-
 
 // ============================================================
 // PASSWORD FIELD
@@ -507,18 +609,29 @@ function PasswordField({
   visible,
   onToggle,
   disabled,
+  showLabel,
+  hideLabel,
 }) {
   return (
     <div>
       <label
         htmlFor={id}
-        className="mb-2 block text-sm font-semibold"
+        className="
+          mb-2
+          block
+          text-sm
+          font-semibold
+          text-[var(--color-text)]
+        "
       >
         {label}
       </label>
 
-
-      <div className="relative">
+      <div
+        className="
+          relative
+        "
+      >
         <LockKeyhole
           size={18}
           className="
@@ -531,7 +644,6 @@ function PasswordField({
           "
         />
 
-
         <input
           id={id}
           name={id}
@@ -541,12 +653,8 @@ function PasswordField({
               : "password"
           }
           autoComplete="new-password"
-          value={
-            value
-          }
-          disabled={
-            disabled
-          }
+          value={value}
+          disabled={disabled}
           onChange={(
             event
           ) =>
@@ -554,12 +662,10 @@ function PasswordField({
               event.target.value
             )
           }
-          placeholder={
-            label
-          }
+          placeholder={label}
           className="
             nexora-focus
-            h-12
+            h-[52px]
             w-full
             rounded-xl
             border
@@ -568,6 +674,7 @@ function PasswordField({
             pl-11
             pr-12
             text-sm
+            text-[var(--color-text)]
             outline-none
             transition
             focus:border-[var(--color-primary)]
@@ -575,16 +682,12 @@ function PasswordField({
           "
         />
 
-
         <button
           type="button"
-          disabled={
-            disabled
-          }
-          onClick={
-            onToggle
-          }
+          disabled={disabled}
+          onClick={onToggle}
           className="
+            nexora-focus
             absolute
             right-2
             top-1/2
@@ -602,8 +705,13 @@ function PasswordField({
           "
           aria-label={
             visible
-              ? "Hide password"
-              : "Show password"
+              ? hideLabel
+              : showLabel
+          }
+          title={
+            visible
+              ? hideLabel
+              : showLabel
           }
         >
           {visible ? (
@@ -621,9 +729,8 @@ function PasswordField({
   );
 }
 
-
 // ============================================================
-// REQUIREMENT
+// PASSWORD REQUIREMENT
 // ============================================================
 
 function Requirement({
@@ -638,6 +745,7 @@ function Requirement({
         gap-2
         text-xs
         font-medium
+
         ${
           passed
             ? "text-[var(--color-success)]"
@@ -650,9 +758,11 @@ function Requirement({
           flex
           h-5
           w-5
+          shrink-0
           items-center
           justify-center
           rounded-full
+
           ${
             passed
               ? "bg-[var(--color-success-soft)]"
@@ -665,22 +775,26 @@ function Requirement({
         />
       </span>
 
-
       {text}
     </div>
   );
 }
 
-
 // ============================================================
-// SUCCESS
+// SUCCESS STATE
 // ============================================================
 
 function ResetSuccess({
   loginPath,
+  t,
+  titleClass,
 }) {
   return (
-    <div className="text-center">
+    <div
+      className="
+        text-center
+      "
+    >
       <div
         className="
           mx-auto
@@ -695,28 +809,47 @@ function ResetSuccess({
         "
       >
         <CheckCircle2
-          size={28}
+          size={27}
         />
       </div>
 
-
-      <p className="mt-6 text-sm font-semibold text-[var(--color-success)]">
-        Password updated
+      <p
+        className="
+          mt-5
+          text-sm
+          font-semibold
+          text-[var(--color-success)]
+        "
+      >
+        {t(
+          "recovery.passwordUpdated"
+        )}
       </p>
 
-
-      <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em]">
-        Reset successful
+      <h1
+        className={`
+          mt-2
+          font-bold
+          ${titleClass}
+        `}
+      >
+        {t(
+          "recovery.resetSuccessful"
+        )}
       </h1>
 
-
-      <p className="mt-4 text-sm leading-6 text-[var(--color-text-secondary)]">
-        Your Waypoint password has
-        been changed successfully.
-        You can now sign in using
-        your new password.
+      <p
+        className="
+          mt-4
+          text-sm
+          leading-6
+          text-[var(--color-text-secondary)]
+        "
+      >
+        {t(
+          "recovery.resetSuccessDescription"
+        )}
       </p>
-
 
       <Link
         to={loginPath}
@@ -725,13 +858,14 @@ function ResetSuccess({
           nexora-focus
           mt-7
           flex
-          h-12
+          min-h-[50px]
           w-full
           items-center
           justify-center
           rounded-xl
           bg-[var(--color-primary)]
           px-5
+          py-3
           text-sm
           font-bold
           text-white
@@ -739,11 +873,12 @@ function ResetSuccess({
           hover:bg-[var(--color-primary-hover)]
         "
       >
-        Back to sign in
+        {t(
+          "recovery.backToSignIn"
+        )}
       </Link>
     </div>
   );
 }
-
 
 export default ResetPasswordPage;

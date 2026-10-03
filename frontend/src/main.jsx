@@ -22,6 +22,10 @@ import {
 } from "./contexts/AuthContext.jsx";
 
 import {
+  LanguageProvider,
+} from "./contexts/LanguageContext.jsx";
+
+import {
   ThemeProvider,
 } from "./contexts/ThemeContext.jsx";
 
@@ -32,11 +36,13 @@ createRoot(
 ).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </StrictMode>
 );
