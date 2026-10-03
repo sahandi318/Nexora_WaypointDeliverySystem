@@ -1,12 +1,17 @@
 import express from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
-
 import prisma from "./config/database.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
+import translationRoutes from "./routes/translationRoutes.js";
+
+import {
+  authenticateToken,
+  requirePasswordChangeCompleted,
+  authorizeRoles,
+} from "./middleware/authMiddleware.js";
 
 import {
   resetState,
@@ -44,53 +49,22 @@ app.use(
 );
 
 // ============================================================
-// DRIVER AUTH MIDDLEWARE
+// DRIVER ACCESS MIDDLEWARE
 // ============================================================
 
-/*
- * Driver routes temporarily use the same JWT issued by the
- * shared authentication system.
- *
- * There is NO Driver-specific login endpoint here.
+/**
+ * Driver APIs use the SAME authentication and RBAC pipeline as
+ * the rest of the application. The authenticated user is loaded
+ * from MySQL on every protected request, so Driver identity is
+ * never taken from mock data or a separate Driver login.
  */
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  "dev-only-nexora-secret";
 
-function driverAuth(req, res, next) {
-  const header =
-    req.headers.authorization;
+const driverAccess = [
+  authenticateToken,
+  requirePasswordChangeCompleted,
+  authorizeRoles("DRIVER"),
+];
 
-  if (
-    !header ||
-    !header.startsWith("Bearer ")
-  ) {
-    return res.status(401).json({
-      success: false,
-      message:
-        "Authentication required.",
-    });
-  }
-
-  try {
-    const token =
-      header.slice(7);
-
-    req.user =
-      jwt.verify(
-        token,
-        JWT_SECRET
-      );
-
-    next();
-  } catch {
-    return res.status(401).json({
-      success: false,
-      message:
-        "Invalid or expired token.",
-    });
-  }
-}
 
 // ============================================================
 // API ROOT
@@ -101,8 +75,10 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       name:
         "Nexora Waypoint API",
+
       message:
         "API is running.",
     });
@@ -118,10 +94,13 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       service:
         "Nexora Waypoint API",
+
       status:
         "running",
+
       timestamp:
         new Date().toISOString(),
     });
@@ -198,6 +177,15 @@ app.use(
 );
 
 // ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
 // DRIVER HELPERS
 // ============================================================
 
@@ -240,6 +228,7 @@ function stopView(
 ) {
   return {
     ...stop,
+
     totalStops:
       trip.stops.length,
   };
@@ -263,6 +252,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "COMPLETED",
+
       statusLabel:
         "Completed",
     };
@@ -275,6 +265,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "IN_PROGRESS",
+
       statusLabel:
         "In Progress",
     };
@@ -287,6 +278,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "VEHICLE_READY",
+
       statusLabel:
         "Vehicle Ready",
     };
@@ -299,6 +291,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "PLANNED",
+
       statusLabel:
         "Planned",
     };
@@ -307,6 +300,7 @@ function operationalTripStatus(
   return {
     statusKey:
       "WAITING",
+
     statusLabel:
       "Awaiting Plan",
   };
@@ -410,7 +404,7 @@ function updateNextStop(
 
 app.get(
   "/api/driver/trips",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const activeTrip =
       state.trips.find(
@@ -432,10 +426,31 @@ app.get(
     res.json({
       driver: {
         userId:
-          state.user.userId,
+          req.user.userId,
 
         name:
-          state.user.name,
+          req.user.fullName,
+
+        email:
+          req.user.email,
+
+        profilePhotoData:
+          req.user.profilePhotoData ||
+          null,
+
+        depot:
+          req.user.depot
+            ? {
+                id:
+                  req.user.depot.id,
+
+                code:
+                  req.user.depot.code,
+
+                name:
+                  req.user.depot.name,
+              }
+            : null,
       },
 
       vehicle:
@@ -503,7 +518,7 @@ app.get(
 
 app.get(
   "/api/driver/trips/:tripId",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const trip =
       findTrip(
@@ -528,7 +543,7 @@ app.get(
 
 app.get(
   "/api/driver/trips/:tripId/stops/:stopId",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const trip =
       findTrip(
@@ -566,7 +581,7 @@ app.get(
 
 app.post(
   "/api/driver/stops/:stopId/arrive",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const found =
       findStop(
@@ -615,7 +630,7 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/outcome",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const found =
       findStop(
@@ -724,7 +739,7 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/exception",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const found =
       findStop(
@@ -791,7 +806,7 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/pod",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const found =
       findStop(
@@ -863,7 +878,7 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/complete",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const found =
       findStop(
@@ -951,7 +966,7 @@ app.post(
 
 app.get(
   "/api/driver/sync-status",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     res.json({
       pendingCount:
@@ -971,7 +986,7 @@ app.get(
 
 app.post(
   "/api/driver/sync-recovery",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const syncedCount =
       Number(
@@ -1030,7 +1045,7 @@ app.post(
 
 app.post(
   "/api/driver/sync-notification/dismiss",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     state.sync
       .recoveryNotification =

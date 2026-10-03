@@ -18,7 +18,10 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+import RecoveryAuthLayout from "../components/common/RecoveryAuthLayout";
+
 import useAuth from "../hooks/useAuth";
+import useTranslations from "../hooks/useTranslations";
 
 import {
   getPasswordResetIdentifier,
@@ -26,16 +29,13 @@ import {
 } from "../services/passwordResetSession";
 
 import {
+  getLoginPathForPortal,
   getPortalFromSearchParams,
   getRecoveryPath,
 } from "../utils/authPortal";
 
-import waypointLogo from "../assets/waypoint-logo.png";
-
-
 const RESEND_SECONDS =
   60;
-
 
 function VerifyResetOtpPage() {
   const navigate =
@@ -50,20 +50,27 @@ function VerifyResetOtpPage() {
       searchParams
     );
 
+  const loginPath =
+    getLoginPathForPortal(
+      portal
+    );
 
   const {
     requestPasswordReset,
     verifyPasswordResetOtp,
   } = useAuth();
 
+  const {
+    t,
+    language,
+    translateDynamicText,
+  } = useTranslations();
 
   const identifier =
     getPasswordResetIdentifier();
 
-
   const existingResetToken =
     getPasswordResetToken();
-
 
   const [
     otp,
@@ -76,9 +83,9 @@ function VerifyResetOtpPage() {
   ] = useState("");
 
   const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState("");
+    resendSucceeded,
+    setResendSucceeded,
+  ] = useState(false);
 
   const [
     isSubmitting,
@@ -97,7 +104,6 @@ function VerifyResetOtpPage() {
     RESEND_SECONDS
   );
 
-
   // ==========================================================
   // RESEND TIMER
   // ==========================================================
@@ -108,7 +114,6 @@ function VerifyResetOtpPage() {
     ) {
       return undefined;
     }
-
 
     const timer =
       window.setInterval(
@@ -124,7 +129,6 @@ function VerifyResetOtpPage() {
         1000
       );
 
-
     return () => {
       window.clearInterval(
         timer
@@ -134,6 +138,9 @@ function VerifyResetOtpPage() {
     resendSeconds,
   ]);
 
+  // ==========================================================
+  // ROUTE GUARDS
+  // ==========================================================
 
   if (
     existingResetToken
@@ -149,7 +156,6 @@ function VerifyResetOtpPage() {
     );
   }
 
-
   if (!identifier) {
     return (
       <Navigate
@@ -162,6 +168,41 @@ function VerifyResetOtpPage() {
     );
   }
 
+  // ==========================================================
+  // ERROR TRANSLATION
+  // ==========================================================
+
+  async function resolveError(
+    error,
+    fallbackKey
+  ) {
+    const backendMessage =
+      error.response?.data
+        ?.message ||
+      error.message;
+
+    if (!backendMessage) {
+      return t(
+        fallbackKey
+      );
+    }
+
+    if (
+      language === "en"
+    ) {
+      return backendMessage;
+    }
+
+    try {
+      return await translateDynamicText(
+        backendMessage
+      );
+    } catch {
+      return t(
+        fallbackKey
+      );
+    }
+  }
 
   // ==========================================================
   // OTP INPUT
@@ -172,17 +213,23 @@ function VerifyResetOtpPage() {
   ) {
     const digitsOnly =
       event.target.value
-        .replace(/\D/g, "")
-        .slice(0, 6);
-
+        .replace(
+          /\D/g,
+          ""
+        )
+        .slice(
+          0,
+          6
+        );
 
     setOtp(
       digitsOnly
     );
 
-    setErrorMessage("");
+    setErrorMessage(
+      ""
+    );
   }
-
 
   // ==========================================================
   // VERIFY
@@ -193,33 +240,37 @@ function VerifyResetOtpPage() {
   ) {
     event.preventDefault();
 
-
     if (
       !/^\d{6}$/.test(
         otp
       )
     ) {
       setErrorMessage(
-        "Enter the 6-digit verification code."
+        t(
+          "recovery.codeRequired"
+        )
       );
 
       return;
     }
 
-
     try {
-      setIsSubmitting(true);
+      setIsSubmitting(
+        true
+      );
 
-      setErrorMessage("");
+      setErrorMessage(
+        ""
+      );
 
-      setSuccessMessage("");
-
+      setResendSucceeded(
+        false
+      );
 
       await verifyPasswordResetOtp({
         identifier,
         otp,
       });
-
 
       navigate(
         getRecoveryPath(
@@ -232,16 +283,17 @@ function VerifyResetOtpPage() {
       );
     } catch (error) {
       setErrorMessage(
-        error.response?.data
-          ?.message ||
-        error.message ||
-        "Unable to verify the code."
+        await resolveError(
+          error,
+          "recovery.verifyFailed"
+        )
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(
+        false
+      );
     }
   }
-
 
   // ==========================================================
   // RESEND
@@ -255,386 +307,446 @@ function VerifyResetOtpPage() {
       return;
     }
 
-
     try {
-      setIsResending(true);
+      setIsResending(
+        true
+      );
 
-      setErrorMessage("");
+      setErrorMessage(
+        ""
+      );
 
-      setSuccessMessage("");
-
+      setResendSucceeded(
+        false
+      );
 
       await requestPasswordReset({
         identifier,
       });
 
-
-      setOtp("");
-
+      setOtp(
+        ""
+      );
 
       setResendSeconds(
         RESEND_SECONDS
       );
 
-
-      setSuccessMessage(
-        "If the account is valid, a new verification code has been sent."
+      setResendSucceeded(
+        true
       );
     } catch (error) {
       setErrorMessage(
-        error.response?.data
-          ?.message ||
-        error.message ||
-        "Unable to resend the verification code."
+        await resolveError(
+          error,
+          "recovery.resendFailed"
+        )
       );
     } finally {
-      setIsResending(false);
+      setIsResending(
+        false
+      );
     }
   }
 
+  const titleClass =
+    language === "en"
+      ? `
+          text-[2rem]
+          leading-[1.15]
+          tracking-[-0.035em]
+        `
+      : `
+          text-[1.65rem]
+          leading-[1.32]
+          tracking-[-0.015em]
+        `;
 
   return (
-    <main className="relative min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      <div className="absolute right-5 top-5 sm:right-8 sm:top-8">
-</div>
-
-
-      <div
+    <RecoveryAuthLayout
+      backTo={loginPath}
+    >
+      <section
         className="
-          mx-auto
-          flex
-          min-h-screen
-          max-w-6xl
-          items-center
-          justify-center
-          px-5
-          py-20
-          sm:px-8
+          w-full
+          rounded-2xl
+          border
+          border-[var(--color-border)]
+          bg-[var(--color-surface)]
+          p-6
+          shadow-[var(--shadow-lg)]
+          sm:p-8
         "
       >
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <img
-              src={
-                waypointLogo
-              }
-              alt="Waypoint"
-              className="h-12 w-12 object-contain"
-            />
+        {/* ICON */}
 
-            <div>
-              <p className="font-extrabold tracking-[0.04em]">
-                WAYPOINT
-              </p>
+        <div
+          className="
+            flex
+            h-11
+            w-11
+            items-center
+            justify-center
+            rounded-xl
+            bg-[var(--color-primary-soft)]
+            text-[var(--color-primary)]
+          "
+        >
+          <MailCheck
+            size={21}
+            strokeWidth={1.9}
+          />
+        </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                Delivery Operations
-              </p>
-            </div>
-          </div>
+        {/* HEADER */}
 
+        <p
+          className="
+            mt-5
+            text-sm
+            font-semibold
+            text-[var(--color-primary)]
+          "
+        >
+          {t(
+            "recovery.emailVerification"
+          )}
+        </p>
 
-          <div
+        <h1
+          className={`
+            mt-2
+            font-bold
+            text-[var(--color-text)]
+            ${titleClass}
+          `}
+        >
+          {t(
+            "recovery.enterCodeTitle"
+          )}
+        </h1>
+
+        <p
+          className="
+            mt-3
+            text-sm
+            leading-6
+            text-[var(--color-text-secondary)]
+          "
+        >
+          {t(
+            "recovery.codeDescription"
+          )}
+        </p>
+
+        {/* ACCOUNT */}
+
+        <div
+          className="
+            mt-5
+            flex
+            flex-wrap
+            items-center
+            gap-x-2
+            gap-y-1
+            rounded-xl
+            border
+            border-[var(--color-border)]
+            bg-[var(--color-surface-soft)]
+            px-4
+            py-3
+            text-sm
+          "
+        >
+          <span
             className="
-              rounded-[26px]
-              border
-              border-[var(--color-border)]
-              bg-[var(--color-surface)]
-              p-6
-              shadow-[var(--shadow-lg)]
-              sm:p-8
+              text-[var(--color-text-muted)]
             "
           >
-            <div
+            {t(
+              "recovery.account"
+            )}
+          </span>
+
+          <strong
+            className="
+              text-[var(--color-text)]
+            "
+          >
+            {identifier}
+          </strong>
+        </div>
+
+        {/* FORM */}
+
+        <form
+          className="
+            mt-6
+            space-y-5
+          "
+          onSubmit={
+            handleSubmit
+          }
+        >
+          <div>
+            <label
+              htmlFor="otp"
               className="
-                flex
-                h-12
-                w-12
-                items-center
-                justify-center
-                rounded-2xl
-                bg-[var(--color-primary-soft)]
-                text-[var(--color-primary)]
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-[var(--color-text)]
               "
             >
-              <MailCheck
-                size={23}
-              />
-            </div>
+              {t(
+                "recovery.verificationCode"
+              )}
+            </label>
 
-
-            <p className="mt-6 text-sm font-semibold text-[var(--color-primary)]">
-              Email verification
-            </p>
-
-
-            <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em]">
-              Enter your 6-digit code
-            </h1>
-
-
-            <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-              If the account exists,
-              Waypoint sent a code to
-              its registered email.
-              The code expires after
-              10 minutes.
-            </p>
-
-
-            <div
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              disabled={
+                isSubmitting
+              }
+              onChange={
+                handleOtpChange
+              }
+              placeholder="000000"
               className="
-                mt-5
+                nexora-focus
+                h-[56px]
+                w-full
                 rounded-xl
-                bg-[var(--color-surface-soft)]
+                border
+                border-[var(--color-border)]
+                bg-[var(--color-input)]
+                px-4
+                text-center
+                text-xl
+                font-bold
+                tracking-[0.42em]
+                text-[var(--color-text)]
+                outline-none
+                transition
+                duration-200
+                focus:border-[var(--color-primary)]
+                disabled:opacity-60
+              "
+            />
+          </div>
+
+          {errorMessage && (
+            <div
+              role="alert"
+              className="
+                flex
+                items-start
+                gap-3
+                rounded-xl
+                border
+                border-[var(--color-danger)]
+                bg-[var(--color-danger-soft)]
                 px-4
                 py-3
                 text-sm
+                leading-5
+                text-[var(--color-danger)]
               "
             >
-              <span className="text-[var(--color-text-muted)]">
-                Account:
-              </span>{" "}
-
-              <strong>
-                {identifier}
-              </strong>
-            </div>
-
-
-            <form
-              className="mt-7 space-y-5"
-              onSubmit={
-                handleSubmit
-              }
-            >
-              <div>
-                <label
-                  htmlFor="otp"
-                  className="mb-2 block text-sm font-semibold"
-                >
-                  Verification code
-                </label>
-
-
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={
-                    otp
-                  }
-                  disabled={
-                    isSubmitting
-                  }
-                  onChange={
-                    handleOtpChange
-                  }
-                  placeholder="000000"
-                  className="
-                    nexora-focus
-                    h-14
-                    w-full
-                    rounded-xl
-                    border
-                    border-[var(--color-border)]
-                    bg-[var(--color-input)]
-                    px-4
-                    text-center
-                    text-2xl
-                    font-bold
-                    tracking-[0.35em]
-                    outline-none
-                    transition
-                    focus:border-[var(--color-primary)]
-                    disabled:opacity-60
-                  "
-                />
-              </div>
-
-
-              {errorMessage && (
-                <div
-                  role="alert"
-                  className="
-                    flex
-                    items-start
-                    gap-3
-                    rounded-xl
-                    border
-                    border-[var(--color-danger)]
-                    bg-[var(--color-danger-soft)]
-                    px-4
-                    py-3
-                    text-sm
-                    text-[var(--color-danger)]
-                  "
-                >
-                  <AlertCircle
-                    size={18}
-                    className="mt-0.5 shrink-0"
-                  />
-
-                  {errorMessage}
-                </div>
-              )}
-
-
-              {successMessage && (
-                <div
-                  className="
-                    rounded-xl
-                    border
-                    border-[var(--color-success)]
-                    bg-[var(--color-success-soft)]
-                    px-4
-                    py-3
-                    text-sm
-                    text-[var(--color-success)]
-                  "
-                >
-                  {successMessage}
-                </div>
-              )}
-
-
-              <button
-                type="submit"
-                disabled={
-                  isSubmitting ||
-                  otp.length !== 6
-                }
+              <AlertCircle
+                size={18}
                 className="
-                  nexora-focus
-                  flex
-                  h-12
-                  w-full
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-xl
-                  bg-[var(--color-primary)]
-                  px-5
-                  text-sm
-                  font-bold
-                  text-white
-                  transition
-                  hover:bg-[var(--color-primary-hover)]
-                  disabled:cursor-not-allowed
-                  disabled:opacity-60
+                  mt-0.5
+                  shrink-0
                 "
-              >
-                {isSubmitting ? (
-                  <>
-                    <span
-                      className="
-                        h-4
-                        w-4
-                        animate-spin
-                        rounded-full
-                        border-2
-                        border-white/40
-                        border-t-white
-                      "
-                    />
+              />
 
-                    Verifying...
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck
-                      size={18}
-                    />
+              {errorMessage}
+            </div>
+          )}
 
-                    Verify code
-                  </>
-                )}
-              </button>
-            </form>
-
-
+          {resendSucceeded && (
             <div
               className="
-                mt-6
-                flex
-                items-center
-                justify-between
-                gap-4
-                border-t
-                border-[var(--color-border)]
-                pt-5
+                rounded-xl
+                border
+                border-[var(--color-success)]
+                bg-[var(--color-success-soft)]
+                px-4
+                py-3
+                text-sm
+                leading-5
+                text-[var(--color-success)]
               "
             >
-              <Link
-                to={getRecoveryPath(
-                  "/forgot-password",
-                  portal
-                )}
-                className="
-                  nexora-focus
-                  inline-flex
-                  items-center
-                  gap-1.5
-                  text-sm
-                  font-semibold
-                  text-[var(--color-text-secondary)]
-                  hover:text-[var(--color-primary)]
-                "
-              >
-                <ArrowLeft
-                  size={15}
-                />
-
-                Change account
-              </Link>
-
-
-              <button
-                type="button"
-                disabled={
-                  resendSeconds > 0 ||
-                  isResending
-                }
-                onClick={
-                  handleResend
-                }
-                className="
-                  nexora-focus
-                  inline-flex
-                  items-center
-                  gap-1.5
-                  text-sm
-                  font-semibold
-                  text-[var(--color-primary)]
-                  disabled:cursor-not-allowed
-                  disabled:text-[var(--color-text-muted)]
-                "
-              >
-                <RefreshCw
-                  size={15}
-                  className={
-                    isResending
-                      ? "animate-spin"
-                      : ""
-                  }
-                />
-
-                {resendSeconds > 0
-                  ? `Resend in ${resendSeconds}s`
-                  : isResending
-                    ? "Sending..."
-                    : "Resend code"}
-              </button>
+              {t(
+                "recovery.resendSuccess"
+              )}
             </div>
-          </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={
+              isSubmitting ||
+              otp.length !== 6
+            }
+            className="
+              nexora-focus
+              flex
+              min-h-[50px]
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-[var(--color-primary)]
+              px-5
+              py-3
+              text-sm
+              font-bold
+              text-white
+              transition
+              duration-200
+              hover:bg-[var(--color-primary-hover)]
+              disabled:cursor-not-allowed
+              disabled:opacity-55
+            "
+          >
+            {isSubmitting ? (
+              <>
+                <span
+                  className="
+                    h-4
+                    w-4
+                    animate-spin
+                    rounded-full
+                    border-2
+                    border-white/40
+                    border-t-white
+                  "
+                />
+
+                {t(
+                  "recovery.verifying"
+                )}
+              </>
+            ) : (
+              <>
+                <ShieldCheck
+                  size={17}
+                />
+
+                {t(
+                  "recovery.verifyCode"
+                )}
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* SECONDARY ACTIONS */}
+
+        <div
+          className="
+            mt-6
+            flex
+            flex-col
+            gap-3
+            border-t
+            border-[var(--color-border)]
+            pt-5
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
+        >
+          <Link
+            to={getRecoveryPath(
+              "/forgot-password",
+              portal
+            )}
+            className="
+              nexora-focus
+              inline-flex
+              min-h-9
+              items-center
+              gap-1.5
+              text-sm
+              font-semibold
+              text-[var(--color-text-secondary)]
+              transition
+              hover:text-[var(--color-primary)]
+            "
+          >
+            <ArrowLeft
+              size={15}
+            />
+
+            {t(
+              "recovery.changeAccount"
+            )}
+          </Link>
+
+          <button
+            type="button"
+            disabled={
+              resendSeconds > 0 ||
+              isResending
+            }
+            onClick={
+              handleResend
+            }
+            className="
+              nexora-focus
+              inline-flex
+              min-h-9
+              items-center
+              gap-1.5
+              text-sm
+              font-semibold
+              text-[var(--color-primary)]
+              disabled:cursor-not-allowed
+              disabled:text-[var(--color-text-muted)]
+            "
+          >
+            <RefreshCw
+              size={15}
+              className={
+                isResending
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+
+            {resendSeconds > 0
+              ? t(
+                  "recovery.resendIn",
+                  null,
+                  {
+                    seconds:
+                      resendSeconds,
+                  }
+                )
+              : isResending
+                ? t(
+                    "recovery.sending"
+                  )
+                : t(
+                    "recovery.resendCode"
+                  )}
+          </button>
         </div>
-      </div>
-    </main>
+      </section>
+    </RecoveryAuthLayout>
   );
 }
-
 
 export default VerifyResetOtpPage;
