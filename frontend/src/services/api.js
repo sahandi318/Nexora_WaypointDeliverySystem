@@ -15,6 +15,10 @@ const api = axios.create({
   },
 });
 
+// ============================================================
+// REQUEST INTERCEPTOR
+// ============================================================
+
 api.interceptors.request.use(
   (config) => {
     const token =
@@ -32,6 +36,26 @@ api.interceptors.request.use(
 
   (error) =>
     Promise.reject(error)
+);
+
+// ============================================================
+// RESPONSE INTERCEPTOR
+// ============================================================
+
+api.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (
+      error.response?.status === 401
+    ) {
+      sessionStorage.removeItem(
+        ACCESS_TOKEN_KEY
+      );
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export default api;

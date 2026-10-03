@@ -17,8 +17,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import ThemeToggle from "../components/common/ThemeToggle";
-
 import useAuth from "../hooks/useAuth";
 
 import {
@@ -243,9 +241,7 @@ function ChangePasswordPage() {
 
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
-
-            <button
+<button
               type="button"
               onClick={
                 handleSignOut

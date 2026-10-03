@@ -96,6 +96,10 @@ model User {
   email String? @unique @db.VarChar(180)
   phone String? @db.VarChar(30)
 
+  // Small processed profile photo stored as a data URL.
+  // Used by the administrator profile and compact admin avatar.
+  profilePhotoData String? @db.LongText
+
   passwordHash String @db.VarChar(255)
 
   role UserRole
