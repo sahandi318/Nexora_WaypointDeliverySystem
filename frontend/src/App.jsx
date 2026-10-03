@@ -71,6 +71,9 @@ import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrder
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
 
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
+import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
+import ReceiptDiscrepancyResolution from "./pages/dispatcher/reports/ReceiptDiscrepancyResolution";
+import FutureCapacityPlanning from "./pages/dispatcher/reports/FutureCapacityPlanning";
 
 
 
@@ -133,6 +136,14 @@ function App() {
   const showLandingChrome =
 
     location.pathname === "/";
+
+
+
+  // Reports pages use the fixed Dispatcher sidebar.
+
+  const isDispatcherReportsRoute =
+
+    location.pathname.startsWith("/dispatcher/reports");
 
 
 
@@ -870,7 +881,37 @@ function App() {
 
             }
 
-          />
+          >
+
+            <Route
+
+              index
+
+              element={<DeliveryReports />}
+
+            />
+
+
+
+            <Route
+
+              path="discrepancies"
+
+              element={<ReceiptDiscrepancyResolution />}
+
+            />
+
+
+
+            <Route
+
+              path="capacity"
+
+              element={<FutureCapacityPlanning />}
+
+            />
+
+          </Route>
 
 
 
@@ -1172,11 +1213,25 @@ function App() {
 
 
 
-      {showLandingChrome && (
+      {showLandingChrome ? (
 
         <Footer />
 
-      )}
+      ) : isDispatcherReportsRoute ? (
+
+        <div
+
+          className="ml-[230px]"
+
+          style={{ width: "calc(100% - 230px)" }}
+
+        >
+
+          <Footer />
+
+        </div>
+
+      ) : null}
 
     </div>
 
