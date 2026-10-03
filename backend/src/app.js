@@ -6,6 +6,7 @@ import prisma from "./config/database.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
+import translationRoutes from "./routes/translationRoutes.js";
 
 
 const app =
@@ -79,7 +80,8 @@ app.get(
         "running",
 
       timestamp:
-        new Date().toISOString(),
+        new Date()
+          .toISOString(),
     });
   }
 );
@@ -157,6 +159,16 @@ app.use(
 app.use(
   "/api/store-manager",
   storeManagerRoutes
+);
+
+
+// ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
 );
 
 
