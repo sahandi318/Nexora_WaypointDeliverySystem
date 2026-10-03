@@ -32,7 +32,14 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
 import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+// ============================================================
+// DISPATCHER REPORTS & CAPACITY
+// ============================================================
+
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
+import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
+import ReceiptDiscrepancyResolution from "./pages/dispatcher/reports/ReceiptDiscrepancyResolution";
+import FutureCapacityPlanning from "./pages/dispatcher/reports/FutureCapacityPlanning";
 
 
 // ============================================================
@@ -67,6 +74,11 @@ function App() {
     isInitializing,
   } = useAuth();
 
+  const location = useLocation();
+
+  // Apply the footer offset only inside Dispatcher Reports pages.
+  const isDispatcherReportsRoute =
+    location.pathname.startsWith("/dispatcher/reports");
 
   const showPublicNavbar =
     !isInitializing &&
@@ -313,26 +325,47 @@ function App() {
       />
 
       {/* =====================================================
-       DISPATCHER
-       ===================================================== */}
+    DISPATCHER
+    ===================================================== */}
 
-      <Route
-        path="/dispatcher/reports"
-        element={
-          <ProtectedRoute allowedRoles={["DISPATCHER"]}>
-            <ReportsCapacity />
-          </ProtectedRoute>
-        }
-      />
+{/* Reports & Capacity parent route.
+    All child report pages remain protected by Dispatcher RBAC. */}
+<Route
+  path="/dispatcher/reports"
+  element={
+    <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+      <ReportsCapacity />
+    </ProtectedRoute>
+  }
+>
+  {/* Default Reports & Capacity tab */}
+  <Route
+    index
+    element={<DeliveryReports />}
+  />
 
-      <Route
-        path="/dispatcher/*"
-        element={
-          <ProtectedRoute allowedRoles={["DISPATCHER"]}>
-              <RoleWorkspacePage />
-          </ProtectedRoute>
-        }
-      />
+  {/* Receipt discrepancy review tab */}
+  <Route
+    path="discrepancies"
+    element={<ReceiptDiscrepancyResolution />}
+  />
+
+  {/* Future capacity planning tab */}
+  <Route
+    path="capacity"
+    element={<FutureCapacityPlanning />}
+  />
+</Route>
+
+{/* Other Dispatcher pages currently handled by RoleWorkspacePage */}
+<Route
+  path="/dispatcher/*"
+  element={
+    <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+      <RoleWorkspacePage />
+    </ProtectedRoute>
+  }
+/>
 
       {/* =====================================================
           LOADER
@@ -469,7 +502,16 @@ function App() {
         </Routes>
       </div>
 
-      <Footer />
+      {isDispatcherReportsRoute ? (
+  <div
+    className="ml-[230px]"
+    style={{ width: "calc(100% - 230px)" }}
+  >
+    <Footer />
+  </div>
+) : (
+  <Footer />
+)}
     </div>
   );
 }
