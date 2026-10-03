@@ -966,3 +966,283 @@ body {
   .sync-record-icon { width: 32px; height: 32px; }
   .offline-retry-message { font-size: 11px; }
 }
+
+/* =========================================================
+   DRIVER THEME LEGIBILITY FIX
+   ---------------------------------------------------------
+   The shared application controls light/dark mode with
+   html[data-theme="light|dark"]. Driver screens use their own
+   legacy CSS, so explicitly map readable foreground/surface
+   colours here. Functional colours on green headers, primary
+   buttons, outcome cards and status icons are intentionally
+   preserved.
+   ========================================================= */
+
+html[data-theme="light"] {
+  --driver-page-bg: #f0fbf6;
+  --driver-surface: #ffffff;
+  --driver-surface-soft: #f6f9f8;
+  --driver-text: #17222b;
+  --driver-text-secondary: #596a70;
+  --driver-text-muted: #7a898f;
+  --driver-border: #d9e4e0;
+  --driver-action-surface: #ffffff;
+  --driver-next-bg: #dbf8ed;
+}
+
+html[data-theme="dark"] {
+  --driver-page-bg: #071f19;
+  --driver-surface: #0b3027;
+  --driver-surface-soft: #0f3b30;
+  --driver-text: #f4fff9;
+  --driver-text-secondary: #c6ddd4;
+  --driver-text-muted: #8faf9f;
+  --driver-border: #1c4e40;
+  --driver-action-surface: #0b3027;
+  --driver-next-bg: #123f33;
+}
+
+/* Base Driver foreground/background. */
+html[data-theme] .app-stage {
+  color: var(--driver-text);
+}
+
+html[data-theme] .mobile-shell {
+  background: var(--driver-page-bg);
+  color: var(--driver-text);
+}
+
+html[data-theme] .screen-body,
+html[data-theme] .section-title {
+  color: var(--driver-text);
+}
+
+/* White/dark cards must always carry an explicit readable text colour. */
+html[data-theme] .mobile-shell .card,
+html[data-theme] .trip-card,
+html[data-theme] .trip-summary-card,
+html[data-theme] .outlet-card,
+html[data-theme] .access-card,
+html[data-theme] .order-card,
+html[data-theme] .navigation-card,
+html[data-theme] .arrived-card,
+html[data-theme] .pod-card,
+html[data-theme] .exception-card,
+html[data-theme] .summary-card,
+html[data-theme] .sync-status-card,
+html[data-theme] .sync-record-list {
+  background: var(--driver-surface);
+  border-color: var(--driver-border);
+  color: var(--driver-text);
+}
+
+/* General copy inside Driver cards. */
+html[data-theme] .trip-heading strong,
+html[data-theme] .summary-card h3,
+html[data-theme] .summary-card > div,
+html[data-theme] .sync-status-card > div,
+html[data-theme] .pod-card > label,
+html[data-theme] .exception-card > label,
+html[data-theme] .quantity-input,
+html[data-theme] .sync-record-copy strong {
+  color: var(--driver-text);
+}
+
+html[data-theme] .trip-heading span,
+html[data-theme] .trip-meta,
+html[data-theme] .trip-summary-card h3 span,
+html[data-theme] .trip-summary-card p,
+html[data-theme] .stop-main small,
+html[data-theme] .stop-main em,
+html[data-theme] .status-text,
+html[data-theme] .nav-heading strong,
+html[data-theme] .nav-heading span,
+html[data-theme] .stop-counter,
+html[data-theme] .planning-reference,
+html[data-theme] .gps-accuracy,
+html[data-theme] .sync-record-copy span,
+html[data-theme] .last-sync,
+html[data-theme] .degradation-sync-card small,
+html[data-theme] .empty-sync p {
+  color: var(--driver-text-muted);
+}
+
+/* Secondary information blocks. */
+html[data-theme] .info-grid > div,
+html[data-theme] .access-card > div {
+  background: var(--driver-surface-soft);
+  color: var(--driver-text);
+}
+
+html[data-theme] .info-grid span,
+html[data-theme] .access-card span,
+html[data-theme] .order-line span {
+  color: var(--driver-text-muted);
+}
+
+html[data-theme] .info-grid strong,
+html[data-theme] .access-card strong,
+html[data-theme] .order-line strong {
+  color: var(--driver-text);
+}
+
+/* Forms: prevent inherited white text on a light input surface. */
+html[data-theme] .plain-input,
+html[data-theme] .pod-card textarea,
+html[data-theme] .exception-card textarea,
+html[data-theme] .exception-card select,
+html[data-theme] .quantity-input,
+html[data-theme] .quantity-input input,
+html[data-theme] .input-wrap,
+html[data-theme] .input-wrap input {
+  background: var(--driver-action-surface);
+  border-color: var(--driver-border);
+  color: var(--driver-text);
+}
+
+html[data-theme] .plain-input::placeholder,
+html[data-theme] .pod-card textarea::placeholder,
+html[data-theme] .exception-card textarea::placeholder,
+html[data-theme] .quantity-input input::placeholder,
+html[data-theme] .input-wrap input::placeholder {
+  color: var(--driver-text-muted);
+  opacity: 1;
+}
+
+/* Trip overview list. */
+html[data-theme] .stop-row {
+  color: var(--driver-text);
+  border-bottom-color: var(--driver-border);
+}
+
+html[data-theme] .stop-row--next {
+  background: var(--driver-next-bg);
+}
+
+html[data-theme] .stop-index {
+  background: var(--driver-surface);
+  border-color: var(--driver-border);
+}
+
+html[data-theme] .tabs {
+  border-bottom-color: var(--driver-border);
+}
+
+html[data-theme] .tabs button {
+  color: var(--driver-text-secondary);
+}
+
+html[data-theme] .tabs button.active {
+  color: #009d75;
+}
+
+/* Driver actions and navigation surfaces. */
+html[data-theme] .btn-outline,
+html[data-theme] .photo-button {
+  background: var(--driver-action-surface);
+}
+
+html[data-theme] .bottom-nav {
+  background: var(--driver-surface);
+  border-top-color: var(--driver-border);
+}
+
+html[data-theme] .bottom-nav__item {
+  color: var(--driver-text-secondary);
+}
+
+html[data-theme] .bottom-nav__item.active {
+  color: #009b73;
+}
+
+html[data-theme] .sticky-actions {
+  background: linear-gradient(
+    to top,
+    var(--driver-page-bg) 75%,
+    color-mix(in srgb, var(--driver-page-bg) 20%, transparent)
+  );
+}
+
+/* Sync Center rows are especially prone to inheriting shared theme text. */
+html[data-theme] .sync-record-row {
+  border-bottom-color: var(--driver-border);
+  color: var(--driver-text);
+}
+
+html[data-theme] .sync-record-copy strong {
+  color: var(--driver-text);
+}
+
+html[data-theme] .sync-record-copy span {
+  color: var(--driver-text-muted);
+}
+
+/* Preserve intentional white-on-green elements in BOTH themes. */
+html[data-theme] .status-bar,
+html[data-theme] .driver-topbar,
+html[data-theme] .driver-topbar strong,
+html[data-theme] .icon-button.light,
+html[data-theme] .dashboard-hero,
+html[data-theme] .dashboard-hero .driver-greeting span,
+html[data-theme] .dashboard-hero .driver-greeting strong,
+html[data-theme] .dashboard-hero .driver-greeting small,
+html[data-theme] .complete-hero,
+html[data-theme] .complete-hero h1,
+html[data-theme] .complete-hero strong,
+html[data-theme] .complete-hero span,
+html[data-theme] .btn-primary,
+html[data-theme] .sync-record-icon {
+  color: #ffffff;
+}
+
+/* Explicit light-mode safety net: text on pale/white Driver surfaces can
+   never inherit the shared application's dark-theme white foreground. */
+html[data-theme="light"] .mobile-shell .card,
+html[data-theme="light"] .mobile-shell .section-title,
+html[data-theme="light"] .mobile-shell .screen-body,
+html[data-theme="light"] .mobile-shell .trip-heading strong,
+html[data-theme="light"] .mobile-shell .summary-card h3,
+html[data-theme="light"] .mobile-shell .sync-record-copy strong,
+html[data-theme="light"] .mobile-shell label {
+  color: #17222b;
+}
+
+/* Keep semantic coloured text unchanged after the light-mode safety net. */
+html[data-theme="light"] .pill-green,
+html[data-theme="light"] .status-text.done,
+html[data-theme="light"] .status-text.next,
+html[data-theme="light"] .next-stop-button,
+html[data-theme="light"] .success-note,
+html[data-theme="light"] .sync-status-card strong,
+html[data-theme="light"] .sync-pending-text,
+html[data-theme="light"] .empty-sync,
+html[data-theme="light"] .sync-complete-strip,
+html[data-theme="light"] .link-button,
+html[data-theme="light"] .photo-button,
+html[data-theme="light"] .btn-outline {
+  color: #008c69;
+}
+
+html[data-theme="light"] .pill-blue {
+  color: #3469dc;
+}
+
+html[data-theme="light"] .pill-muted {
+  color: #6d7b83;
+}
+
+html[data-theme="light"] .full-delivery {
+  color: #009b73;
+}
+
+html[data-theme="light"] .partial-delivery {
+  color: #ef7f18;
+}
+
+html[data-theme="light"] .unable-delivery {
+  color: #e84450;
+}
+
+html[data-theme="light"] .loading-issue-note {
+  color: #d96516;
+}

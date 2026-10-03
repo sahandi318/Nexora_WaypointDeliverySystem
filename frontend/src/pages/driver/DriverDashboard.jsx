@@ -7,6 +7,54 @@ import LoadingState from '../../components/LoadingState';
 import MobileShell from '../../components/MobileShell';
 import api from '../../services/api';
 
+
+function getInitials(name) {
+  const cleanedName =
+    String(name || "")
+      .trim();
+
+  if (!cleanedName) {
+    return "DR";
+  }
+
+  return cleanedName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) =>
+      part.charAt(0)
+    )
+    .join("")
+    .toUpperCase();
+}
+
+function getGreeting() {
+  const hour =
+    new Date().getHours();
+
+  if (hour < 12) {
+    return "Good morning,";
+  }
+
+  if (hour < 18) {
+    return "Good afternoon,";
+  }
+
+  return "Good evening,";
+}
+
+function getCurrentDateLabel() {
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  ).format(new Date());
+}
+
 function statusPillClass(statusKey) {
   switch (statusKey) {
     case 'IN_PROGRESS':
@@ -47,6 +95,19 @@ export default function DriverDashboard() {
 
   const trips = useMemo(() => data?.trips || [], [data]);
 
+  const driverName =
+    data?.driver?.name?.trim() ||
+    "Driver";
+
+  const driverInitials =
+    getInitials(driverName);
+
+  const greeting =
+    getGreeting();
+
+  const currentDateLabel =
+    getCurrentDateLabel();
+
   if (!data) {
     return (
       <MobileShell>
@@ -65,11 +126,17 @@ export default function DriverDashboard() {
         </div>
 
         <div className="driver-greeting">
-          <div className="avatar">RF</div>
+          <div
+            className="avatar"
+            aria-label={`${driverName} initials`}
+          >
+            {driverInitials}
+          </div>
+
           <div>
-            <span>Good morning,</span>
-            <strong>{data.driver.name}</strong>
-            <small>Mon, 28 Sep 2026</small>
+            <span>{greeting}</span>
+            <strong>{driverName}</strong>
+            <small>{currentDateLabel}</small>
           </div>
         </div>
       </section>
