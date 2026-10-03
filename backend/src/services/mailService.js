@@ -1,84 +1,48 @@
 import nodemailer from "nodemailer";
 
 
-const EMAIL_DELIVERY_MODES = {
-  CONSOLE:
-    "console",
-
-  SMTP:
-    "smtp",
-};
-
-
-// ============================================================
-// ENVIRONMENT HELPERS
-// ============================================================
-
-function requireEnvironmentVariable(
-  name
-) {
-  const value =
-    process.env[name]
-      ?.trim();
-
-
+// SMTP is the only delivery path. Never emit recovery codes to logs.
+function requireEnvironmentVariable(name) {
+  const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(
-      `Missing required environment variable: ${name}`
-    );
+    const error = new Error(`Missing required environment variable: ${name}`);
+    error.code = "EMAIL_CONFIGURATION";
+    error.variable = name;
+    throw error;
   }
-
-
   return value;
 }
 
-
 export function getEmailDeliveryMode() {
-  const configuredMode =
-    process.env
-      .EMAIL_DELIVERY_MODE
-      ?.trim()
-      .toLowerCase();
-
-
-  const mode =
-    configuredMode ||
-    (
-      process.env.NODE_ENV ===
-      "production"
-        ? EMAIL_DELIVERY_MODES.SMTP
-        : EMAIL_DELIVERY_MODES.CONSOLE
-    );
-
-
-  if (
-    !Object.values(
-      EMAIL_DELIVERY_MODES
-    ).includes(
-      mode
-    )
-  ) {
-    throw new Error(
-      "EMAIL_DELIVERY_MODE must be either 'console' or 'smtp'."
-    );
+  const mode = process.env.EMAIL_DELIVERY_MODE?.trim().toLowerCase() || "smtp";
+  if (mode !== "smtp") {
+    const error = new Error("EMAIL_DELIVERY_MODE must be 'smtp'. Console delivery is disabled.");
+    error.code = "EMAIL_CONFIGURATION";
+    error.variable = "EMAIL_DELIVERY_MODE";
+    throw error;
   }
-
-
-  if (
-    process.env.NODE_ENV ===
-      "production" &&
-    mode ===
-      EMAIL_DELIVERY_MODES.CONSOLE
-  ) {
-    throw new Error(
-      "Console email delivery is disabled in production."
-    );
-  }
-
-
   return mode;
 }
 
+// Only allow known diagnostic fields; provider messages can contain private data.
+export function getSafeMailError(error) {
+  const knownCodes = ["EMAIL_CONFIGURATION", "EAUTH", "ECONNECTION", "ETIMEDOUT",
+    "EDNS", "ESOCKET", "ETLS", "EENVELOPE", "EMESSAGE", "SMTP_NOT_ACCEPTED"];
+  const code = knownCodes.includes(error?.code) ? error.code : "EMAIL_DELIVERY_FAILED";
+  const variables = ["EMAIL_DELIVERY_MODE", "SMTP_HOST", "SMTP_PORT", "SMTP_SECURE",
+    "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"];
+  return {
+    code,
+    ...(variables.includes(error?.variable) ? { variable: error.variable } : {}),
+    ...(Number.isInteger(error?.responseCode) ? { responseCode: error.responseCode } : {}),
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
 
 // ============================================================
 // SMTP TRANSPORT
@@ -116,7 +80,8 @@ function createMailTransporter() {
 
   if (
     !Number.isInteger(port) ||
-    port <= 0
+    port <= 0 ||
+    port > 65535
   ) {
     throw new Error(
       "SMTP_PORT must be a valid port number."
@@ -128,6 +93,13 @@ function createMailTransporter() {
     host,
     port,
     secure,
+
+    requireTLS: !secure,
+    logger: false,
+    debug: false,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
 
     auth: {
       user,
@@ -148,16 +120,6 @@ export async function verifyMailConnection() {
     getEmailDeliveryMode();
 
 
-  if (
-    mode ===
-    EMAIL_DELIVERY_MODES.CONSOLE
-  ) {
-    return {
-      mode,
-    };
-  }
-
-
   const transporter =
     createMailTransporter();
 
@@ -168,48 +130,6 @@ export async function verifyMailConnection() {
   return {
     mode,
   };
-}
-
-
-// ============================================================
-// DEVELOPMENT CONSOLE DELIVERY
-// ============================================================
-
-function writeOtpToDevelopmentConsole({
-  to,
-  fullName,
-  otp,
-  expiresInMinutes,
-}) {
-  console.log("");
-  console.log(
-    "=========================================="
-  );
-  console.log(
-    " Waypoint Demo Password Reset Email"
-  );
-  console.log(
-    "=========================================="
-  );
-  console.log(
-    `To       : ${to}`
-  );
-  console.log(
-    `Name     : ${fullName}`
-  );
-  console.log(
-    `OTP      : ${otp}`
-  );
-  console.log(
-    `Expires  : ${expiresInMinutes} minute(s)`
-  );
-  console.log(
-    "Mode     : console (no external email sent)"
-  );
-  console.log(
-    "=========================================="
-  );
-  console.log("");
 }
 
 
@@ -225,27 +145,6 @@ export async function sendPasswordResetOtp({
 }) {
   const mode =
     getEmailDeliveryMode();
-
-
-  if (
-    mode ===
-    EMAIL_DELIVERY_MODES.CONSOLE
-  ) {
-    writeOtpToDevelopmentConsole({
-      to,
-      fullName,
-      otp,
-      expiresInMinutes,
-    });
-
-
-    return {
-      messageId:
-        `console-${Date.now()}`,
-
-      mode,
-    };
-  }
 
 
   const transporter =
@@ -290,7 +189,7 @@ Waypoint Delivery Operations
             Waypoint Delivery Operations
           </h2>
 
-          <p>Hello ${fullName},</p>
+          <p>Hello ${escapeHtml(fullName)},</p>
 
           <p>
             We received a request to reset your Waypoint password.
@@ -332,6 +231,19 @@ Waypoint Delivery Operations
         </div>
       `,
     });
+
+
+  if (!result.accepted?.some((address) =>
+    String(address).toLowerCase() === to.toLowerCase()
+  )) {
+    const error = new Error("SMTP did not accept the password reset recipient.");
+    error.code = "SMTP_NOT_ACCEPTED";
+    throw error;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.info("Password reset email accepted by SMTP");
+  }
 
 
   return {
