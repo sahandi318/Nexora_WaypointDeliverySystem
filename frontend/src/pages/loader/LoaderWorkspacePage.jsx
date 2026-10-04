@@ -75,12 +75,22 @@ function Card({ className = '', children }) {
 export default function LoaderWorkspacePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const loaderName = user?.fullName ||user?.name || "Loader User";
+  const assignedDepotName = user?.depot?.name || user?.depotName ||"";
+  const assignedDepotCode = user?.depot?.code || user?.depotCode ||"";
   const connectivity = useConnectivity();
   const isOnline = typeof connectivity === 'boolean' ? connectivity : connectivity?.isOnline ?? true;
-
+  const assignedDepotKey = assignedDepotName
+    .toLowerCase()
+    .includes("kandy") ||
+  assignedDepotCode
+    .toLowerCase()
+    .includes("kdy")
+    ? "kandy"
+    : "peliyagoda";
   const [view, setView] = useState('dashboard');
   const [depotKey, setDepotKey] = useState('peliyagoda');
-  const [tripId, setTripId] = useState('PEL-042');
+  const [tripId, setTripId] = useState(null);
   const [filter, setFilter] = useState('all');
   const [mobileMenu, setMobileMenu] = useState(false);
   const [planChanged, setPlanChanged] = useState(false);
@@ -250,8 +260,24 @@ const [pageTitle, eyebrow] =
   titleMap[view] ||
   titleMap.dashboard;
 
+  
+  useEffect(() => {
+  if (!user) {
+    return;
+  }
 
+  const key =
+    user?.depot?.name
+      ?.toLowerCase()
+      .includes("kandy") ||
+    user?.depot?.code
+      ?.toLowerCase()
+      .includes("kdy")
+      ? "kandy"
+      : "peliyagoda";
 
+  setDepotKey(key);
+}, [user]);
   useEffect(() => {
   if (!backendTrip?.stops) {
     return;
@@ -430,11 +456,12 @@ const [pageTitle, eyebrow] =
 
 
   function selectDepot(next) {
-    setDepotKey(next);
-    setTripId(next === 'kandy' ? 'KDY-008' : 'PEL-042');
-    setFilter('all');
-    setView('dashboard');
-  }
+  setDepotKey(next);
+  setTripId(null);
+  setBackendTrip(null);
+  setFilter('all');
+  setView('dashboard');
+}
 /*
   function toggleLoaded(id) {
     setCheckedItems((current) => {
@@ -697,7 +724,19 @@ const [pageTitle, eyebrow] =
     navigate('/login', { replace: true });
   }
 
-
+  useEffect(() => {
+  if (
+    !tripId &&
+    backendDashboard?.trips?.length
+  ) {
+    setTripId(
+      backendDashboard.trips[0].id
+    );
+  }
+}, [
+  backendDashboard,
+  tripId,
+]);
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -727,7 +766,24 @@ const [pageTitle, eyebrow] =
             <div className="mb-3 flex items-start gap-2.5 text-[11px] leading-5 text-[var(--color-sidebar-muted)]"><ShieldCheck size={17} className="mt-0.5 shrink-0" /><p>Loading progress and exceptions are recorded against the active shift.</p></div>
             <div className="border-t border-white/10 pt-3">
               <div className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-black">{(user?.name || 'Loader').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</div>
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-black">
+  {loaderName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()}
+</div>
+
+<div className="min-w-0 flex-1">
+  <p className="truncate text-xs font-bold">
+    {loaderName}
+  </p>
+
+  <p className="truncate text-[10px] text-[var(--color-sidebar-muted)]">
+    Loader · {assignedDepotName || "Depot not assigned"}
+  </p>
+</div>
                 <div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{user?.name || 'Loader User'}</p><p className="text-[10px] text-[var(--color-sidebar-muted)]">Loader · Shift A</p></div>
                 <button onClick={handleLogout} title="Logout" className="rounded-lg p-2 text-[var(--color-sidebar-muted)] hover:bg-white/10 hover:text-white"><LogOut size={16} /></button>
               </div>
@@ -765,12 +821,17 @@ const [pageTitle, eyebrow] =
               <div className="min-w-0"><p className="truncate text-[10px] font-extrabold tracking-[0.13em] text-[var(--color-text-muted)]">{eyebrow}</p><h1 className="truncate text-xl font-black tracking-[-0.02em] sm:text-2xl">{pageTitle}</h1></div>
             </div>
             <div className="flex items-center gap-2">
-              <label className="hidden items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-bold text-[var(--color-text-secondary)] sm:flex">
-                <Warehouse size={16} className="text-[var(--color-primary)]" />
-                <select value={depotKey} onChange={(e) => selectDepot(e.target.value)} className="bg-transparent font-bold text-[var(--color-text)] outline-none">
-                  <option value="peliyagoda">Peliyagoda DC</option><option value="kandy">Kandy Hub</option>
-                </select>
-              </label>
+              <div className="hidden items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-bold text-[var(--color-text-secondary)] sm:flex">
+  <Warehouse
+    size={16}
+    className="text-[var(--color-primary)]"
+  />
+
+  <span>
+    {assignedDepotName ||
+      "Depot not assigned"}
+  </span>
+</div>
               <button onClick={() => setShowPlanModal(true)} className="nexora-focus relative grid h-10 w-10 place-items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]"><Bell size={18} /><span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--color-warning)] px-1 text-[9px] font-black text-white">1</span></button>
               <div className={`hidden h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold md:flex ${isOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isOnline ? <Wifi size={15} /> : <CloudOff size={15} />}{isOnline ? 'Online' : 'Offline'}</div>
               <ThemeToggle />
