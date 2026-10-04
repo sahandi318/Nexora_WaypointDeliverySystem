@@ -22,6 +22,16 @@ export async function getDispatcherTrip(tripCode) {
   return response.data.trip;
 }
 
+export async function getDispatcherDeliveryReports({ depot } = {}) {
+  const response = await api.get("/dispatcher/delivery-reports", {
+    params: {
+      ...(depot ? { depot } : {}),
+    },
+  });
+
+  return response.data;
+}
+
 export function createDispatcherMonitoringSocket() {
   const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 

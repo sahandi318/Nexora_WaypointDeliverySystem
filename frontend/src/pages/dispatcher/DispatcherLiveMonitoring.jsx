@@ -41,16 +41,43 @@ function initials(name = "Dispatcher") {
     .join("");
 }
 
-function formatSyncAge(value) {
+function formatSyncAge(value, nowMs = Date.now()) {
   if (!value) return "No sync recorded";
   const timestamp = new Date(value).getTime();
   if (!Number.isFinite(timestamp)) return "No sync recorded";
 
-  const minutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
-  if (minutes <= 0) return "Just now";
+  const seconds = Math.max(0, Math.floor((nowMs - timestamp) / 1000));
+  if (seconds < 15) return "Just now";
+  if (seconds < 60) return `${seconds} sec ago`;
+
+  const minutes = Math.floor(seconds / 60);
   if (minutes === 1) return "1 min ago";
   if (minutes < 60) return `${minutes} min ago`;
-  return `${Math.floor(minutes / 60)} hr ago`;
+
+  const hours = Math.floor(minutes / 60);
+  return hours === 1 ? "1 hr ago" : `${hours} hr ago`;
+}
+
+function formatSriLankaClock(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleTimeString("en-LK", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Colombo",
+  });
+}
+
+function formatSriLankaDate(value = Date.now()) {
+  const date = new Date(value);
+  return date.toLocaleDateString("en-LK", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Colombo",
+  });
 }
 
 function statusLabel(status) {
@@ -80,9 +107,14 @@ function FitRouteBounds({ trip }) {
   const map = useMap();
 
   useEffect(() => {
-    const points = (trip?.stops || [])
+    const routePoints = (trip?.routePoints || [])
+      .filter((point) => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]));
+
+    const stopPoints = (trip?.stops || [])
       .filter((stop) => Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude))
       .map((stop) => [stop.latitude, stop.longitude]);
+
+    const points = routePoints.length ? [...routePoints] : [...stopPoints];
 
     if (Number.isFinite(trip?.currentLat) && Number.isFinite(trip?.currentLng)) {
       points.push([trip.currentLat, trip.currentLng]);
@@ -103,7 +135,14 @@ function RouteMap({ trip }) {
     .filter((stop) => Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude))
     .map((stop) => [stop.latitude, stop.longitude]);
 
-  const center = stopPoints[0] || [6.9271, 79.8612];
+  const liveRoutePoints = (trip?.routePoints || [])
+    .filter((point) => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]));
+
+  // When the Driver navigation page has published an OSRM route,
+  // render that exact geometry. Fall back to the planned stop line
+  // only until the Driver opens navigation.
+  const routeGeometry = liveRoutePoints.length > 1 ? liveRoutePoints : stopPoints;
+  const center = routeGeometry[0] || stopPoints[0] || [6.9271, 79.8612];
 
   return (
     <div className="dispatcher-panel dispatcher-map-card">
@@ -126,11 +165,11 @@ function RouteMap({ trip }) {
 
             <FitRouteBounds trip={trip} />
 
-            {stopPoints.length > 1 && (
+            {routeGeometry.length > 1 && (
               <Polyline
-                positions={stopPoints}
+                positions={routeGeometry}
                 pathOptions={{
-                  color: "#0f9f6e",
+                  color: "#008a6b",
                   weight: 5,
                   opacity: 0.9,
                 }}
@@ -187,6 +226,7 @@ function RouteMap({ trip }) {
             <span><i className="dispatcher-dot vehicle" /> Current Vehicle</span>
             <span><i className="dispatcher-dot next" /> Next Stop</span>
             <span><i className="dispatcher-dot pending" /> Pending</span>
+            {liveRoutePoints.length > 1 && <span>Driver road route</span>}
           </div>
         </>
       ) : (
@@ -208,6 +248,7 @@ export default function DispatcherLiveMonitoring() {
   const [depotId, setDepotId] = useState(user?.depot?.id ? String(user.depot.id) : "");
   const [status, setStatus] = useState("ACTIVE");
   const [search, setSearch] = useState("");
+  const [nowMs, setNowMs] = useState(Date.now());
 
   async function loadMonitoring({ quiet = false } = {}) {
     if (!quiet) setLoading(true);
@@ -262,6 +303,11 @@ export default function DispatcherLiveMonitoring() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depotId, status]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 10000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const selectedTrip = useMemo(
     () => trips.find((trip) => trip.tripCode === selectedTripCode) || null,
@@ -320,7 +366,7 @@ export default function DispatcherLiveMonitoring() {
             <div className="dispatcher-filters">
               <div className="dispatcher-filter" style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <CalendarDays size={15} />
-                <span>{new Date().toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })}</span>
+                <span>{formatSriLankaDate(nowMs)}</span>
               </div>
 
               <select
@@ -371,7 +417,7 @@ export default function DispatcherLiveMonitoring() {
           {offline && (
             <div className="dispatcher-offline-alert" role="status">
               <span><strong>Live tracking temporarily unavailable.</strong> Driver appears to be offline. Showing last synchronized progress.</span>
-              <strong>Last sync {formatSyncAge(selectedTrip.lastSynchronized)}</strong>
+              <strong>Last sync {formatSyncAge(selectedTrip.lastSynchronized, nowMs)}</strong>
             </div>
           )}
 
@@ -453,7 +499,8 @@ export default function DispatcherLiveMonitoring() {
                     <div className="dispatcher-detail-row"><span>Stops Completed</span><strong>{selectedTrip.progressCompleted} / {selectedTrip.progressTotal}</strong></div>
                     <div className="dispatcher-detail-row"><span>Next Destination</span><strong>{selectedTrip.nextDestination || "Trip complete"}</strong></div>
                     <div className="dispatcher-detail-row"><span>ETA</span><strong>{selectedTrip.eta || "-"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Last Synchronized</span><strong>{formatSyncAge(selectedTrip.lastSynchronized)}</strong></div>
+                    <div className="dispatcher-detail-row"><span>Last Synchronized</span><strong>{formatSyncAge(selectedTrip.lastSynchronized, nowMs)} · {formatSriLankaClock(selectedTrip.lastSynchronized)}</strong></div>
+                    <div className="dispatcher-detail-row"><span>Route Updated</span><strong>{selectedTrip.routeUpdatedAt ? `${formatSyncAge(selectedTrip.routeUpdatedAt, nowMs)} · ${formatSriLankaClock(selectedTrip.routeUpdatedAt)}` : "Waiting for Driver navigation"}</strong></div>
                   </div>
                 ) : (
                   <div className="dispatcher-empty">Select a trip.</div>
@@ -482,7 +529,7 @@ export default function DispatcherLiveMonitoring() {
                 <div className="dispatcher-update-card">
                   <div className="dispatcher-update-title">
                     <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><MessageSquareText size={16} /> Latest Driver Update</span>
-                    <span style={{ color: "var(--color-text-muted)", fontSize: 9 }}>{formatSyncAge(selectedTrip.latestDriverUpdateAt)}</span>
+                    <span style={{ color: "var(--color-text-muted)", fontSize: 9 }}>{formatSyncAge(selectedTrip.latestDriverUpdateAt, nowMs)} · {formatSriLankaClock(selectedTrip.latestDriverUpdateAt)}</span>
                   </div>
                   <p>{selectedTrip.latestDriverUpdate || "Waiting for a driver update."}</p>
                 </div>

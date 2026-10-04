@@ -1,4 +1,5 @@
 import {
+  getDispatcherDeliveryReports,
   getLiveMonitoringSnapshot,
   serializeTripForDispatcher,
 } from "../services/liveMonitoringService.js";
@@ -42,6 +43,24 @@ export async function getLiveMonitoringTrip(req, res, next) {
     return res.status(200).json({
       success: true,
       trip: serializeTripForDispatcher(trip),
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getDeliveryReports(req, res, next) {
+  try {
+    const requestedDepotName = String(req.query.depot || "").trim();
+    const ownDepotName = req.user?.depot?.name || null;
+    const depotName = requestedDepotName || ownDepotName || null;
+
+    const report = await getDispatcherDeliveryReports({ depotName });
+
+    return res.status(200).json({
+      success: true,
+      ...report,
+      generatedAt: new Date().toISOString(),
     });
   } catch (error) {
     return next(error);
