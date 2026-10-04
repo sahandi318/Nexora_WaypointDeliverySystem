@@ -14,6 +14,7 @@
     "seed:store-manager": "tsx src/scripts/seedStoreManager.js",
     "seed:store-manager-catalog": "tsx src/scripts/seedStoreManagerCatalog.js",
     "seed:admin": "tsx src/scripts/seedAdmin.js",
+    "seed:deployment-accounts": "tsx src/scripts/seedDeploymentAccounts.js",
     "test:email": "tsx src/scripts/testEmailConnection.js",
     "setup:store-manager-data": "npm run data:import-outlets && npm run seed:store-manager && npm run seed:store-manager-catalog",
     "test": "npm run test:store-manager-http",
