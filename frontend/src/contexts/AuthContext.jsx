@@ -207,7 +207,9 @@ export function AuthProvider({
         {
           identifier:
             cleanedIdentifier,
-        }
+        },
+        // SMTP may take longer than the shared API's 10-second timeout.
+        { timeout: 60000 }
       );
 
 
