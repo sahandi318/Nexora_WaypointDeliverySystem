@@ -7,6 +7,12 @@ import {
 } from "../controllers/storeManagerController.js";
 
 import {
+  getStoreManagerDelivery,
+  getStoreManagerDeliveries,
+  getStoreManagerDeliveryTrackingController,
+} from "../controllers/storeManagerDeliveryController.js";
+
+import {
   getStoreManagerCatalog,
   getStoreManagerOrder,
   getStoreManagerOrders,
@@ -89,6 +95,25 @@ router.get(
 router.get(
   "/catalog",
   getStoreManagerCatalog
+);
+
+// ============================================================
+// STORE MANAGER DELIVERIES
+// ============================================================
+
+router.get(
+  "/deliveries",
+  getStoreManagerDeliveries
+);
+
+router.get(
+  "/deliveries/:orderCode",
+  getStoreManagerDelivery
+);
+
+router.get(
+  "/deliveries/:orderCode/tracking",
+  getStoreManagerDeliveryTrackingController
 );
 
 // ============================================================
