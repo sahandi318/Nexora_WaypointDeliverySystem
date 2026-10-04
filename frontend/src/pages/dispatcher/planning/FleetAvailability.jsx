@@ -34,20 +34,18 @@ function FleetAvailability() {
     useNavigate();
 
 
-  const [
-    selectedDate,
-    setSelectedDate,
-  ] = useState(
-    new Date()
-      .toISOString()
-      .split("T")[0]
+  const [selectedDate, setSelectedDate] = useState(
+    sessionStorage.getItem("dispatcherPlanningDate") ||
+      new Date().toISOString().split("T")[0]
   );
 
 
-  const [
-    selectedDepot,
-    setSelectedDepot,
-  ] = useState("ALL");
+  const [selectedDepot, setSelectedDepot] =
+    useState(
+      sessionStorage.getItem(
+        "dispatcherPlanningDepot"
+      ) || "ALL"
+    );
 
 
   const [
@@ -279,16 +277,17 @@ function FleetAvailability() {
 
               <input
                 type="date"
-                value={
-                  selectedDate
-                }
-                onChange={(
-                  event
-                ) =>
-                  setSelectedDate(
-                    event.target.value
-                  )
-                }
+                value={selectedDate}
+                onChange={(event) => {
+                  const value = event.target.value;
+
+                  setSelectedDate(value);
+
+                  sessionStorage.setItem(
+                    "dispatcherPlanningDate",
+                    value
+                  );
+                }}
               />
 
             </div>
@@ -301,18 +300,18 @@ function FleetAvailability() {
               />
 
               <select
-                value={
-                  selectedDepot
-                }
-                onChange={(
-                  event
-                ) =>
-                  setSelectedDepot(
-                    event.target.value
-                  )
-                }
-              >
+                value={selectedDepot}
+                onChange={(event) => {
+                  const value = event.target.value;
 
+                  setSelectedDepot(value);
+
+                  sessionStorage.setItem(
+                    "dispatcherPlanningDepot",
+                    value
+                  );
+                }}
+              >
                 <option value="ALL">
                   All Depots
                 </option>
@@ -324,7 +323,6 @@ function FleetAvailability() {
                 <option value="Kandy">
                   Kandy Depot
                 </option>
-
               </select>
 
             </div>
@@ -780,11 +778,17 @@ function FleetAvailability() {
                     filteredVehicles.map(
                       (vehicle) => (
 
-                        <tr
-                          key={
-                            vehicle.vehicleId
-                          }
-                        >
+                          <tr
+                            key={vehicle.vehicleId}
+                            onClick={() =>
+                              setSelectedVehicleId(vehicle.vehicleId)
+                            }
+                            className={
+                              selectedVehicleId === vehicle.vehicleId
+                                ? "fleet-row selected"
+                                : "fleet-row"
+                            }
+                          >
 
                           <td>
                             <strong>
@@ -859,7 +863,12 @@ function FleetAvailability() {
                             <button
                               type="button"
                               className="fleet-more-button"
-                              onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedVehicleId(
+                                  vehicle.vehicleId
+                                );
+                              }}
                               aria-label={`View ${vehicle.vehicleId}`}
                             >
                               •••
@@ -886,9 +895,8 @@ function FleetAvailability() {
             <div className="fleet-table-footer">
 
               <span>
-                Showing 0 of{" "}
-                {filteredVehicles.length}{" "}
-                vehicles
+                Showing {filteredVehicles.length} of{" "}
+                {vehicles.length} vehicles
               </span>
 
 
@@ -1659,7 +1667,22 @@ function FleetAvailability() {
           color: #8a9692;
         }
 
+        .fleet-row {
+          cursor: pointer;
+        }
 
+        .fleet-row:hover {
+          background: #f5faf7;
+        }
+
+        .fleet-row.selected {
+          background: #e8f7f0;
+        }
+
+        .fleet-row.selected td {
+          border-top-color: #b9e4d1;
+        }
+ 
         .fleet-empty-state {
           height: 240px;
 
