@@ -1295,3 +1295,184 @@
 
   background: #f5f8f6;
 }
+
+/* ==========================================================
+   DARK / LIGHT THEME SUPPORT FOR DISPATCHER DASHBOARD
+   ========================================================== */
+
+.dispatcher-page,
+.dispatcher-layout,
+.dispatcher-main {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Page heading */
+.dispatcher-header h1 {
+  color: var(--color-text);
+}
+
+.dispatcher-header p {
+  color: var(--color-text-secondary);
+}
+
+/* Date / depot filters */
+.dashboard-filter {
+  border-color: var(--color-border);
+  background: var(--color-input);
+  color: var(--color-text-secondary);
+}
+
+.dashboard-filter input {
+  color: var(--color-text);
+}
+
+.dashboard-filter input::-webkit-calendar-picker-indicator {
+  opacity: 0.8;
+}
+
+/* Main statistic cards */
+.dashboard-stat-card {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.dashboard-stat-title {
+  color: var(--color-text-secondary);
+}
+
+.dashboard-stat-value-row strong {
+  color: var(--color-text);
+}
+
+/* General dashboard cards */
+.dashboard-card {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.dashboard-card-header {
+  border-bottom-color: var(--color-border);
+}
+
+.dashboard-card-header h2 {
+  color: var(--color-text);
+}
+
+/* Count circle */
+.dashboard-title-with-count > span {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* Table */
+.dashboard-table th {
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+}
+
+.dashboard-table td {
+  border-top-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.dashboard-empty-cell {
+  color: var(--color-text-muted) !important;
+}
+
+/* Planning readiness */
+.readiness-label {
+  color: var(--color-text-secondary);
+}
+
+.readiness-row strong {
+  color: var(--color-text);
+}
+
+.dashboard-sync-info {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+/* Live delivery section */
+.live-map-placeholder {
+  border-color: var(--color-border);
+
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--color-surface-soft) 85%, transparent),
+      color-mix(in srgb, var(--color-surface-soft) 85%, transparent)
+    ),
+    var(--color-surface-soft);
+
+  color: var(--color-text-muted);
+}
+
+.live-status-item {
+  border-bottom-color: var(--color-border);
+}
+
+.live-status-item strong {
+  color: var(--color-text);
+}
+
+.live-status-item span {
+  color: var(--color-text-muted);
+}
+
+/* Trips */
+.trip-row {
+  border-bottom-color: var(--color-border);
+}
+
+.trip-row strong {
+  color: var(--color-text);
+}
+
+.trip-row span {
+  color: var(--color-text-muted);
+}
+
+/* Recent activity */
+.activity-row {
+  border-bottom-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.activity-time {
+  color: var(--color-text-muted);
+}
+
+/* Empty states */
+.dashboard-empty-block {
+  color: var(--color-text-muted);
+}
+
+/* Quick links */
+.quick-links-section > h2 {
+  color: var(--color-text);
+}
+
+.quick-link-card {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.quick-link-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.quick-link-card strong {
+  color: var(--color-text);
+}
+
+.quick-link-card span {
+  color: var(--color-text-muted);
+}
+
+.quick-link-arrow {
+  color: var(--color-text-muted);
+}
