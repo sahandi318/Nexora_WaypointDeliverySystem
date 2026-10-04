@@ -65,6 +65,7 @@ import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 
 
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+import LoaderWorkspacePage from "./pages/loader/LoaderWorkspacePage";
 import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModuleEntryPage";
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
@@ -1033,39 +1034,22 @@ function App() {
 
               ===================================================== */}
 
+      <Route
+        path="/loader/*"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LOADER",
+            ]}
+          >
+            <LoaderWorkspacePage />
+          </ProtectedRoute>
+        }
+      />
 
-
-          <Route
-
-            path="/loader/*"
-
-            element={
-
-              <ProtectedRoute
-
-                allowedRoles={[
-
-                  "LOADER",
-
-                ]}
-
-              >
-
-                <RoleWorkspacePage />
-
-              </ProtectedRoute>
-
-            }
-
-          />
-
-
-
-          {/* =====================================================
-
-              DRIVER
-
-              ===================================================== */}
+      {/* =====================================================
+          DRIVER
+          ===================================================== */}
 
 
 

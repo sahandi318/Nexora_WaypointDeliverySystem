@@ -5,6 +5,7 @@ import prisma from "./config/database.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
+import loaderRoutes from "./routes/loaderRoutes.js";
 import translationRoutes from "./routes/translationRoutes.js";
 
 import {
@@ -192,6 +193,23 @@ app.use(
   translationRoutes
 );
 
+// ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
+// LOADER ROUTES
+// ============================================================
+
+app.use(
+  "/api/loader",
+  loaderRoutes
+);
 // ============================================================
 // DRIVER HELPERS
 // ============================================================
