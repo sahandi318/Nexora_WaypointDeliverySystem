@@ -71,9 +71,11 @@ model Depot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  outlets   Outlet[]
-  users     User[]
-  liveTrips LiveTrip[]
+  outlets       Outlet[]
+  users         User[]
+  liveTrips     LiveTrip[]
+  vehicles      Vehicle[]
+  deliveryPlans DeliveryPlan[]
 
   @@map("depots")
 }
@@ -150,9 +152,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps  PasswordResetOtp[]
-  liveTripsAsDriver  LiveTrip[]         @relation("LiveTripDriver")
-  createdStoreOrders StoreOrder[]       @relation("StoreOrderCreatedBy")
+  passwordResetOtps       PasswordResetOtp[]
+  liveTripsAsDriver       LiveTrip[]         @relation("LiveTripDriver")
+  createdStoreOrders      StoreOrder[]       @relation("StoreOrderCreatedBy")
+  dispatcherDeliveryPlans DeliveryPlan[]     @relation("DispatcherDeliveryPlans")
 
   @@index([role])
   @@index([outletId])
@@ -263,8 +266,9 @@ model LiveTrip {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stops  LiveTripStop[]
-  events LiveTripEvent[]
+  stops             LiveTripStop[]
+  events            LiveTripEvent[]
+  loadingExceptions LoadingException[]
 
   @@index([deliveryDate])
   @@index([depotId, deliveryDate])
@@ -427,7 +431,9 @@ model StoreOrder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items StoreOrderItem[]
+  items             StoreOrderItem[]
+  tripAllocations   TripOrderAllocation[]
+  loadingExceptions LoadingException[]
 
   @@index([outletId, submittedAt])
   @@index([outletId, status])
@@ -457,4 +463,162 @@ model StoreOrderItem {
   @@unique([orderId, productId])
   @@index([productId])
   @@map("store_order_items")
+}
+
+// ============================================================
+// VEHICLE
+// ============================================================
+
+model Vehicle {
+  id Int @id @default(autoincrement())
+
+  vehicleCode String @unique @map("vehicle_code") @db.VarChar(50)
+
+  vehicleType String @map("vehicle_type") @db.VarChar(120)
+
+  depotId Int
+  depot   Depot @relation(fields: [depotId], references: [id])
+
+  capacityWeightKg Decimal @map("capacity_weight_kg") @db.Decimal(12, 3)
+  capacityVolumeM3 Decimal @map("capacity_volume_m3") @db.Decimal(14, 6)
+
+  refrigerated Boolean @default(false)
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  plannedTrips PlannedTrip[]
+
+  @@index([depotId])
+  @@index([isActive])
+  @@map("vehicles")
+}
+
+// ============================================================
+// DELIVERY PLAN
+// ============================================================
+
+model DeliveryPlan {
+  id Int @id @default(autoincrement())
+
+  deliveryDate DateTime @map("delivery_date") @db.Date
+
+  depotId Int
+  depot   Depot @relation(fields: [depotId], references: [id])
+
+  status String @default("DRAFT") @db.VarChar(40)
+
+  createdByUserId Int?  @map("created_by_user_id")
+  createdByUser   User? @relation("DispatcherDeliveryPlans", fields: [createdByUserId], references: [id])
+
+  publishedAt DateTime? @map("published_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trips PlannedTrip[]
+
+  @@unique([deliveryDate, depotId])
+  @@index([status])
+  @@map("delivery_plans")
+}
+
+// ============================================================
+// PLANNED TRIP
+// ============================================================
+
+model PlannedTrip {
+  id Int @id @default(autoincrement())
+
+  tripCode String @unique @map("trip_code") @db.VarChar(50)
+
+  planId Int
+  plan   DeliveryPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  vehicleId Int
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  tripNumber Int @map("trip_number")
+
+  plannedDeparture String? @map("planned_departure") @db.VarChar(20)
+
+  status String @default("PLANNED") @db.VarChar(40)
+
+  totalWeightKg Decimal @default(0.000) @map("total_weight_kg") @db.Decimal(12, 3)
+  totalVolumeM3 Decimal @default(0.000000) @map("total_volume_m3") @db.Decimal(14, 6)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  allocations TripOrderAllocation[]
+
+  @@unique([planId, vehicleId, tripNumber])
+  @@index([planId])
+  @@index([vehicleId])
+  @@map("planned_trips")
+}
+
+// ============================================================
+// TRIP ORDER ALLOCATION
+// ============================================================
+
+model TripOrderAllocation {
+  id Int @id @default(autoincrement())
+
+  plannedTripId Int         @map("planned_trip_id")
+  plannedTrip   PlannedTrip @relation(fields: [plannedTripId], references: [id], onDelete: Cascade)
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id])
+
+  stopSequence Int? @map("stop_sequence")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([plannedTripId, storeOrderId])
+  @@index([storeOrderId])
+  @@map("trip_order_allocations")
+}
+
+// ============================================================
+// LOADING EXCEPTION
+// ============================================================
+
+model LoadingException {
+  id Int @id @default(autoincrement())
+
+  exceptionCode String @unique @map("exception_code") @db.VarChar(50)
+
+  liveTripId Int?      @map("live_trip_id")
+  liveTrip   LiveTrip? @relation(fields: [liveTripId], references: [id], onDelete: SetNull)
+
+  storeOrderId Int?        @map("store_order_id")
+  storeOrder   StoreOrder? @relation(fields: [storeOrderId], references: [id], onDelete: SetNull)
+
+  exceptionType String @map("exception_type") @db.VarChar(60)
+
+  itemName String? @map("item_name") @db.VarChar(160)
+
+  expectedQuantity  Int? @map("expected_quantity")
+  availableQuantity Int? @map("available_quantity")
+
+  loaderName String? @map("loader_name") @db.VarChar(150)
+
+  loaderNote String? @map("loader_note") @db.Text
+
+  status String @default("OPEN") @db.VarChar(40)
+
+  resolutionAction String?   @map("resolution_action") @db.VarChar(100)
+  resolutionNote   String?   @map("resolution_note") @db.Text
+  resolvedAt       DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([liveTripId])
+  @@index([storeOrderId])
+  @@index([status])
+  @@map("loading_exceptions")
 }
