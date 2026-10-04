@@ -340,8 +340,119 @@ async function ensureAdditionalDemoTrips(depot) {
   }
 }
 
+export const STORE_MANAGER_DELIVERY_SOCKET_EVENT =
+  "store-manager:delivery-update";
+
 export function setMonitoringIo(io) {
   ioInstance = io;
+}
+
+function normalizeSocketOutletCode(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+function storeManagerOutletRoom(outletCode) {
+  const normalizedOutletCode =
+    normalizeSocketOutletCode(outletCode);
+
+  return normalizedOutletCode
+    ? `outlet:${normalizedOutletCode}`
+    : null;
+}
+
+/**
+ * Resolve only outlets that have a PUBLISHED allocation on the trip.
+ * This prevents an unrelated Store Manager from receiving a refresh event
+ * even if their browser attempts to supply another outlet code.
+ */
+export async function getPublishedStoreManagerOutletRoomsForTrip(
+  tripCode
+) {
+  const normalizedTripCode =
+    String(tripCode ?? "").trim();
+
+  if (!normalizedTripCode) return [];
+
+  const stops = await prisma.liveTripStop.findMany({
+    where: {
+      liveTrip: {
+        tripCode: normalizedTripCode,
+      },
+      deliveryAllocations: {
+        some: {
+          status: "PUBLISHED",
+        },
+      },
+    },
+    select: {
+      outletCode: true,
+    },
+  });
+
+  return [
+    ...new Set(
+      stops
+        .map((stop) =>
+          storeManagerOutletRoom(
+            stop.outletCode
+          )
+        )
+        .filter(Boolean)
+    ),
+  ];
+}
+
+/**
+ * Store Manager socket events are deliberately small invalidation notices.
+ * The frontend must refetch the outlet-isolated REST tracking endpoint for
+ * actual delivery details. We never push another outlet's stop, coordinates,
+ * route geometry, POD payload, or downstream route data through the socket.
+ */
+export function buildSafeStoreManagerDeliverySocketPayload(
+  payload = {}
+) {
+  return {
+    at: new Date().toISOString(),
+    reason:
+      String(payload.reason || "delivery-update"),
+    tripCode:
+      payload.tripCode
+        ? String(payload.tripCode)
+        : null,
+  };
+}
+
+export async function emitStoreManagerDeliveryUpdate(
+  payload = {}
+) {
+  if (!ioInstance || !payload.tripCode) {
+    return [];
+  }
+
+  const rooms =
+    await getPublishedStoreManagerOutletRoomsForTrip(
+      payload.tripCode
+    );
+
+  if (rooms.length === 0) return rooms;
+
+  const safePayload =
+    buildSafeStoreManagerDeliverySocketPayload(
+      payload
+    );
+
+  for (const room of rooms) {
+    ioInstance
+      .to(room)
+      .emit(
+        STORE_MANAGER_DELIVERY_SOCKET_EVENT,
+        safePayload
+      );
+  }
+
+  return rooms;
 }
 
 export function emitMonitoringUpdate(payload = {}) {
@@ -349,6 +460,19 @@ export function emitMonitoringUpdate(payload = {}) {
     at: new Date().toISOString(),
     ...payload,
   });
+
+  // Store Managers receive only a safe refresh signal for published
+  // deliveries that belong to their server-authorized outlet room.
+  if (payload.tripCode) {
+    void emitStoreManagerDeliveryUpdate(payload).catch(
+      (error) => {
+        console.error(
+          "Store Manager live-delivery event failed:",
+          error
+        );
+      }
+    );
+  }
 }
 
 export async function initializeLiveMonitoring() {
@@ -367,10 +491,17 @@ export async function synchronizeDriverState() {
   const depot = await resolveDepot(driver);
 
   for (const trip of state.trips || []) {
-    await upsertTripFromDriverState(trip, driver, depot);
-  }
+    await upsertTripFromDriverState(
+      trip,
+      driver,
+      depot
+    );
 
-  emitMonitoringUpdate({ reason: "driver-state-sync" });
+    emitMonitoringUpdate({
+      reason: "driver-state-sync",
+      tripCode: trip.tripId,
+    });
+  }
 }
 
 export async function synchronizeTripForDriver({ trip, driverUser, emit = true }) {
@@ -453,9 +584,15 @@ export async function updateDriverPresence({
           : trip.latestDriverUpdateAt || now,
       },
     });
-  }
 
-  emitMonitoringUpdate({ reason: online ? "driver-online" : "driver-offline" });
+    emitMonitoringUpdate({
+      reason:
+        online
+          ? "driver-online"
+          : "driver-offline",
+      tripCode: trip.tripCode,
+    });
+  }
 }
 
 export async function recordDriverRouteSnapshot({
