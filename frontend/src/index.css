@@ -1427,3 +1427,220 @@ html[data-theme="dark"] .eligible-vehicle-button {
   background: var(--color-primary) !important;
   color: #ffffff !important;
 }
+
+/* =========================================================
+   DISPATCHER LOADING COORDINATION — DARK MODE
+   ========================================================= */
+
+/* Page text */
+html[data-theme="dark"] .loading-page,
+html[data-theme="dark"] .loading-exceptions-page {
+  color: var(--color-text);
+}
+
+/* Headers */
+html[data-theme="dark"] .loading-header h1,
+html[data-theme="dark"] .loading-exceptions-header h1 {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .loading-header p,
+html[data-theme="dark"] .loading-exceptions-header p {
+  color: var(--color-text-secondary);
+}
+
+/* Header filters */
+html[data-theme="dark"] .loading-filter,
+html[data-theme="dark"] .exception-header-filter {
+  background: var(--color-input);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-filter span,
+html[data-theme="dark"] .exception-header-filter span {
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .loading-filter input,
+html[data-theme="dark"] .loading-filter select,
+html[data-theme="dark"] .exception-header-filter input,
+html[data-theme="dark"] .exception-header-filter select {
+  color: var(--color-text);
+}
+
+/* Tabs */
+html[data-theme="dark"] .loading-tabs,
+html[data-theme="dark"] .loading-exception-tabs {
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-tab,
+html[data-theme="dark"] .loading-exception-tabs button {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .loading-tab.active,
+html[data-theme="dark"] .loading-exception-tabs button.active {
+  color: var(--color-primary);
+}
+
+/* Summary cards */
+html[data-theme="dark"] .loading-summary-card,
+html[data-theme="dark"] .exception-summary-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-summary-card span,
+html[data-theme="dark"] .exception-summary-card span,
+html[data-theme="dark"] .exception-summary-card small {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .loading-summary-card strong,
+html[data-theme="dark"] .exception-summary-card strong {
+  color: var(--color-text);
+}
+
+/* Main panels */
+html[data-theme="dark"] .loading-panel,
+html[data-theme="dark"] .loading-details,
+html[data-theme="dark"] .exception-table-panel,
+html[data-theme="dark"] .exception-details-panel,
+html[data-theme="dark"] .resolution-panel {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+/* Panel headings */
+html[data-theme="dark"] .panel-header {
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme="dark"] .panel-header h2,
+html[data-theme="dark"] .exception-table-panel h2,
+html[data-theme="dark"] .exception-detail-title h2,
+html[data-theme="dark"] .resolution-heading h2,
+html[data-theme="dark"] .exception-card h3,
+html[data-theme="dark"] .detail-section h3 {
+  color: var(--color-text);
+}
+
+/* Search / select controls */
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .exception-search {
+  border-color: var(--color-border);
+  background: var(--color-input);
+}
+
+html[data-theme="dark"] .search-box input,
+html[data-theme="dark"] .exception-search input,
+html[data-theme="dark"] .table-controls select,
+html[data-theme="dark"] .exception-table-tools select {
+  background: var(--color-input);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+/* Tables */
+html[data-theme="dark"] .loading-table th,
+html[data-theme="dark"] .exception-table th {
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .loading-table td,
+html[data-theme="dark"] .exception-table td {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-table tbody tr:hover,
+html[data-theme="dark"] .selected-row,
+html[data-theme="dark"] .exception-table tbody tr:hover,
+html[data-theme="dark"] .exception-table tbody tr.selected {
+  background: var(--color-surface-soft);
+}
+
+/* Empty states */
+html[data-theme="dark"] .empty-table,
+html[data-theme="dark"] .exception-empty,
+html[data-theme="dark"] .no-selected-trip,
+html[data-theme="dark"] .exception-no-selection,
+html[data-theme="dark"] .empty-detail,
+html[data-theme="dark"] .resolution-empty {
+  color: var(--color-text-muted) !important;
+}
+
+/* Trip/detail information */
+html[data-theme="dark"] .trip-detail-heading h2,
+html[data-theme="dark"] .detail-item strong,
+html[data-theme="dark"] .stop-item strong,
+html[data-theme="dark"] .loader-update strong,
+html[data-theme="dark"] .exception-info-item strong,
+html[data-theme="dark"] .info-value strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .detail-item span,
+html[data-theme="dark"] .stop-item span,
+html[data-theme="dark"] .loader-update span,
+html[data-theme="dark"] .loader-update p,
+html[data-theme="dark"] .exception-info-item span,
+html[data-theme="dark"] .info-value span,
+html[data-theme="dark"] .loader-note,
+html[data-theme="dark"] .resolution-heading p,
+html[data-theme="dark"] .history-item span,
+html[data-theme="dark"] .history-item p {
+  color: var(--color-text-secondary);
+}
+
+/* Detail cards */
+html[data-theme="dark"] .trip-info-grid,
+html[data-theme="dark"] .detail-section,
+html[data-theme="dark"] .exception-card {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+/* Loader update */
+html[data-theme="dark"] .loader-update {
+  background: var(--color-surface-soft);
+}
+
+/* Assigned / affected order tables */
+html[data-theme="dark"] .assigned-orders-table th,
+html[data-theme="dark"] .affected-table th {
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .assigned-orders-table td,
+html[data-theme="dark"] .affected-table td {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+/* Special warning / discrepancy panels */
+html[data-theme="dark"] .discrepancy-card {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+html[data-theme="dark"] .departure-warning,
+html[data-theme="dark"] .loading-error,
+html[data-theme="dark"] .loading-exception-error {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+html[data-theme="dark"] .loading-exception-success {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+}
+
+/* Resolution buttons */
+html[data-theme="dark"] .replacement-button {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
