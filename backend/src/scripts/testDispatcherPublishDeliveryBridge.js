@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import prisma from "../config/database.js";
 import { state } from "../mockData.js";
 import { publishDispatcherPlan } from "../services/dispatcherPlanningService.js";
+import { getOrganizerVehicleRows } from "../services/organizerOperationalDataService.js";
 import { listStoreManagerDeliveries } from "../services/storeManagerDeliveryService.js";
 
 const createdOrderIds = [];
@@ -66,6 +67,17 @@ async function main() {
   assert.ok(driver, "Fixture required: active Driver in Dispatcher depot");
   assert.ok(storeManager, "Fixture required: active Store Manager");
 
+  const organizerVehicles = await getOrganizerVehicleRows();
+  const requiresVan = String(outlet.parkingConstraint || "")
+    .toLowerCase()
+    .includes("van_only");
+  const vehicle = organizerVehicles.find(
+    (row) =>
+      row.depot === dispatcher.depot.name &&
+      (!requiresVan || String(row.type).toLowerCase() === "van")
+  );
+  assert.ok(vehicle, "Fixture required: compatible organizer vehicle in Dispatcher depot");
+
   const runId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const order = await prisma.storeOrder.create({
     data: {
@@ -87,7 +99,7 @@ async function main() {
 
   const result = await publishDispatcherPlan({
     trip: {
-      vehicleId: `TEST-VEH-${runId}`.slice(0, 50),
+      vehicleId: vehicle.vehicle_id,
       orderIds: [order.id],
       driverUserId: driver.id,
     },
@@ -130,6 +142,8 @@ async function main() {
   assert.equal(allocation.liveTripStop.liveTrip.tripCode, result.tripCode);
   assert.equal(allocation.liveTripStop.liveTrip.driverUserId, driver.id);
   assert.equal(allocation.liveTripStop.liveTrip.depotId, dispatcher.depotId);
+  assert.equal(allocation.liveTripStop.liveTrip.vehicleCode, vehicle.vehicle_id);
+  assert.ok(allocation.liveTripStop.planningContext);
 
   const storeManagerDeliveries = await listStoreManagerDeliveries({
     outletDatabaseId: outlet.id,

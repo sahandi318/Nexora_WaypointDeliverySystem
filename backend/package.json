@@ -31,7 +31,8 @@
     "test:dispatcher-planning": "tsx src/scripts/testDispatcherPlanningIntegration.js",
     "test:dispatcher-publish-bridge": "tsx src/scripts/testDispatcherPublishDeliveryBridge.js",
     "test:store-manager-receive": "tsx src/scripts/testStoreManagerReceiveDelivery.js",
-    "test:store-manager-issues": "tsx src/scripts/testStoreManagerIssues.js"
+    "test:store-manager-issues": "tsx src/scripts/testStoreManagerIssues.js",
+    "test:organizer-data": "tsx src/scripts/testOrganizerOperationalData.js"
   },
   "keywords": [
     "nexora",

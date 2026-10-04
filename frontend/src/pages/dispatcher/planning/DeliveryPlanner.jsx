@@ -113,13 +113,21 @@ function DeliveryPlanner() {
           description: selectedTrip.driverName || "No Driver assigned",
           status: selectedTrip.driverUserId ? "Ready" : "Warning",
         },
+        {
+          title: "Organizer operational data",
+          description: `${selectedTrip.estimatedDistanceKm ?? 0} km · ${selectedTrip.estimatedDurationMinutes ?? 0} min · ${selectedTrip.estimatedFuelL ?? 0} L`,
+          status: selectedTrip.validationWarnings?.length ? "Warning" : "Ready",
+        },
       ]
     : [];
 
   const routeSummary = selectedTrip
     ? {
-        distance: "Calculated when Driver starts navigation",
-        duration: "Live ETA updates from Driver",
+        departure: selectedTrip.departure || "—",
+        distance: `${selectedTrip.estimatedDistanceKm ?? 0} km`,
+        duration: `${selectedTrip.estimatedDurationMinutes ?? 0} min`,
+        fuel: `${selectedTrip.estimatedFuelL ?? 0} L`,
+        remainingCapacity: selectedTrip.capacityUsage || "—",
         stops: selectedTrip.stops,
       }
     : null;

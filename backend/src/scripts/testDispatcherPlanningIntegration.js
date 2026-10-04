@@ -107,6 +107,16 @@ async function main() {
       if (t.driverUserId) assert.ok(drivers.some(d => d.id === t.driverUserId));
       for (const id of t.orderIds) assert.ok(own.some(o => o.id === id && day(o.effectiveDispatchDate) === s.date && o.status !== "DEFERRED"));
       assert.deepEqual(t.stopsList.map(stop => stop.orderId).sort(), t.orderIds.map(id => own.find(o => o.id === id).orderCode).sort());
+      assert.ok(Number.isFinite(t.estimatedDistanceKm));
+      assert.ok(Number.isFinite(t.estimatedDurationMinutes));
+      assert.ok(Number.isFinite(t.estimatedFuelL));
+      assert.ok(t.stopsList.every(stop => Number.isFinite(stop.serviceAllowanceMinutes)));
+      assert.equal(t.dataSource, "Waypoint organizer General Data");
+    }
+    for (const s of snapshots) {
+      assert.equal(s.organizerDataset?.files?.outlets, 120);
+      assert.equal(s.organizerDataset?.files?.vehicles, 60);
+      assert.equal(s.organizerDataset?.files?.roadConditions, 10920);
     }
   });
   const token = createAccessToken(dispatcher);

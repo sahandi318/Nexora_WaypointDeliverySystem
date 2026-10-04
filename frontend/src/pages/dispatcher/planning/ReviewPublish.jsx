@@ -111,13 +111,21 @@ function ReviewPublish() {
           description: selectedTrip.driverName || "No active Driver assigned.",
           status: selectedTrip.driverUserId ? "Ready" : "Blocking",
         },
+        {
+          id: "organizer-data",
+          title: "Organizer operational data",
+          description: `${selectedTrip.estimatedDistanceKm ?? 0} km · ${selectedTrip.estimatedDurationMinutes ?? 0} min · ${selectedTrip.estimatedFuelL ?? 0} L fuel`,
+          status: selectedTrip.validationWarnings?.length ? "Warning" : "Ready",
+        },
       ]
     : [];
 
-  const nonBlockingWarnings =
-    selectedTrip?.validation === "Warning"
-      ? ["Review vehicle compatibility before publication."]
-      : [];
+  const nonBlockingWarnings = [
+    ...(selectedTrip?.validation === "Warning"
+      ? ["Review vehicle compatibility and operational timing before publication."]
+      : []),
+    ...(selectedTrip?.validationWarnings || []),
+  ];
 
   const publicationPreview = planningData.publicationPreview || [];
 
@@ -750,6 +758,16 @@ function ReviewPublish() {
                     }
                   />
 
+                  <DetailBlock
+                    label="Estimated distance"
+                    value={`${selectedTrip.estimatedDistanceKm ?? 0} km`}
+                  />
+
+                  <DetailBlock
+                    label="Estimated fuel"
+                    value={`${selectedTrip.estimatedFuelL ?? 0} L`}
+                  />
+
                 </div>
 
 
@@ -802,6 +820,7 @@ function ReviewPublish() {
                                   stop.eta ||
                                   "—"
                                 }
+                                {stop.serviceAllowanceMinutes ? ` · ${stop.serviceAllowanceMinutes} min service` : ""}
                               </span>
 
                             </div>

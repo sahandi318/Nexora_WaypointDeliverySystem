@@ -2136,6 +2136,28 @@ function FleetAvailability() {
 
                   <DetailRow
 
+                    label="Fuel efficiency"
+
+                    value={
+
+                      selectedVehicle
+
+                        .kmPerL
+
+                        ? `${selectedVehicle.kmPerL} km/L`
+
+                        : "—"
+
+                    }
+
+                  />
+
+
+
+
+
+                  <DetailRow
+
                     label="Weekly fuel quota"
 
                     value={

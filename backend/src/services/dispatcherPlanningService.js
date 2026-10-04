@@ -1,6 +1,3 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
 import prisma from "../config/database.js";
 import { resolveActorScope } from "./dispatcherOrderService.js";
 import {
@@ -12,54 +9,12 @@ import {
   emitMonitoringUpdate,
   synchronizeTripForDriver,
 } from "./liveMonitoringService.js";
-
-const DATA_DIR = path.resolve(process.cwd(), "../data");
-
-function parseCsvLine(line) {
-  const result = [];
-  let current = "";
-  let quoted = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-
-    if (char === '"') {
-      if (quoted && line[index + 1] === '"') {
-        current += '"';
-        index += 1;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (char === "," && !quoted) {
-      result.push(current);
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current);
-  return result;
-}
-
-async function readCsv(fileName) {
-  const raw = await fs.readFile(path.join(DATA_DIR, fileName), "utf8");
-  const lines = raw
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((line) => line.trim());
-
-  if (!lines.length) return [];
-
-  const headers = parseCsvLine(lines[0]).map((value) => value.trim());
-
-  return lines.slice(1).map((line) => {
-    const values = parseCsvLine(line);
-    return Object.fromEntries(
-      headers.map((header, index) => [header, values[index] ?? ""])
-    );
-  });
-}
+import {
+  buildOrganizerTripEstimate,
+  getOrganizerDatasetSummary,
+  getOrganizerVehicleRow,
+  getOrganizerVehicleRows,
+} from "./organizerOperationalDataService.js";
 
 function localDateOnly(dateValue) {
   if (!dateValue) {
@@ -156,7 +111,10 @@ function vehicleView(row, tripsUsed = 0) {
     capacityGroup: maxWeight >= 5000 ? "HIGH" : maxWeight >= 3500 ? "MEDIUM" : "LOW",
     isSuitable: tripsUsed < 2,
     fuelType: row.fuel_type || null,
+    kmPerL: Number(row.km_per_l || 0),
     weeklyFuelQuotaL: Number(row.weekly_fuel_quota_l || 0),
+    weeklyFuelQuota: `${Number(row.weekly_fuel_quota_l || 0).toLocaleString()} L`,
+    dataSource: "Waypoint organizer vehicles.csv",
   };
 }
 
@@ -192,7 +150,7 @@ function compatibleVehicle(order, vehicle) {
   return (!needsChilled || isReefer) && (!vanOnly || isVan);
 }
 
-function makeSuggestedTrips(orders, fleet, drivers) {
+async function makeSuggestedTrips(orders, fleet, drivers, { date } = {}) {
   const availableOrders = orders.filter((order) => order.status !== "Deferred");
   const remaining = [...availableOrders];
   const trips = [];
@@ -200,7 +158,14 @@ function makeSuggestedTrips(orders, fleet, drivers) {
 
   while (remaining.length) {
     const first = remaining[0];
-    const sameDepot = remaining.filter((order) => order.depot === first.depot);
+    const sameDepot = remaining
+      .filter((order) => order.depot === first.depot)
+      .sort((left, right) => {
+        const leftSameDistrict = left.district === first.district ? 0 : 1;
+        const rightSameDistrict = right.district === first.district ? 0 : 1;
+        if (leftSameDistrict !== rightSameDistrict) return leftSameDistrict - rightSameDistrict;
+        return String(left.windowOpen || "23:59").localeCompare(String(right.windowOpen || "23:59"));
+      });
     const candidateVehicle =
       fleet.find(
         (vehicle) =>
@@ -250,6 +215,21 @@ function makeSuggestedTrips(orders, fleet, drivers) {
       tripNumber
     ).padStart(2, "0")}`;
 
+    const organizerEstimate = await buildOrganizerTripEstimate({
+      date,
+      depot: first.depot,
+      vehicle: candidateVehicle,
+      orders: capacityOrders,
+    });
+
+    const stopEstimateByOrder = new Map(
+      organizerEstimate.stops.map((stop) => [stop.orderId, stop])
+    );
+    const compatibilityReady = capacityOrders.every((order) =>
+      compatibleVehicle(order, candidateVehicle)
+    );
+    const hasOperationalWarnings = organizerEstimate.warnings.length > 0;
+
     trips.push({
       tripId,
       tripCode: tripId,
@@ -260,23 +240,40 @@ function makeSuggestedTrips(orders, fleet, drivers) {
       driverName: driver?.name || "Unassigned Driver",
       stops: capacityOrders.length,
       orders: capacityOrders.length,
-      departure: first.windowOpen || "After plan publication",
-      validation:
-        capacityOrders.every((order) => compatibleVehicle(order, candidateVehicle))
-          ? "Ready"
-          : "Warning",
+      departure: organizerEstimate.departure || first.windowOpen || "After plan publication",
+      validation: compatibilityReady && !hasOperationalWarnings ? "Ready" : "Warning",
+      validationWarnings: organizerEstimate.warnings,
       capacityUsage: `${weight.toFixed(0)} / ${candidateVehicle.maxWeightKg.toFixed(
         0
       )} kg`,
-      stopsList: capacityOrders.map((order, index) => ({
-        sequence: index + 1,
-        orderId: order.orderId,
-        outletId: order.outletId,
-        outletName: order.outletName,
-        district: order.district,
-        deliveryWindow: order.deliveryWindow,
-        plannedArrival: order.windowOpen || null,
-      })),
+      estimatedDistanceKm: organizerEstimate.totalDistanceKm,
+      estimatedDurationMinutes: organizerEstimate.totalDurationMinutes,
+      estimatedTravelMinutes: organizerEstimate.totalTravelMinutes,
+      estimatedServiceMinutes: organizerEstimate.totalServiceMinutes,
+      estimatedFuelL: organizerEstimate.estimatedFuelL,
+      fuelQuotaPercent: organizerEstimate.fuelQuotaPercent,
+      kmPerL: organizerEstimate.kmPerL,
+      weeklyFuelQuotaL: organizerEstimate.weeklyFuelQuotaL,
+      dataSource: "Waypoint organizer General Data",
+      stopsList: capacityOrders.map((order, index) => {
+        const estimate = stopEstimateByOrder.get(order.orderId);
+        return {
+          sequence: index + 1,
+          orderId: order.orderId,
+          outletId: order.outletId,
+          outletName: order.outletName,
+          name: order.outletName || order.outletId,
+          district: order.district,
+          deliveryWindow: order.deliveryWindow,
+          plannedArrival: estimate?.plannedArrival || order.windowOpen || null,
+          eta: estimate?.plannedArrival || order.windowOpen || null,
+          distanceKm: estimate?.distanceKm ?? null,
+          travelMinutes: estimate?.travelMinutes ?? null,
+          serviceAllowanceMinutes: estimate?.serviceAllowanceMinutes ?? null,
+          lateByMinutes: estimate?.lateByMinutes ?? 0,
+          planningContext: estimate?.planningContext ?? null,
+        };
+      }),
       orderIds: capacityOrders.map((order) => order.id),
     });
 
@@ -337,7 +334,7 @@ export async function getDispatcherPlanningSnapshot({
           submittedAt: "asc",
         },
       }),
-      readCsv("vehicles.csv"),
+      getOrganizerVehicleRows(),
       prisma.liveTrip.findMany({
         where: {
           ...(dispatcherDepotId ? { depotId: dispatcherDepotId } : {}),
@@ -400,7 +397,10 @@ export async function getDispatcherPlanningSnapshot({
     depotId: driver.depot?.id || null,
   }));
 
-  const suggestedTrips = makeSuggestedTrips(orders, fleet, drivers);
+  const [suggestedTrips, organizerDataset] = await Promise.all([
+    makeSuggestedTrips(orders, fleet, drivers, { date: dateText }),
+    getOrganizerDatasetSummary(),
+  ]);
 
   const publicationPreview = [
     {
@@ -458,6 +458,7 @@ export async function getDispatcherPlanningSnapshot({
     suggestedTrips,
     publicationPreview,
     summary,
+    organizerDataset,
   };
 }
 
@@ -487,7 +488,7 @@ function timeLabelFromOrders(orders) {
   return open && close ? `${open} – ${close}` : "Published delivery plan";
 }
 
-function stopFromOrder(order, index, tripCode) {
+function stopFromOrder(order, index, tripCode, estimate = null) {
   const outlet = order.outlet;
   const coords = deterministicCoordinate(outlet?.outletCode, outlet?.depot?.name);
 
@@ -500,7 +501,7 @@ function stopFromOrder(order, index, tripCode) {
     district: outlet?.district || "",
     windowOpen: outlet?.windowOpenTime || null,
     windowClose: outlet?.windowCloseTime || null,
-    plannedArrival: outlet?.windowOpenTime || null,
+    plannedArrival: estimate?.plannedArrival || outlet?.windowOpenTime || null,
     arrivalTime: null,
     tempRequirement: orderTemperature(order),
     expectedUnits: order.totalUnits,
@@ -511,8 +512,10 @@ function stopFromOrder(order, index, tripCode) {
     mallWindow: outlet?.mallWindow || null,
     mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.latitude}%2C${coords.longitude}`,
     destination: coords,
-    etaMinutes: null,
-    distanceKm: null,
+    etaMinutes: estimate?.travelMinutes ?? null,
+    distanceKm: estimate?.distanceKm ?? null,
+    serviceAllowanceMinutes: estimate?.serviceAllowanceMinutes ?? null,
+    planningReference: estimate?.planningContext ?? null,
     status: index === 0 ? "next" : "pending",
     completed: false,
     outcome: null,
@@ -649,6 +652,38 @@ export async function publishDispatcherPlan({
   }
 
   const tripDepotId = orderDepotIds[0];
+  const trustedDepotName = orders[0]?.outlet?.depot?.name || null;
+  const organizerVehicleRow = await getOrganizerVehicleRow(trip.vehicleId);
+
+  if (!organizerVehicleRow) {
+    throw new Error("Select a vehicle from the organizer fleet before publishing the plan.");
+  }
+
+  const organizerVehicle = vehicleView(organizerVehicleRow, 0);
+  if (organizerVehicle.depot !== trustedDepotName) {
+    throw new Error("The selected vehicle does not belong to the delivery depot.");
+  }
+
+  const totalWeightKg = orders.reduce(
+    (sum, order) => sum + Number(order.estimatedWeightKg || 0),
+    0
+  );
+  const totalVolumeM3 = orders.reduce(
+    (sum, order) => sum + Number(order.estimatedVolumeM3 || 0),
+    0
+  );
+  const trustedOrderViews = orders.map(orderView);
+
+  if (
+    totalWeightKg > organizerVehicle.maxWeightKg ||
+    totalVolumeM3 > organizerVehicle.maxVolumeM3
+  ) {
+    throw new Error("The selected vehicle capacity is not sufficient for this trip.");
+  }
+
+  if (trustedOrderViews.some((order) => !compatibleVehicle(order, organizerVehicle))) {
+    throw new Error("The selected vehicle does not satisfy the trip temperature or access constraints.");
+  }
 
   const driver = trip.driverUserId
     ? await prisma.user.findFirst({
@@ -677,14 +712,35 @@ export async function publishDispatcherPlan({
   }
 
   const tripCode = `TRIP${Date.now().toString().slice(-6)}`;
-  const stops = orders.map((order, index) => stopFromOrder(order, index, tripCode));
+  const publishEstimate = await buildOrganizerTripEstimate({
+    date: orders[0]?.effectiveDispatchDate,
+    depot: orders[0]?.outlet?.depot?.name,
+    vehicle: organizerVehicle,
+    orders: trustedOrderViews,
+  });
+  const publishEstimateByOrder = new Map(
+    publishEstimate.stops.map((stop) => [stop.orderId, stop])
+  );
+  const stops = orders.map((order, index) =>
+    stopFromOrder(
+      order,
+      index,
+      tripCode,
+      publishEstimateByOrder.get(order.orderCode) ?? null
+    )
+  );
 
   const driverTrip = {
     tripId: tripCode,
     tripNumber: state.trips.length + 1,
     brand: orders[0].outlet?.brand || "Waypoint",
     district: orders[0].outlet?.district || "",
-    vehicleId: trip.vehicleId,
+    vehicleId: organizerVehicle.vehicleId,
+    vehicleType: organizerVehicle.type,
+    vehicleTemperature: organizerVehicle.temperature,
+    fuelType: organizerVehicle.fuelType,
+    kmPerL: organizerVehicle.kmPerL,
+    weeklyFuelQuotaL: organizerVehicle.weeklyFuelQuotaL,
     assignedDriverUserId: driver.id,
     assignedDriverUserCode: driver.userId,
     timeLabel: timeLabelFromOrders(orders),
@@ -697,6 +753,13 @@ export async function publishDispatcherPlan({
     completedAt: null,
     publishedBy: dispatcherUser?.userId || null,
     publishedAt: new Date().toISOString(),
+    organizerPlanning: {
+      estimatedDistanceKm: publishEstimate.totalDistanceKm,
+      estimatedDurationMinutes: publishEstimate.totalDurationMinutes,
+      estimatedFuelL: publishEstimate.estimatedFuelL,
+      warnings: publishEstimate.warnings,
+      source: "Waypoint organizer General Data",
+    },
     stops,
   };
 

@@ -663,6 +663,8 @@ export async function getTrip(
             ?.dockType ||
           "Standard unloading",
 
+        planning: stop.planningContext || null,
+
         items:
           (
             stop.storeOrder

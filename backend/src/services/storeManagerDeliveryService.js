@@ -560,6 +560,7 @@ function mapDeliverySummary(order) {
           sequence: stop?.sequence ?? null,
           plannedEta: stop?.plannedEta ?? null,
           actualArrival: stop?.actualArrival ?? null,
+          planning: safePlanningContext(stop?.planningContext),
           tripStatus: trip?.status ?? null,
           stopStatus: stop?.status ?? null,
           outcome: stop?.outcome ?? null,
@@ -659,6 +660,26 @@ export function resolveStoreManagerTrackingEta(
   };
 }
 
+
+function safePlanningContext(context) {
+  if (!context || typeof context !== "object") return null;
+
+  return {
+    requestedDate: context.requestedDate ?? null,
+    roadClass: context.districtTravel?.roadClass ?? null,
+    plannedDistanceKm: context.districtTravel?.distanceKm ?? null,
+    freeFlowMinutes: context.districtTravel?.freeFlowMinutes ?? null,
+    adjustedTravelMinutes: context.adjustedTravelMinutes ?? null,
+    trafficSpeedIndex: context.traffic?.speedIndex ?? null,
+    roadDisruptionIndex: context.road?.disruptionIndex ?? null,
+    serviceAllowanceMinutes: context.service?.allowanceMinutes ?? null,
+    monsoon: context.calendar?.monsoon ?? false,
+    calendarSource: context.calendar?.source ?? null,
+    sourceDate: context.calendar?.sourceDate ?? null,
+    source: "WAYPOINT_ORGANIZER_GENERAL_DATA",
+  };
+}
+
 function mapSafeTracking(order, allocation) {
   const stop = allocation.liveTripStop;
   const trip = stop.liveTrip;
@@ -721,6 +742,7 @@ function mapSafeTracking(order, allocation) {
       latitude: stop.latitude,
       longitude: stop.longitude,
       stopsRemainingBeforeOutlet: pendingBeforeOutlet,
+      planning: safePlanningContext(stop.planningContext),
     },
     eta: trackingEta.value,
     etaSource: trackingEta.source,

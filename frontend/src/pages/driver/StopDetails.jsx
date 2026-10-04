@@ -44,6 +44,18 @@ export default function StopDetails() {
         <h3 className="section-title">Access &amp; Unloading</h3>
         <section className="card two-col access-card"><div><span>Unloading point</span><strong>{stop.unloadingPoint}</strong></div><div><span>Vehicle access</span><strong>{stop.vehicleAccess}</strong></div></section>
 
+        {stop.planningReference && (
+          <>
+            <h3 className="section-title">Operational Planning</h3>
+            <section className="card two-col access-card">
+              <div><span>Planned road</span><strong>{stop.planningReference.districtTravel?.roadClass || 'Standard'}</strong></div>
+              <div><span>Service allowance</span><strong>{stop.serviceAllowanceMinutes ?? stop.planningReference.service?.allowanceMinutes ?? '—'} min</strong></div>
+              <div><span>Traffic speed index</span><strong>{stop.planningReference.traffic?.speedIndex ?? '—'}</strong></div>
+              <div><span>Road condition index</span><strong>{stop.planningReference.road?.disruptionIndex ?? '—'}</strong></div>
+            </section>
+          </>
+        )}
+
         <h3 className="section-title">Order Information</h3>
         <section className="card order-card">
           <div className="order-line"><div><span>Order number</span><strong>{stop.orderId}</strong></div><span className="pill pill-blue">{stop.tempRequirement}</span></div>

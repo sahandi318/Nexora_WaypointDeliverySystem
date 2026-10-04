@@ -382,17 +382,21 @@ Vehicle data supports planning information such as:
 - Fuel information
 - Depot assignment
 
-### Other operational datasets
+### Complete General Data integration
 
-The repository also includes reference data for areas such as:
+The planning and delivery flow now uses all seven organizer General Data files at runtime:
 
-- Calendar/operating days
-- District travel
-- Traffic speed
-- Road conditions
-- Service allowances
+- `outlets.csv` — outlet/depot context, dock type, access constraints, mall windows and delivery windows
+- `vehicles.csv` — capacity, temperature capability, fuel type, km/L and weekly fuel quota
+- `calendar.csv` — operating-day and monsoon context
+- `district_travel.csv` — depot-to-district and inter-stop distance/free-flow time
+- `traffic_speed.csv` — district/hour/monsoon traffic speed index
+- `road_conditions.csv` — district/date disruption index
+- `service_allowance.csv` — brand + dock service/unloading allowance
 
-Some of these datasets are available for further optimization and ETA/planning enhancement.
+Dispatcher suggestions calculate planned distance, adjusted travel time, service time, fuel use and delivery-window warnings from the organizer data. Publication recalculates the estimate server-side and stores the safe per-stop planning context with the published `LiveTripStop`. The same published context then reaches Loader and Driver workflows, while Store Managers receive only their own stop's safe planning/ETA information.
+
+Because the supplied calendar ends on `2026-06-28`, requests after the source range use an explicit seasonal/weekday fallback and expose the source date instead of silently pretending the organizer file contains current-day records. See `docs/general-data-integration.md`.
 
 ---
 
@@ -629,6 +633,14 @@ npm run test:dispatcher-order-handoff
 ```bash
 npm run test:dispatcher-planning
 ```
+
+### Organizer General Data calculations
+
+```bash
+npm run test:organizer-data
+```
+
+This verifies all seven General Data files, travel/traffic/road/service calculations, fuel estimation and post-range calendar fallback behavior.
 
 The final integrated development branch was verified with these regression suites after applying the latest database migrations.
 

@@ -348,8 +348,9 @@ model LiveTripStop {
   latitude  Float?
   longitude Float?
 
-  plannedEta    String? @db.VarChar(40)
-  actualArrival String? @db.VarChar(40)
+  plannedEta     String? @db.VarChar(40)
+  actualArrival  String? @db.VarChar(40)
+  planningContext Json?   @map("planning_context")
 
   status  String  @default("PENDING") @db.VarChar(40)
   outcome String? @db.VarChar(60)
