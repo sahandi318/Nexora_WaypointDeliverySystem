@@ -77,6 +77,8 @@ import FleetAvailability from "./pages/dispatcher/planning/FleetAvailability";
 import DeliveryPlanner from "./pages/dispatcher/planning/DeliveryPlanner";
 import DeferredOrders from "./pages/dispatcher/planning/DeferredOrders";
 import ReviewPublish from "./pages/dispatcher/planning/ReviewPublish";
+import LoadingCoordination from "./pages/dispatcher/loading/LoadingCoordination";
+import LoadingExceptions from "./pages/dispatcher/loading/LoadingExceptions";
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
 import ReceiptDiscrepancyResolution from "./pages/dispatcher/reports/ReceiptDiscrepancyResolution";
@@ -917,8 +919,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dispatcher/loading"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <LoadingCoordination />
+              </ProtectedRoute>
+            }
+          />
 
-
+          <Route
+            path="/dispatcher/loading/exceptions"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <LoadingExceptions />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dispatcher/live"
             element={
