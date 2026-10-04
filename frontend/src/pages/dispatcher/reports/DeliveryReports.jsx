@@ -56,8 +56,8 @@ function outcomeLabel(outcome, status) {
 function resultClass(outcome, status) {
   if (outcome === "UNABLE_TO_DELIVER") return "text-red-500";
   if (outcome === "PARTIAL_DELIVERY") return "text-amber-600";
-  if (outcome === "DELIVERED_FULL" || status === "COMPLETED") return "text-emerald-600";
-  return "text-slate-500";
+  if (outcome === "DELIVERED_FULL" || status === "COMPLETED") return "text-[var(--color-success)]";
+  return "text-[var(--color-text-secondary)]";
 }
 
 const DeliveryReports = () => {
@@ -204,29 +204,29 @@ const DeliveryReports = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[12px] font-semibold text-slate-800">Delivery Records</h2>
-              <span className="text-[9px] text-slate-400">({filteredTrips.length})</span>
+              <h2 className="text-[12px] font-semibold text-[var(--color-text)]">Delivery Records</h2>
+              <span className="text-[9px] text-[var(--color-text-muted)]">({filteredTrips.length})</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex h-7 items-center rounded-md border border-slate-200 bg-slate-50 px-2">
-                <span className="mr-2 text-[9px] text-slate-400">⌕</span>
+              <div className="flex h-7 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-2">
+                <span className="mr-2 text-[9px] text-[var(--color-text-muted)]">⌕</span>
                 <input
                   type="text"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search trip, POD receiver or outlet..."
-                  className="w-[190px] bg-transparent text-[9px] text-slate-600 outline-none placeholder:text-slate-400"
+                  className="w-[190px] bg-transparent text-[9px] text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
                 />
               </div>
 
               <select
                 value={selectedVehicle}
                 onChange={(event) => setSelectedVehicle(event.target.value)}
-                className="h-7 rounded-md border border-slate-200 bg-white px-2 text-[9px] text-slate-600 outline-none"
+                className="h-7 rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-[9px] text-[var(--color-text)] outline-none"
               >
                 <option value="All Vehicles">All Vehicles</option>
                 {vehicleOptions.map((vehicle) => (
@@ -238,7 +238,7 @@ const DeliveryReports = () => {
 
           <div className="overflow-x-auto px-3">
             <table className="w-full min-w-[760px] text-left text-[9px]">
-              <thead className="border-y border-slate-100 bg-slate-50 text-[8px] font-medium uppercase text-slate-400">
+              <thead className="border-y border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[8px] font-medium uppercase text-[var(--color-text-muted)]">
                 <tr>
                   <th className="w-8 px-2 py-2" />
                   <th className="px-2 py-2">Trip ID</th>
@@ -253,7 +253,7 @@ const DeliveryReports = () => {
 
               <tbody>
                 {loading ? (
-                  <tr><td colSpan="8" className="px-4 py-8 text-center text-slate-400">Loading delivery records...</td></tr>
+                  <tr><td colSpan="8" className="px-4 py-8 text-center text-[var(--color-text-muted)]">Loading delivery records...</td></tr>
                 ) : paginatedTrips.length ? (
                   paginatedTrips.map((trip) => {
                     const selected = selectedTrip?.tripCode === trip.tripCode;
@@ -261,58 +261,58 @@ const DeliveryReports = () => {
                       <tr
                         key={trip.tripCode}
                         onClick={() => setSelectedTripCode(trip.tripCode)}
-                        className={`cursor-pointer border-b border-slate-100 ${selected ? "bg-[#e8f7f1]" : "bg-white hover:bg-slate-50"}`}
+                        className={`cursor-pointer border-b border-[var(--color-border)] ${selected ? "bg-[var(--color-primary-soft)]" : "bg-[var(--color-surface)] hover:bg-[var(--color-surface-soft)]"}`}
                       >
                         <td className="px-2 py-2"><input type="checkbox" checked={selected} readOnly className="accent-emerald-600" /></td>
-                        <td className="px-2 py-2 font-semibold text-emerald-700">{trip.tripCode}</td>
-                        <td className="px-2 py-2 text-slate-700">{trip.vehicleCode}</td>
-                        <td className="px-2 py-2 text-slate-700">{trip.driverName}</td>
-                        <td className="px-2 py-2 text-slate-500">{formatDateTime(trip.lastActivityAt)}</td>
-                        <td className="px-2 py-2 text-center text-slate-700">{trip.completedStops}/{trip.totalStops}</td>
+                        <td className="px-2 py-2 font-semibold text-[var(--color-success)]">{trip.tripCode}</td>
+                        <td className="px-2 py-2 text-[var(--color-text)]">{trip.vehicleCode}</td>
+                        <td className="px-2 py-2 text-[var(--color-text)]">{trip.driverName}</td>
+                        <td className="px-2 py-2 text-[var(--color-text-secondary)]">{formatDateTime(trip.lastActivityAt)}</td>
+                        <td className="px-2 py-2 text-center text-[var(--color-text)]">{trip.completedStops}/{trip.totalStops}</td>
                         <td className="px-2 py-2"><StatusBadge status={trip.status} /></td>
-                        <td className="px-2 py-2 font-semibold text-emerald-600">{trip.confirmation}</td>
+                        <td className="px-2 py-2 font-semibold text-[var(--color-success)]">{trip.confirmation}</td>
                       </tr>
                     );
                   })
                 ) : (
-                  <tr><td colSpan="8" className="px-4 py-8 text-center text-slate-400">No delivery records match these filters.</td></tr>
+                  <tr><td colSpan="8" className="px-4 py-8 text-center text-[var(--color-text-muted)]">No delivery records match these filters.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 text-[8px] text-slate-400">
+          <div className="flex items-center justify-between px-4 py-3 text-[8px] text-[var(--color-text-muted)]">
             <span>Showing {paginatedTrips.length} of {filteredTrips.length} delivery records</span>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="h-6 w-6 rounded border border-slate-200 disabled:opacity-40">‹</button>
+              <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="h-6 w-6 rounded border border-[var(--color-border)] disabled:opacity-40">‹</button>
               {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
                 <button
                   key={pageNumber}
                   type="button"
                   onClick={() => setCurrentPage(pageNumber)}
-                  className={`h-6 w-6 rounded border ${currentPage === pageNumber ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-200"}`}
+                  className={`h-6 w-6 rounded border ${currentPage === pageNumber ? "border-emerald-500 bg-emerald-500 text-white" : "border-[var(--color-border)]"}`}
                 >
                   {pageNumber}
                 </button>
               ))}
-              <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="h-6 w-6 rounded border border-slate-200 disabled:opacity-40">›</button>
+              <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="h-6 w-6 rounded border border-[var(--color-border)] disabled:opacity-40">›</button>
             </div>
           </div>
         </div>
 
-        <aside className="rounded-lg border border-slate-200 bg-white p-4">
+        <aside className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           {selectedTrip ? (
             <>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-[13px] font-bold text-slate-800">{selectedTrip.tripCode} - {selectedTrip.vehicleCode}</h2>
-                  <p className="mt-1 text-[8px] text-slate-400">Live Driver records are synchronized into this report.</p>
+                  <h2 className="text-[13px] font-bold text-[var(--color-text)]">{selectedTrip.tripCode} - {selectedTrip.vehicleCode}</h2>
+                  <p className="mt-1 text-[8px] text-[var(--color-text-muted)]">Live Driver records are synchronized into this report.</p>
                 </div>
                 <StatusBadge status={selectedTrip.status} />
               </div>
 
               <div className="mt-4">
-                <h3 className="text-[10px] font-semibold text-slate-800">Trip Summary</h3>
+                <h3 className="text-[10px] font-semibold text-[var(--color-text)]">Trip Summary</h3>
                 <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
                   <Info label="VEHICLE TYPE" value={selectedTrip.vehicleType || "—"} />
                   <Info label="DEPOT" value={selectedTrip.depot || "—"} />
@@ -323,61 +323,61 @@ const DeliveryReports = () => {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-[8px] font-semibold text-emerald-700">
+              <div className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-[8px] font-semibold text-[var(--color-success)]">
                 Overall Result: {selectedTrip.status}
               </div>
 
               <div className="mt-4">
-                <h3 className="mb-2 text-[10px] font-semibold text-slate-800">Stop Outcomes ({selectedTrip.stops.length})</h3>
-                <div className="overflow-hidden rounded border border-slate-100">
-                  <div className="grid grid-cols-[24px_minmax(0,1fr)_56px_56px_58px] bg-slate-50 px-2 py-1 text-[7px] text-slate-400">
+                <h3 className="mb-2 text-[10px] font-semibold text-[var(--color-text)]">Stop Outcomes ({selectedTrip.stops.length})</h3>
+                <div className="overflow-hidden rounded border border-[var(--color-border)]">
+                  <div className="grid grid-cols-[24px_minmax(0,1fr)_56px_56px_58px] bg-[var(--color-surface-soft)] px-2 py-1 text-[7px] text-[var(--color-text-muted)]">
                     <span>#</span><span>Outlet</span><span>Plan</span><span>Arrival</span><span>Result</span>
                   </div>
                   {visibleStops.map((stop) => (
-                    <div key={stop.stopCode} className="grid grid-cols-[24px_minmax(0,1fr)_56px_56px_58px] items-center border-t border-slate-100 px-2 py-1.5 text-[8px]">
-                      <span className="text-slate-500">{stop.sequence}</span>
+                    <div key={stop.stopCode} className="grid grid-cols-[24px_minmax(0,1fr)_56px_56px_58px] items-center border-t border-[var(--color-border)] px-2 py-1.5 text-[8px]">
+                      <span className="text-[var(--color-text-secondary)]">{stop.sequence}</span>
                       <div className="min-w-0">
-                        <div className="truncate text-slate-700">{stop.outletName || stop.outletCode}</div>
-                        {stop.pod && <div className="truncate text-[7px] font-semibold text-emerald-600">POD · {stop.pod.receiverName}</div>}
+                        <div className="truncate text-[var(--color-text)]">{stop.outletName || stop.outletCode}</div>
+                        {stop.pod && <div className="truncate text-[7px] font-semibold text-[var(--color-success)]">POD · {stop.pod.receiverName}</div>}
                       </div>
-                      <span className="text-slate-600">{stop.plannedEta || "—"}</span>
-                      <span className="text-slate-600">{stop.actualArrival || "—"}</span>
+                      <span className="text-[var(--color-text-secondary)]">{stop.plannedEta || "—"}</span>
+                      <span className="text-[var(--color-text-secondary)]">{stop.actualArrival || "—"}</span>
                       <span className={resultClass(stop.outcome, stop.status)}>● {outcomeLabel(stop.outcome, stop.status)}</span>
                     </div>
                   ))}
                 </div>
                 {selectedTrip.stops.length > 6 && (
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[8px] text-slate-400">Showing {visibleStops.length} of {selectedTrip.stops.length} stops</span>
-                    <button type="button" onClick={() => setShowAllStops((value) => !value)} className="text-[8px] font-semibold text-emerald-700">{showAllStops ? "Show Less" : "View All Stops >"}</button>
+                    <span className="text-[8px] text-[var(--color-text-muted)]">Showing {visibleStops.length} of {selectedTrip.stops.length} stops</span>
+                    <button type="button" onClick={() => setShowAllStops((value) => !value)} className="text-[8px] font-semibold text-[var(--color-success)]">{showAllStops ? "Show Less" : "View All Stops >"}</button>
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 border-t border-slate-100 pt-4">
-                <h3 className="text-[10px] font-semibold text-slate-800">Latest Proof of Delivery</h3>
+              <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+                <h3 className="text-[10px] font-semibold text-[var(--color-text)]">Latest Proof of Delivery</h3>
                 {selectedTrip.latestPod ? (
-                  <div className="mt-2 rounded-md border border-emerald-100 bg-[#f1fbf7] p-3">
+                  <div className="mt-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-soft)] p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-[9px] font-semibold text-slate-700">{selectedTrip.latestPod.outletCode || "Outlet"}</p>
-                        <p className="mt-0.5 text-[8px] text-slate-500">Receiver: <strong>{selectedTrip.latestPod.receiverName || "—"}</strong></p>
+                        <p className="text-[9px] font-semibold text-[var(--color-text)]">{selectedTrip.latestPod.outletCode || "Outlet"}</p>
+                        <p className="mt-0.5 text-[8px] text-[var(--color-text-secondary)]">Receiver: <strong>{selectedTrip.latestPod.receiverName || "—"}</strong></p>
                       </div>
-                      <span className="rounded-full border border-emerald-400 px-2 py-1 text-[7px] text-emerald-700">POD Submitted</span>
+                      <span className="rounded-full border border-[var(--color-success)] px-2 py-1 text-[7px] text-[var(--color-success)]">POD Submitted</span>
                     </div>
-                    <p className="mt-2 text-[8px] text-slate-500">{selectedTrip.latestPod.deliveryNote || "No delivery note."}</p>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-[7px] text-slate-400">
+                    <p className="mt-2 text-[8px] text-[var(--color-text-secondary)]">{selectedTrip.latestPod.deliveryNote || "No delivery note."}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-[7px] text-[var(--color-text-muted)]">
                       <span>Time: {formatDateTime(selectedTrip.latestPod.createdAt || selectedTrip.latestPod.recordedAt)}</span>
                       <span>Photo: {selectedTrip.latestPod.photoName || "Not supplied"}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-2 text-[8px] text-slate-400">No proof of delivery has been submitted for this trip yet.</p>
+                  <p className="mt-2 text-[8px] text-[var(--color-text-muted)]">No proof of delivery has been submitted for this trip yet.</p>
                 )}
               </div>
             </>
           ) : (
-            <div className="py-10 text-center text-[10px] text-slate-400">Select a delivery record to view details.</div>
+            <div className="py-10 text-center text-[10px] text-[var(--color-text-muted)]">Select a delivery record to view details.</div>
           )}
         </aside>
       </div>
@@ -387,18 +387,18 @@ const DeliveryReports = () => {
 
 const SummaryCard = ({ title, value, note, type, icon }) => {
   const styles = {
-    green: { icon: "bg-emerald-50 text-emerald-600", text: "text-emerald-600" },
-    amber: { icon: "bg-amber-50 text-amber-500", text: "text-orange-500" },
-    red: { icon: "bg-red-50 text-red-500", text: "text-red-500" },
+    green: { icon: "bg-[var(--color-success-soft)] text-[var(--color-success)]", text: "text-[var(--color-success)]" },
+    amber: { icon: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]", text: "text-orange-500" },
+    red: { icon: "bg-[var(--color-danger-soft)] text-[var(--color-danger)]", text: "text-red-500" },
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
       <div className="flex items-center gap-3">
         <div className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] ${styles[type].icon}`}>{icon}</div>
         <div>
-          <p className="text-[8px] text-slate-500">{title}</p>
-          <p className="text-[20px] font-bold leading-none text-slate-800">{value}</p>
+          <p className="text-[8px] text-[var(--color-text-secondary)]">{title}</p>
+          <p className="text-[20px] font-bold leading-none text-[var(--color-text)]">{value}</p>
           <p className={`mt-1 text-[7px] ${styles[type].text}`}>{note}</p>
         </div>
       </div>
@@ -408,15 +408,15 @@ const SummaryCard = ({ title, value, note, type, icon }) => {
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    "All Delivered": "bg-emerald-50 text-emerald-600",
-    "Partially Delivered": "bg-amber-50 text-amber-600",
-    "Issue to Review": "bg-red-50 text-red-500",
-    "Receipt Pending": "bg-orange-50 text-orange-500",
-    "In Progress": "bg-blue-50 text-blue-600",
+    "All Delivered": "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+    "Partially Delivered": "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+    "Issue to Review": "bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
+    "Receipt Pending": "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+    "In Progress": "bg-[var(--color-info-soft)] text-[var(--color-info)]",
   };
 
   return (
-    <span className={`whitespace-nowrap rounded-full px-2 py-1 text-[7px] font-medium ${styles[status] || "bg-slate-100 text-slate-500"}`}>
+    <span className={`whitespace-nowrap rounded-full px-2 py-1 text-[7px] font-medium ${styles[status] || "bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)]"}`}>
       ● {status}
     </span>
   );
@@ -424,8 +424,8 @@ const StatusBadge = ({ status }) => {
 
 const Info = ({ label, value }) => (
   <div>
-    <p className="text-[7px] text-slate-400">{label}</p>
-    <p className="mt-0.5 text-[8px] font-semibold text-slate-700">{value}</p>
+    <p className="text-[7px] text-[var(--color-text-muted)]">{label}</p>
+    <p className="mt-0.5 text-[8px] font-semibold text-[var(--color-text)]">{value}</p>
   </div>
 );
 
