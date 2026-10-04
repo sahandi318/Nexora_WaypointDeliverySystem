@@ -26,43 +26,102 @@ const ReportsCapacity = () => {
 
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
 
+  const [planningWeeks, setPlanningWeeks] = useState([]);
+  const [selectedPlanningWeek, setSelectedPlanningWeek] = useState("");
+
   useEffect(() => {
-  const loadCalendarDates = async () => {
-    try {
-      const response = await fetch("/data/calendar.csv");
-      const csvText = await response.text();
+    const loadCalendarDates = async () => {
+      try {
+        const response = await fetch("/data/calendar.csv");
 
-      const lines = csvText
-        .trim()
-        .split("\n");
+        if (!response.ok) {
+          throw new Error(`Calendar request failed: ${response.status}`);
+        }
 
-      // Skip CSV header.
-      const rows = lines.slice(1);
+        const csvText = await response.text();
 
-      const dates = rows
-        .map((row) => row.split(",")[0].trim())
-        .filter(Boolean);
+        const lines = csvText
+          .trim()
+          .split(/\r?\n/);
 
-      if (dates.length === 0) {
-        return;
+        // Skip CSV header.
+        const rows = lines.slice(1);
+
+        const calendarRows = rows
+          .map((row) => {
+            const columns = row.split(",");
+
+            return {
+              date: columns[0]?.trim(),
+              isoYear: columns[4]?.trim(),
+              isoWeek: columns[5]?.trim(),
+              isOperating: columns[11]?.trim(),
+            };
+          })
+          .filter((row) => row.date && row.isoYear && row.isoWeek);
+
+        if (calendarRows.length === 0) {
+          return;
+        }
+
+        const dates = calendarRows.map((row) => row.date);
+
+        const firstDate = dates[0];
+        const lastDate = dates[dates.length - 1];
+
+        setMinDate(firstDate);
+        setMaxDate(lastDate);
+
+        // Initial report period for frontend testing.
+        setStartDate("2026-06-22");
+        setEndDate("2026-06-27");
+
+        // Build selectable planning weeks from the actual calendar file.
+        const latestCalendarYear = Math.max(
+          ...calendarRows.map((row) => Number(row.isoYear))
+        );
+
+        const weekMap = new Map();
+
+        calendarRows
+          .filter(
+            (row) =>
+              Number(row.isoYear) === latestCalendarYear &&
+              row.isOperating === "1"
+          )
+          .forEach((row) => {
+            const key = `${row.isoYear}-W${String(row.isoWeek).padStart(2, "0")}`;
+
+            if (!weekMap.has(key)) {
+              weekMap.set(key, {
+                value: key,
+                isoYear: Number(row.isoYear),
+                isoWeek: Number(row.isoWeek),
+                startDate: row.date,
+                endDate: row.date,
+              });
+            } else {
+              weekMap.get(key).endDate = row.date;
+            }
+          });
+
+        const weeks = Array.from(weekMap.values()).sort(
+          (a, b) => a.isoWeek - b.isoWeek
+        );
+
+        setPlanningWeeks(weeks);
+
+        // Default to the latest available operating week in calendar.csv.
+        if (weeks.length > 0) {
+          setSelectedPlanningWeek(weeks[weeks.length - 1].value);
+        }
+      } catch (error) {
+        console.error("Failed to load calendar.csv:", error);
       }
+    };
 
-      const firstDate = dates[0];
-      const lastDate = dates[dates.length - 1];
-
-      setMinDate(firstDate);
-      setMaxDate(lastDate);
-
-      // Initial report period for frontend testing.
-      setStartDate("2026-06-22");
-      setEndDate("2026-06-27");
-    } catch (error) {
-      console.error("Failed to load calendar.csv:", error);
-    }
-  };
-
-  loadCalendarDates();
-}, []);
+    loadCalendarDates();
+  }, []);
 
   // Future Capacity uses a different filter set.
   const isCapacityPage =
@@ -119,29 +178,49 @@ const ReportsCapacity = () => {
             {isCapacityPage ? (
               <>
                 {/* Planning week filter */}
-                <button
-                  type="button"
-                  className="
-                    flex h-10 items-center gap-2
-                    rounded-lg border border-[var(--color-border)]
-                    bg-[var(--color-surface)] px-4
-                    text-[11px] text-[var(--color-text-secondary)]
-                  "
-                >
-                  <span className="text-[var(--color-text-muted)]">▣</span>
+                <div className="relative flex h-10 items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+                  <span className="pointer-events-none absolute left-3 text-[var(--color-text-muted)]">
+                    ▣
+                  </span>
 
-                  <span className="text-[8px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                  <span className="pointer-events-none absolute left-8 text-[8px] uppercase tracking-wide text-[var(--color-text-muted)]">
                     Planning Week
                   </span>
 
-                  <span className="font-medium text-[var(--color-text)]">
-                    5 - 11 Oct 2026
-                  </span>
+                  <select
+                    value={selectedPlanningWeek}
+                    onChange={(event) =>
+                      setSelectedPlanningWeek(event.target.value)
+                    }
+                    className="
+                      h-10 min-w-[265px]
+                      appearance-none
+                      rounded-lg
+                      bg-transparent
+                      pl-[108px] pr-9
+                      text-[11px] font-medium
+                      text-[var(--color-text)]
+                      outline-none
+                      cursor-pointer
+                    "
+                  >
+                    {planningWeeks.length === 0 ? (
+                      <option value="">Loading weeks...</option>
+                    ) : (
+                      planningWeeks.map((week) => (
+                        <option key={week.value} value={week.value}>
+                          {`Week ${week.isoWeek} · ${formatShortDate(
+                            week.startDate
+                          )} - ${formatShortDate(week.endDate)}`}
+                        </option>
+                      ))
+                    )}
+                  </select>
 
-                  <span className="ml-1 text-[var(--color-text-secondary)]">
+                  <span className="pointer-events-none absolute right-3 text-[var(--color-text-secondary)]">
                     ⌄
                   </span>
-                </button>
+                </div>
 
                 {/* Depot filter */}
                 <div className="relative flex items-center">
@@ -454,6 +533,8 @@ const ReportsCapacity = () => {
     endDate,
     selectedDepot,
     selectedStatus,
+    selectedPlanningWeek,
+    planningWeeks,
   }}
 />
         </section>
@@ -469,6 +550,18 @@ const formatDate = (dateString) => {
 
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatShortDate = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(`${dateString}T00:00:00`);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
     month: "short",
     year: "numeric",
   });
