@@ -81,7 +81,7 @@ function FleetAvailability() {
   const [
     suitableOnly,
     setSuitableOnly,
-  ] = useState(false);
+  ] = useState(true);
 
 
   const [planningData, setPlanningData] = useState({
@@ -90,6 +90,7 @@ function FleetAvailability() {
   });
 
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const selectedOrderId = sessionStorage.getItem("dispatcherSelectedOrderId");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,14 +98,17 @@ function FleetAvailability() {
     getDispatcherPlanning({
       date: selectedDate,
       depot: selectedDepot,
+      orderId: selectedOrderId,
       signal: controller.signal,
     })
       .then((data) => {
         setPlanningData(data || { fleet: [], summary: {} });
         setSelectedVehicleId((current) =>
-          current && data?.fleet?.some((vehicle) => vehicle.vehicleId === current)
+          current && data?.fleet?.some(
+            (vehicle) => vehicle.vehicleId === current && vehicle.isSuitable
+          )
             ? current
-            : data?.fleet?.[0]?.vehicleId || null
+            : null
         );
       })
       .catch((error) => {
@@ -114,14 +118,14 @@ function FleetAvailability() {
       });
 
     return () => controller.abort();
-  }, [selectedDate, selectedDepot]);
+  }, [selectedDate, selectedDepot, selectedOrderId]);
 
   const vehicles = planningData.fleet || [];
   const summary = planningData.summary || {};
+  const selectedOrder =
+    planningData.orders?.find((order) => String(order.id) === selectedOrderId) || null;
   const selectedVehicle =
-    vehicles.find((vehicle) => vehicle.vehicleId === selectedVehicleId) ||
-    vehicles[0] ||
-    null;
+    vehicles.find((vehicle) => vehicle.vehicleId === selectedVehicleId) || null;
 
 
   const filteredVehicles =
@@ -250,9 +254,9 @@ function FleetAvailability() {
             </h1>
 
             <p>
-              Select a suitable vehicle for
-              the selected order before
-              building the trip.
+              {selectedOrder
+                ? `Eligible vehicles for ${selectedOrder.orderId} · ${selectedOrder.depot}`
+                : "Return to Confirmed Orders and select an order to find its eligible vehicles."}
             </p>
 
           </div>
@@ -282,6 +286,7 @@ function FleetAvailability() {
                   const value = event.target.value;
 
                   setSelectedDate(value);
+                  setSelectedVehicleId(null);
 
                   sessionStorage.setItem(
                     "dispatcherPlanningDate",
@@ -305,6 +310,7 @@ function FleetAvailability() {
                   const value = event.target.value;
 
                   setSelectedDepot(value);
+                  setSelectedVehicleId(null);
 
                   sessionStorage.setItem(
                     "dispatcherPlanningDepot",
@@ -780,13 +786,15 @@ function FleetAvailability() {
 
                           <tr
                             key={vehicle.vehicleId}
-                            onClick={() =>
-                              setSelectedVehicleId(vehicle.vehicleId)
-                            }
+                            onClick={() => {
+                              if (vehicle.isSuitable) setSelectedVehicleId(vehicle.vehicleId);
+                            }}
                             className={
                               selectedVehicleId === vehicle.vehicleId
                                 ? "fleet-row selected"
-                                : "fleet-row"
+                                : vehicle.isSuitable
+                                  ? "fleet-row"
+                                  : "fleet-row unavailable"
                             }
                           >
 
@@ -853,7 +861,9 @@ function FleetAvailability() {
                           <td>
                             <AvailabilityBadge
                               value={
-                                vehicle.availability
+                                vehicle.isSuitable
+                                  ? vehicle.availability
+                                  : "Not eligible"
                               }
                             />
                           </td>
@@ -1070,7 +1080,7 @@ function FleetAvailability() {
                     label="Weekly fuel quota"
                     value={
                       selectedVehicle
-                        .weeklyFuelQuota
+                        .weeklyFuelQuotaL
                     }
                   />
 
@@ -1137,11 +1147,22 @@ function FleetAvailability() {
                 <button
                   type="button"
                   className="select-vehicle-button"
-                  onClick={() =>
-                    navigate(
-                      "/dispatcher/planning/planner"
-                    )
-                  }
+                 onClick={() => {
+                    if (!selectedVehicle?.isSuitable) return;
+
+                    sessionStorage.setItem(
+                      "dispatcherSelectedVehicleId",
+                      selectedVehicle.vehicleId
+                    );
+
+                    sessionStorage.setItem(
+                      "dispatcherPlanningDepot",
+                      selectedVehicle.depot
+                    );
+
+                    navigate("/dispatcher/planning/planner");
+                 }}
+                 disabled={!selectedVehicle?.isSuitable || !selectedOrder}
                 >
 
                   <Truck

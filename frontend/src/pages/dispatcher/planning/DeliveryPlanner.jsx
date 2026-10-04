@@ -31,6 +31,7 @@ import DispatcherLayout
 
 import {
   getDispatcherPlanning,
+  saveDispatcherDraft,
 } from "../../../services/dispatcherPlanningService";
 
 
@@ -56,35 +57,63 @@ function DeliveryPlanner() {
   const [planningData, setPlanningData] = useState({
     orders: [],
     fleet: [],
+    deliveryPlan: null,
+    plannedTrips: [],
     suggestedTrips: [],
     summary: {},
   });
+  const [draftTrips, setDraftTrips] = useState([]);
+  const [selectedTripNumber, setSelectedTripNumber] = useState(
+    Number(sessionStorage.getItem("dispatcherSelectedTripNumber")) || 1
+  );
+  const [selectedOrderId, setSelectedOrderId] = useState(
+    sessionStorage.getItem("dispatcherSelectedOrderId") || ""
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStopOrderId, setSelectedStopOrderId] = useState("");
+  const [plannedDeparture, setPlannedDeparture] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  async function loadPlanning(signal) {
+    const data = await getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+      signal,
+    });
+    setPlanningData(data || {
+      orders: [],
+      fleet: [],
+      deliveryPlan: null,
+      plannedTrips: [],
+      suggestedTrips: [],
+      summary: {},
+    });
+    const savedTrips = data?.deliveryPlan?.trips || [];
+    setDraftTrips(savedTrips.map((trip) => ({
+      tripNumber: trip.tripNumber,
+      vehicleId: trip.vehicleId,
+      plannedDeparture: trip.plannedDeparture || "",
+      orderIds: trip.orderIds,
+    })));
+    const savedSelectedOrder = data?.orders?.find(
+      (order) => String(order.id) === selectedOrderId
+    );
+    if (!savedSelectedOrder || savedSelectedOrder.status === "Deferred") {
+      setSelectedOrderId("");
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
-
-    getDispatcherPlanning({
-      date: selectedDate,
-      depot: selectedDepot,
-      signal: controller.signal,
-    })
-      .then((data) => {
-        setPlanningData(
-          data || {
-            orders: [],
-            fleet: [],
-            suggestedTrips: [],
-            summary: {},
-          }
-        );
-      })
-      .catch((error) => {
-        if (error?.name !== "CanceledError" && error?.name !== "AbortError") {
-          console.error("Unable to load delivery planner:", error);
-        }
-      });
-
+    loadPlanning(controller.signal).catch((error) => {
+      if (error?.name !== "CanceledError" && error?.name !== "AbortError") {
+        setSaveMessage(error.message || "Unable to load delivery planner.");
+      }
+    });
     return () => controller.abort();
+    // Initial draft data is loaded when the date or depot changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, selectedDepot]);
 
   const summary = {
@@ -93,41 +122,183 @@ function DeliveryPlanner() {
     validationWarnings: planningData.summary?.warnings ?? 0,
   };
 
+  const allocatedOrderIds = new Set(draftTrips.flatMap((trip) => trip.orderIds));
   const unassignedOrders = (planningData.orders || []).filter(
-    (order) => order.status === "Confirmed"
+    (order) => order.status === "Confirmed" && !allocatedOrderIds.has(order.id)
+  );
+  const visibleUnassignedOrders = unassignedOrders.filter((order) =>
+    `${order.orderId} ${order.outletName} ${order.district}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
 
-  const selectedVehicle = planningData.fleet?.[0] || null;
+  const currentTrip = draftTrips.find(
+    (trip) => trip.tripNumber === selectedTripNumber
+  );
+  const selectedVehicleId =
+    currentTrip?.vehicleId ||
+    (selectedTripNumber === 1
+      ? sessionStorage.getItem("dispatcherSelectedVehicleId")
+      : "");
+  const selectedVehicle =
+    planningData.fleet?.find((vehicle) => vehicle.vehicleId === selectedVehicleId) || null;
+  const currentOrderIds = currentTrip?.orderIds || [];
+  const currentOrders = currentOrderIds
+    .map((id) => planningData.orders?.find((order) => order.id === id))
+    .filter(Boolean);
+  const totalWeightKg = currentOrders.reduce((sum, order) => sum + Number(order.weightKg || 0), 0);
+  const totalVolumeM3 = currentOrders.reduce((sum, order) => sum + Number(order.volumeM3 || 0), 0);
+  const selectedTrip = {
+    tripNumber: selectedTripNumber,
+    tripId: currentTrip ? `Trip ${selectedTripNumber} · ${currentTrip.vehicleId}` : `Trip ${selectedTripNumber}`,
+    description: selectedVehicle
+      ? `${selectedVehicle.vehicleId} · ${selectedVehicle.type}`
+      : "Select a vehicle for this trip.",
+    orders: currentOrders.length,
+    stops: currentOrders.length,
+    stopsCount: currentOrders.length,
+    totalWeightKg,
+    totalVolumeM3,
+    totalWeight: `${totalWeightKg.toFixed(1)} kg`,
+    totalVolume: `${totalVolumeM3.toFixed(2)} m³`,
+    capacityUsage: selectedVehicle
+      ? `${totalWeightKg.toFixed(1)} / ${selectedVehicle.maxWeightKg} kg · ${totalVolumeM3.toFixed(2)} / ${selectedVehicle.maxVolumeM3} m³`
+      : "Select a vehicle to check capacity.",
+    departure: currentTrip?.plannedDeparture || plannedDeparture || "Not set",
+    orderIds: currentOrderIds,
+  };
+  const selectedOrder =
+    planningData.orders?.find((order) => String(order.id) === selectedOrderId) || null;
 
-  const selectedTrip = planningData.suggestedTrips?.[0] || null;
-
-  const validationChecks = selectedTrip
-    ? [
-        {
-          title: "Vehicle capacity",
-          description: selectedTrip.capacityUsage || "Capacity checked",
-          status: selectedTrip.validation || "Ready",
-        },
-        {
-          title: "Driver assignment",
-          description: selectedTrip.driverName || "No Driver assigned",
-          status: selectedTrip.driverUserId ? "Ready" : "Warning",
-        },
-      ]
-    : [];
-
-  const routeSummary = selectedTrip
+  const validationMessages = [];
+  if (selectedDepot === "ALL") validationMessages.push("Select one depot.");
+  if (!selectedDate) validationMessages.push("Select a delivery date.");
+  if (!selectedVehicle) validationMessages.push("Select a vehicle.");
+  if (selectedVehicle && selectedVehicle.depot !== selectedDepot) {
+    validationMessages.push("Vehicle depot must match the delivery plan depot.");
+  }
+  if (selectedVehicle && totalWeightKg > selectedVehicle.maxWeightKg) {
+    validationMessages.push("Trip exceeds vehicle weight capacity.");
+  }
+  if (selectedVehicle && totalVolumeM3 > selectedVehicle.maxVolumeM3) {
+    validationMessages.push("Trip exceeds vehicle volume capacity.");
+  }
+  if (
+    selectedVehicle &&
+    currentOrders.some((order) => order.orderType === "CHILLED") &&
+    selectedVehicle.temperature !== "Refrigerated"
+  ) {
+    validationMessages.push("Chilled orders require a refrigerated vehicle.");
+  }
+  if (currentOrders.some((order) => order.status === "Deferred")) {
+    validationMessages.push("Deferred orders cannot be assigned to a trip.");
+  }
+  if (
+    selectedVehicle &&
+    currentOrders.some((order) =>
+      [order.parkingConstraint, order.dockType]
+        .filter(Boolean)
+        .some((constraint) =>
+          String(constraint).toLowerCase().replaceAll("-", "_").replaceAll(" ", "_").includes("van_only")
+        )
+    ) &&
+    !selectedVehicle.type.toLowerCase().includes("van")
+  ) {
+    validationMessages.push("A van-only outlet requires a van.");
+  }
+  const validationChecks = [
+    { label: "Vehicle selected", value: selectedVehicle?.vehicleId || "Select a vehicle" },
+    {
+      label: "Order capacity",
+      value: selectedVehicle
+        ? `${totalWeightKg.toFixed(1)} / ${selectedVehicle.maxWeightKg} kg · ${totalVolumeM3.toFixed(2)} / ${selectedVehicle.maxVolumeM3} m³`
+        : "Not checked",
+    },
+    { label: "Temperature / access", value: validationMessages.some((message) => /Chilled|van-only/i.test(message)) ? "Review requirements" : "Compatible" },
+    { label: "Order allocation", value: currentOrders.length ? `${currentOrders.length} selected order(s)` : "Add at least one order" },
+  ];
+  const routeSummary = selectedVehicle
     ? {
-        distance: "Calculated when Driver starts navigation",
-        duration: "Live ETA updates from Driver",
-        stops: selectedTrip.stops,
+        departure: currentTrip?.plannedDeparture || plannedDeparture || "Not set",
+        duration: "Unavailable — no verified route-duration data.",
+        distance: "Unavailable — outlet coordinates are not available.",
+        fuel: "Unavailable — route distance is not available.",
+        remainingCapacity: `${Math.max(0, selectedVehicle.maxWeightKg - totalWeightKg).toFixed(1)} kg · ${Math.max(0, selectedVehicle.maxVolumeM3 - totalVolumeM3).toFixed(2)} m³`,
       }
     : null;
+  const capacityWarning = validationMessages.length ? validationMessages.join(" ") : null;
 
-  const capacityWarning =
-    selectedTrip && selectedTrip.validation !== "Ready"
-      ? "Review vehicle compatibility before publishing."
-      : null;
+  function updateCurrentTrip(updater) {
+    setDraftTrips((current) => {
+      const index = current.findIndex((trip) => trip.tripNumber === selectedTripNumber);
+      const entry = current[index] || {
+        tripNumber: selectedTripNumber,
+        vehicleId: selectedVehicleId || "",
+        plannedDeparture: plannedDeparture || "",
+        orderIds: [],
+      };
+      const updated = updater(entry);
+      if (index === -1) return [...current, updated];
+      return current.map((trip, itemIndex) => itemIndex === index ? updated : trip);
+    });
+  }
+
+  function addSelectedOrder() {
+    if (!selectedOrder || selectedOrder.status === "Deferred") {
+      setSaveMessage("Select a confirmed, non-deferred order first.");
+      return;
+    }
+    if (allocatedOrderIds.has(selectedOrder.id)) {
+      setSaveMessage("This order is already assigned to a trip.");
+      return;
+    }
+    updateCurrentTrip((trip) => ({ ...trip, orderIds: [...trip.orderIds, selectedOrder.id] }));
+    setSelectedStopOrderId(String(selectedOrder.id));
+    setSaveMessage("");
+  }
+
+  function removeSelectedOrder() {
+    if (!selectedStopOrderId) {
+      setSaveMessage("Select a stop to remove.");
+      return;
+    }
+    updateCurrentTrip((trip) => ({
+      ...trip,
+      orderIds: trip.orderIds.filter((id) => String(id) !== selectedStopOrderId),
+    }));
+    setSelectedStopOrderId("");
+  }
+
+  function reorderStops() {
+    updateCurrentTrip((trip) => ({ ...trip, orderIds: [...trip.orderIds].reverse() }));
+  }
+
+  async function handleSaveDraft() {
+    if (saving) return;
+    setSaving(true);
+    setSaveMessage("");
+    try {
+      const tripsToSave = draftTrips
+        .map((trip) => ({
+          vehicleId: trip.vehicleId,
+          tripNumber: trip.tripNumber,
+          plannedDeparture: trip.plannedDeparture || null,
+          orderIds: trip.orderIds,
+        }))
+        .filter((trip) => trip.orderIds.length > 0);
+      const result = await saveDispatcherDraft({
+        date: selectedDate,
+        depot: selectedDepot,
+        trips: tripsToSave,
+      });
+      setSaveMessage(result.message || "Draft saved.");
+      await loadPlanning();
+    } catch (error) {
+      setSaveMessage(error.message || "Unable to save the delivery plan.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
 
   const showValue = (
@@ -173,7 +344,11 @@ function DeliveryPlanner() {
                 size={15}
               />
 
-              Changes saved
+              {planningData.deliveryPlan?.status === "PUBLISHED"
+                ? "Published plan"
+                : planningData.deliveryPlan
+                  ? "Draft saved"
+                  : "Draft not saved"}
 
             </div>
 
@@ -187,11 +362,10 @@ function DeliveryPlanner() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(event) =>
-                  setSelectedDate(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setSelectedDate(event.target.value);
+                  sessionStorage.setItem("dispatcherPlanningDate", event.target.value);
+                }}
               />
 
             </div>
@@ -205,16 +379,11 @@ function DeliveryPlanner() {
 
               <select
                 value={selectedDepot}
-                onChange={(event) =>
-                  setSelectedDepot(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setSelectedDepot(event.target.value);
+                  sessionStorage.setItem("dispatcherPlanningDepot", event.target.value);
+                }}
               >
-
-                <option value="ALL">
-                  All Depots
-                </option>
 
                 <option value="Peliyagoda">
                   Peliyagoda Depot
@@ -235,7 +404,7 @@ function DeliveryPlanner() {
                 size={16}
               />
 
-              Draft Plan
+              {planningData.deliveryPlan?.status || "Draft Plan"}
 
             </div>
 
@@ -274,7 +443,7 @@ function DeliveryPlanner() {
           <SummaryCard
             icon={ClipboardList}
             label="Status"
-            value="Draft plan"
+            value={planningData.deliveryPlan?.status || "Not saved"}
           />
 
 
@@ -410,6 +579,8 @@ function DeliveryPlanner() {
               <input
                 type="text"
                 placeholder="Search by order, outlet or location..."
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
               />
 
             </div>
@@ -417,30 +588,16 @@ function DeliveryPlanner() {
 
             <div className="planner-filter-row">
 
-              <select>
-                <option>
-                  All Brands
-                </option>
-              </select>
-
-              <select>
-                <option>
-                  All
-                </option>
-              </select>
-
-              <select>
-                <option>
-                  All
-                </option>
-              </select>
+              <span>
+                {selectedOrder ? `Selected order: ${selectedOrder.orderId}` : "Choose an order"}
+              </span>
 
             </div>
 
 
             <div className="unassigned-list">
 
-              {unassignedOrders.length ===
+              {visibleUnassignedOrders.length ===
               0 ? (
 
                 <EmptyState
@@ -449,19 +606,27 @@ function DeliveryPlanner() {
 
               ) : (
 
-                unassignedOrders.map(
+                visibleUnassignedOrders.map(
                   (order) => (
 
-                    <div
-                      className="unassigned-order-card"
+                    <button
+                      type="button"
+                      className={`unassigned-order-card ${String(order.id) === selectedOrderId ? "selected" : ""}`}
                       key={
                         order.orderId
                       }
+                      onClick={() => {
+                        setSelectedOrderId(String(order.id));
+                        sessionStorage.setItem("dispatcherSelectedOrderId", String(order.id));
+                      }}
                     >
                       <strong>
                         {order.orderId}
                       </strong>
-                    </div>
+                      <span>
+                        {order.outletName} · {order.weight} · {order.volume}
+                      </span>
+                    </button>
 
                   )
                 )
@@ -488,26 +653,63 @@ function DeliveryPlanner() {
 
             <div className="builder-top-row">
 
-              <select>
-                <option>
-                  {selectedVehicle
-                    ? selectedVehicle.vehicleId
-                    : "Select vehicle"}
-                </option>
+              <select
+                value={selectedVehicle?.vehicleId || ""}
+                onChange={(event) => {
+                  const vehicleId = event.target.value;
+                  sessionStorage.setItem("dispatcherSelectedVehicleId", vehicleId);
+                  updateCurrentTrip((trip) => ({ ...trip, vehicleId }));
+                }}
+                disabled={planningData.deliveryPlan?.status === "PUBLISHED"}
+              >
+                <option value="">Select vehicle</option>
+                {(planningData.fleet || [])
+                  .filter((vehicle) => vehicle.depot === selectedDepot && vehicle.availability === "Available")
+                  .map((vehicle) => (
+                    <option key={vehicle.vehicleId} value={vehicle.vehicleId}>
+                      {vehicle.vehicleId} · {vehicle.type} · {vehicle.depot}
+                    </option>
+                  ))}
               </select>
+
+              <input
+                type="time"
+                aria-label="Planned departure"
+                value={currentTrip?.plannedDeparture || plannedDeparture}
+                onChange={(event) => {
+                  setPlannedDeparture(event.target.value);
+                  updateCurrentTrip((trip) => ({
+                    ...trip,
+                    plannedDeparture: event.target.value,
+                  }));
+                }}
+              />
 
 
               <div className="trip-tabs">
 
                 <button
                   type="button"
-                  className="active"
+                  className={selectedTripNumber === 1 ? "active" : ""}
+                  onClick={() => {
+                    setSelectedTripNumber(1);
+                    setSelectedStopOrderId("");
+                    sessionStorage.setItem("dispatcherSelectedTripNumber", "1");
+                    setPlannedDeparture("");
+                  }}
                 >
                   Trip 1
                 </button>
 
                 <button
                   type="button"
+                  className={selectedTripNumber === 2 ? "active" : ""}
+                  onClick={() => {
+                    setSelectedTripNumber(2);
+                    setSelectedStopOrderId("");
+                    sessionStorage.setItem("dispatcherSelectedTripNumber", "2");
+                    setPlannedDeparture("");
+                  }}
                 >
                   Trip 2
                 </button>
@@ -519,17 +721,9 @@ function DeliveryPlanner() {
 
             <div className="trip-builder-area">
 
-              {!selectedTrip ? (
+              <>
 
-                <EmptyState
-                  text="Select a vehicle and build a trip to begin planning."
-                />
-
-              ) : (
-
-                <>
-
-                  <div className="selected-trip-header">
+                <div className="selected-trip-header">
 
                     <Truck
                       size={18}
@@ -544,18 +738,31 @@ function DeliveryPlanner() {
                       </strong>
 
                       <span>
-                        {
-                          selectedTrip.description
-                        }
+                        {selectedTrip.description}
                       </span>
 
                     </div>
 
-                  </div>
+                </div>
 
-                </>
+                <div className="trip-stop-list">
+                  {currentOrders.length === 0 ? (
+                    <EmptyState text="Choose a confirmed order and add it to this trip." compact />
+                  ) : currentOrders.map((order, index) => (
+                    <button
+                      type="button"
+                      key={order.id}
+                      className={String(order.id) === selectedStopOrderId ? "trip-stop selected" : "trip-stop"}
+                      onClick={() => setSelectedStopOrderId(String(order.id))}
+                    >
+                      <span>{index + 1}</span>
+                      <strong>{order.orderId}</strong>
+                      <span>{order.outletName} · {order.weight}</span>
+                    </button>
+                  ))}
+                </div>
 
-              )}
+              </>
 
             </div>
 
@@ -565,6 +772,13 @@ function DeliveryPlanner() {
               <button
                 type="button"
                 className="primary-action"
+                disabled={
+                  !selectedOrder ||
+                  selectedOrder.status === "Deferred" ||
+                  allocatedOrderIds.has(Number(selectedOrderId)) ||
+                  planningData.deliveryPlan?.status === "PUBLISHED"
+                }
+                onClick={addSelectedOrder}
               >
                 + Add selected order
               </button>
@@ -572,6 +786,8 @@ function DeliveryPlanner() {
 
               <button
                 type="button"
+                disabled={!selectedStopOrderId || planningData.deliveryPlan?.status === "PUBLISHED"}
+                onClick={removeSelectedOrder}
               >
                 Remove stop
               </button>
@@ -579,6 +795,8 @@ function DeliveryPlanner() {
 
               <button
                 type="button"
+                disabled={currentOrders.length < 2 || planningData.deliveryPlan?.status === "PUBLISHED"}
+                onClick={reorderStops}
               >
                 <RefreshCw
                   size={14}
@@ -614,44 +832,28 @@ function DeliveryPlanner() {
                 <LoadSummaryItem
                   icon={MapPin}
                   label="Stops"
-                  value={
-                    selectedTrip
-                      ?.stopsCount ||
-                    "—"
-                  }
+                  value={selectedTrip.stopsCount}
                 />
 
 
                 <LoadSummaryItem
                   icon={Weight}
                   label="Total weight"
-                  value={
-                    selectedTrip
-                      ?.totalWeight ||
-                    "—"
-                  }
+                  value={selectedTrip.totalWeight}
                 />
 
 
                 <LoadSummaryItem
                   icon={Package}
                   label="Total volume"
-                  value={
-                    selectedTrip
-                      ?.totalVolume ||
-                    "—"
-                  }
+                  value={selectedTrip.totalVolume}
                 />
 
 
                 <LoadSummaryItem
                   icon={Clock3}
                   label="Est. duration"
-                  value={
-                    selectedTrip
-                      ?.estimatedDuration ||
-                    "—"
-                  }
+                  value={routeSummary?.duration || "Not available"}
                 />
 
               </div>
@@ -802,10 +1004,7 @@ function DeliveryPlanner() {
 
                 <div>
 
-                  <strong>
-                    Adding order exceeds
-                    capacity
-                  </strong>
+                  <strong>Plan validation</strong>
 
                   <span>
                     {capacityWarning}
@@ -835,7 +1034,7 @@ function DeliveryPlanner() {
             />
 
             <span>
-              Draft plan
+              {saveMessage || planningData.deliveryPlan?.status || "Unsaved draft"}
             </span>
 
           </div>
@@ -845,9 +1044,16 @@ function DeliveryPlanner() {
 
             <button
               type="button"
+              onClick={handleSaveDraft}
+              disabled={
+                saving ||
+                !selectedDate ||
+                selectedDepot === "ALL" ||
+                planningData.deliveryPlan?.status === "PUBLISHED"
+              }
             >
               <Save size={15} />
-              Save Draft
+              {saving ? "Saving..." : "Save Draft"}
             </button>
 
 
@@ -1193,6 +1399,37 @@ function DeliveryPlanner() {
 
         .unassigned-list {
           min-height: 360px;
+          padding: 0 10px 10px;
+        }
+
+
+        .unassigned-order-card {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin: 0 0 6px;
+          padding: 10px;
+          border: 1px solid #e3e9e6;
+          border-radius: 6px;
+          background: #ffffff;
+          color: #27483d;
+          text-align: left;
+          cursor: pointer;
+        }
+
+
+        .unassigned-order-card.selected,
+        .trip-stop.selected {
+          border-color: #20b879;
+          background: #eefaf5;
+        }
+
+
+        .unassigned-order-card span,
+        .trip-stop span:last-child {
+          color: #7d8a85;
+          font-size: 8px;
         }
 
 
@@ -1200,7 +1437,7 @@ function DeliveryPlanner() {
           display: grid;
 
           grid-template-columns:
-            1fr auto;
+            minmax(0, 1fr) 115px auto;
 
           gap: 10px;
 
@@ -1208,7 +1445,8 @@ function DeliveryPlanner() {
         }
 
 
-        .builder-top-row select {
+        .builder-top-row select,
+        .builder-top-row input {
           height: 34px;
 
           border: 1px solid #dde5e1;
@@ -1217,6 +1455,11 @@ function DeliveryPlanner() {
           padding: 0 8px;
 
           font-size: 9px;
+        }
+
+
+        .builder-top-row input {
+          padding: 0 7px;
         }
 
 
@@ -1255,6 +1498,38 @@ function DeliveryPlanner() {
 
           border: 1px solid #e3e9e6;
           border-radius: 6px;
+        }
+
+
+        .trip-stop-list {
+          display: grid;
+          gap: 5px;
+          padding: 8px;
+        }
+
+
+        .trip-stop {
+          display: grid;
+          grid-template-columns: 24px minmax(55px, auto) 1fr;
+          gap: 8px;
+          align-items: center;
+          padding: 7px;
+          border: 1px solid #e3e9e6;
+          border-radius: 5px;
+          background: #ffffff;
+          color: #27483d;
+          text-align: left;
+          cursor: pointer;
+        }
+
+
+        .trip-stop > span:first-child {
+          display: grid;
+          width: 21px;
+          height: 21px;
+          place-items: center;
+          border-radius: 50%;
+          background: #e7f6ed;
         }
 
 
@@ -1329,6 +1604,12 @@ function DeliveryPlanner() {
           background: #20b879;
 
           color: #ffffff;
+        }
+
+
+        .builder-actions button:disabled {
+          cursor: not-allowed;
+          opacity: .55;
         }
 
 

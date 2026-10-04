@@ -128,9 +128,8 @@ button { cursor: pointer; }
 .status-text { font-size:9px; color:#8b969b; }
 .status-text.done { color:#128362; }
 .status-text.next { color:#007a60; font-weight:800; }
-.map-card { height:310px; margin-top:12px; border-radius:14px; overflow:hidden; background:#dff2ea; position:relative; border:1px solid #d4e8df; }
-.map-grid { position:absolute; inset:0; background-image:linear-gradient(28deg,transparent 46%,white 47%,white 51%,transparent 52%),linear-gradient(100deg,transparent 46%,white 47%,white 51%,transparent 52%); background-size:100px 80px; opacity:.7; }
-.map-route-line { position:absolute; width:220px; height:120px; border:7px solid #007e65; border-left:0; border-bottom:0; border-radius:50%; transform:rotate(-18deg); left:70px; top:70px; }
+.map-card { height:310px; margin-top:12px; border-radius:14px; overflow:hidden; background:#f8fafc; position:relative; border:1px solid #d4e8df; }
+.map-unavailable { height:100%; display:grid; place-items:center; padding:24px; color:#64748b; text-align:center; font-size:13px; }
 .map-caption { position:absolute; bottom:12px; left:12px; right:12px; background:white; border-radius:9px; padding:10px; font-size:11px; font-weight:700; }
 
 /* stop details */

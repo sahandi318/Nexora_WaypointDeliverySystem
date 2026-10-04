@@ -176,7 +176,7 @@ const ReportsCapacity = () => {
 
             <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
               {isCapacityPage
-                ? "Review completed deliveries and plan future capacity using demand forecasts."
+                ? "Review confirmed order demand and active fleet capacity from current system records."
                 : "Review completed trips, delivery outcomes, proof of delivery and unresolved issues."}
             </p>
           </div>

@@ -71,6 +71,7 @@ const driverAccess = [
   authenticateToken,
   requirePasswordChangeCompleted,
   authorizeRoles("DRIVER"),
+  hydrateDriverTrips,
 ];
 
 
@@ -276,6 +277,135 @@ async function updateDispatcherMonitoring(task, context) {
   }
 }
 
+function payloadObject(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  return {};
+}
+
+async function hydrateDriverTrips(req, res, next) {
+  try {
+    const persistedTrips = await prisma.liveTrip.findMany({
+      where: { driverUserId: req.user.id },
+      include: {
+        depot: true,
+        stops: { orderBy: { sequence: "asc" } },
+        events: { orderBy: { createdAt: "desc" } },
+      },
+      orderBy: [{ deliveryDate: "desc" }, { tripCode: "asc" }],
+    });
+    const planTrips = await prisma.plannedTrip.findMany({
+      where: { tripCode: { in: persistedTrips.map((trip) => trip.tripCode) } },
+      include: {
+        allocations: {
+          include: {
+            storeOrder: { include: { outlet: true } },
+          },
+          orderBy: { stopSequence: "asc" },
+        },
+      },
+    });
+    const plannedByCode = new Map(planTrips.map((trip) => [trip.tripCode, trip]));
+    const runtimeTrips = persistedTrips.map((trip) => {
+      const plannedTrip = plannedByCode.get(trip.tripCode);
+      const allocationBySequence = new Map(
+        (plannedTrip?.allocations || []).map((allocation) => [
+          allocation.stopSequence,
+          allocation.storeOrder,
+        ])
+      );
+      const podEvents = trip.events.filter((event) => event.type === "POD_SUBMITTED");
+      const exceptionEvents = trip.events.filter((event) => event.type === "EXCEPTION_RECORDED");
+      const stops = trip.stops.map((stop) => {
+        const order = allocationBySequence.get(stop.sequence);
+        const podEvent = podEvents.find(
+          (event) => payloadObject(event.payload).stopId === stop.stopCode
+        );
+        const exceptionEvent = exceptionEvents.find(
+          (event) => payloadObject(event.payload).stopId === stop.stopCode
+        );
+        const completed = stop.status === "COMPLETED";
+        return {
+          stopId: stop.stopCode,
+          position: stop.sequence,
+          outletId: stop.outletCode,
+          outletName: order?.outlet?.brand || stop.outletName || null,
+          orderId: order?.orderCode || null,
+          district: stop.district || "",
+          windowOpen: order?.outlet?.windowOpenTime || null,
+          windowClose: order?.outlet?.windowCloseTime || null,
+          plannedArrival: stop.plannedEta,
+          arrivalTime: stop.actualArrival,
+          tempRequirement: order?.orderType === "CHILLED" ? "Chilled" : "Ambient",
+          expectedUnits: order?.totalUnits || 0,
+          loadedUnits: trip.status === "VEHICLE_READY" ? order?.totalUnits || 0 : 0,
+          deliveredQuantity: null,
+          unloadingPoint: order?.outlet?.dockType || null,
+          vehicleAccess: order?.outlet?.parkingConstraint || null,
+          mallWindow: order?.outlet?.mallWindow || null,
+          mapsUrl: null,
+          destination: { latitude: stop.latitude, longitude: stop.longitude },
+          etaMinutes: null,
+          distanceKm: null,
+          status: completed ? "completed" : stop.status === "ARRIVED" ? "arrived" : stop.status === "NEXT_STOP" ? "next" : "pending",
+          completed,
+          outcome: stop.outcome,
+          pod: podEvent ? payloadObject(podEvent.payload) : null,
+          exception: exceptionEvent ? payloadObject(exceptionEvent.payload) : null,
+        };
+      });
+      const firstOrder = plannedTrip?.allocations?.[0]?.storeOrder;
+      const publishedEvent = trip.events.find((event) => event.type === "DISPATCHER_PLAN_PUBLISHED");
+      const publishedPayload = payloadObject(publishedEvent?.payload);
+      const executionStatus = trip.status === "COMPLETED"
+        ? "COMPLETED"
+        : ["ON_ROUTE", "DELAYED", "OFFLINE"].includes(trip.status)
+          ? "IN_PROGRESS"
+          : "NOT_STARTED";
+      return {
+        tripId: trip.tripCode,
+        tripNumber: plannedTrip?.tripNumber || 1,
+        deliveryDate: trip.deliveryDate.toISOString().slice(0, 10),
+        depotId: trip.depotId,
+        brand: firstOrder?.outlet?.brand || "",
+        district: firstOrder?.outlet?.district || "",
+        vehicleId: trip.vehicleCode,
+        vehicleType: trip.vehicleType,
+        temperature: trip.temperature,
+        timeLabel: plannedTrip?.plannedDeparture || "Departure not set",
+        dispatcherPlanStatus: "PUBLISHED",
+        loaderStatus: trip.status === "VEHICLE_READY"
+          ? "VEHICLE_READY"
+          : trip.status === "ISSUE"
+            ? "BLOCKED"
+            : trip.status === "LOADING"
+              ? "LOADING"
+              : "WAITING",
+        driverExecutionStatus: executionStatus,
+        completedAt: executionStatus === "COMPLETED"
+          ? trip.events.find((event) => event.type === "STOP_COMPLETED")?.createdAt?.toISOString() || null
+          : null,
+        publishedBy: publishedPayload.dispatcherUserId || null,
+        assignedDriverUserId: trip.driverUserId,
+        assignedDriverUserCode: req.user.userId,
+        stops,
+        vehicle: {
+          vehicleId: trip.vehicleCode,
+          type: trip.vehicleType || "Vehicle",
+          temp: trip.temperature || "Ambient",
+          depot: trip.depot?.name || "",
+        },
+      };
+    });
+
+    state.trips = runtimeTrips.filter((trip) => trip.driverExecutionStatus !== "COMPLETED");
+    state.historyTrips = runtimeTrips.filter((trip) => trip.driverExecutionStatus === "COMPLETED");
+    if (runtimeTrips[0]?.vehicle) state.vehicle = runtimeTrips[0].vehicle;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
 /**
  * Driver-facing trip status comes from the connected workflow:
  *
@@ -389,7 +519,7 @@ function tripView(trip) {
       trip.stops.length,
 
     vehicle:
-      state.vehicle,
+      trip.vehicle || state.vehicle,
 
     summary: {
       delivered,
@@ -448,14 +578,6 @@ app.get(
   "/api/driver/trips",
   driverAccess,
   async (req, res) => {
-    await Promise.all(
-      state.trips.map((trip) =>
-        updateDispatcherMonitoring(
-          () => synchronizeTripForDriver({ trip, driverUser: req.user, emit: false }),
-          `trip-list:${trip.tripId}`
-        )
-      )
-    );
     const activeTrip =
       state.trips.find(
         (trip) =>

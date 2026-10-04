@@ -5,7 +5,6 @@ import DriverTopBar from '../../components/DriverTopBar';
 import LoadingState from '../../components/LoadingState';
 import MobileShell from '../../components/MobileShell';
 import { getDriverTrip } from '../../services/offlineService';
-import { colomboMapEmbed } from '../../config';
 
 function getStopState(stop, nextStopId) {
   if (stop.completed || stop.status === 'completed') return 'completed';
@@ -81,8 +80,12 @@ export default function TripOverview() {
 
                   <span className="stop-main">
                     <strong>{stop.outletId}</strong>
-                    <small>Waypoint Style</small>
-                    <em>Delivery window: {stop.windowOpen} – {stop.windowClose}</em>
+                    <small>{stop.outletName || 'Outlet name unavailable'}</small>
+                    <em>
+                      {stop.windowOpen && stop.windowClose
+                        ? `Delivery window: ${stop.windowOpen} – ${stop.windowClose}`
+                        : 'Delivery window not set'}
+                    </em>
                   </span>
 
                   {state === 'completed' && (
@@ -114,14 +117,11 @@ export default function TripOverview() {
           </div>
         ) : (
           <div className="map-card live-map">
-            <iframe
-              title={`Trip ${trip.tripNumber} live map`}
-              src={colomboMapEmbed}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            <div className="map-unavailable">
+              No verified stop coordinates are available for this trip.
+            </div>
             <div className="map-caption">
-              <span className="live-dot" /> Trip {trip.tripNumber} · {trip.totalStops} stops · {trip.district}
+              <span className="offline-dot" /> Trip {trip.tripNumber} · {trip.totalStops} stops · {trip.district}
             </div>
           </div>
         )}
