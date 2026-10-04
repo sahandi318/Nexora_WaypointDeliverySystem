@@ -651,7 +651,7 @@ function numericId(value, label) {
   return id;
 }
 
- HEAD
+ 
 function isVanOnly(outlet) {
   return [outlet?.parkingConstraint, outlet?.dockType]
     .filter(Boolean)

@@ -26,7 +26,7 @@ import {
   getDispatcherPlanningSnapshot,
   getDispatcherLoadingExceptions,
 } from "../services/dispatcherPlanningService.js";
-import prisma from "../config/database.js";
+
 import {
   getDispatcherDeliveryReports,
   getLiveMonitoringSnapshot,
