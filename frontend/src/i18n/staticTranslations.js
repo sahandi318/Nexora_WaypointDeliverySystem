@@ -1540,6 +1540,35 @@ const STATIC_TRANSLATIONS = {
 
       "Review scheduled and active deliveries for your assigned outlet.",
 
+    "storeManager.liveStatusLive":
+      "Live",
+
+    "storeManager.liveStatusLiveHint":
+      "Live delivery updates are connected.",
+
+    "storeManager.liveStatusConnecting":
+      "Connecting",
+
+    "storeManager.liveStatusConnectingHint":
+      "Connecting to live delivery updates.",
+
+    "storeManager.liveStatusReconnecting":
+      "Reconnecting",
+
+    "storeManager.liveStatusReconnectingHint":
+      "Restoring live delivery updates.",
+
+    "storeManager.liveStatusStale":
+      "Delayed",
+
+    "storeManager.liveStatusStaleHint":
+      "Live updates are delayed; periodic refresh is still active.",
+
+    "storeManager.liveStatusOffline":
+      "Offline",
+
+    "storeManager.liveStatusOfflineHint":
+      "The device is offline; showing the latest synchronized delivery data.",
 
 
 
@@ -4044,6 +4073,35 @@ const STATIC_TRANSLATIONS = {
 
       "ඔබට අනුයුක්ත වෙළඳසැල සඳහා නියමිත සහ ක්‍රියාත්මක බෙදාහැරීම් බලන්න.",
 
+    "storeManager.liveStatusLive":
+      "සජීවී",
+
+    "storeManager.liveStatusLiveHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන සම්බන්ධ වී ඇත.",
+
+    "storeManager.liveStatusConnecting":
+      "සම්බන්ධ වෙමින්",
+
+    "storeManager.liveStatusConnectingHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන වෙත සම්බන්ධ වෙමින් පවතී.",
+
+    "storeManager.liveStatusReconnecting":
+      "නැවත සම්බන්ධ වෙමින්",
+
+    "storeManager.liveStatusReconnectingHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන නැවත සම්බන්ධ කරමින් පවතී.",
+
+    "storeManager.liveStatusStale":
+      "ප්‍රමාදයි",
+
+    "storeManager.liveStatusStaleHint":
+      "සජීවී යාවත්කාලීන ප්‍රමාදයි; කාලානුරූප යාවත්කාලීන කිරීම තවම ක්‍රියාත්මකයි.",
+
+    "storeManager.liveStatusOffline":
+      "නොබැඳි",
+
+    "storeManager.liveStatusOfflineHint":
+      "උපාංගය නොබැඳිය; අවසන් සමමුහුර්ත කළ බෙදාහැරීම් දත්ත පෙන්වයි.",
 
 
 
@@ -6548,6 +6606,35 @@ const STATIC_TRANSLATIONS = {
 
       "உங்களுக்கு ஒதுக்கப்பட்ட கடைக்கான திட்டமிடப்பட்ட மற்றும் செயலில் உள்ள விநியோகங்களைப் பார்வையிடவும்.",
 
+    "storeManager.liveStatusLive":
+      "நேரலை",
+
+    "storeManager.liveStatusLiveHint":
+      "நேரலை விநியோக புதுப்பிப்புகள் இணைக்கப்பட்டுள்ளன.",
+
+    "storeManager.liveStatusConnecting":
+      "இணைக்கிறது",
+
+    "storeManager.liveStatusConnectingHint":
+      "நேரலை விநியோக புதுப்பிப்புகளுடன் இணைக்கிறது.",
+
+    "storeManager.liveStatusReconnecting":
+      "மீண்டும் இணைக்கிறது",
+
+    "storeManager.liveStatusReconnectingHint":
+      "நேரலை விநியோக புதுப்பிப்புகளை மீண்டும் இணைக்கிறது.",
+
+    "storeManager.liveStatusStale":
+      "தாமதம்",
+
+    "storeManager.liveStatusStaleHint":
+      "நேரலை புதுப்பிப்புகள் தாமதமாகின்றன; காலமுறை புதுப்பிப்பு தொடர்ந்து செயலில் உள்ளது.",
+
+    "storeManager.liveStatusOffline":
+      "ஆஃப்லைன்",
+
+    "storeManager.liveStatusOfflineHint":
+      "சாதனம் ஆஃப்லைனில் உள்ளது; கடைசியாக ஒத்திசைக்கப்பட்ட விநியோக தரவு காட்டப்படுகிறது.",
 
 
 

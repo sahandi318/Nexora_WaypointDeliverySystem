@@ -26,6 +26,7 @@ import {
 
 import StoreManagerPageHeader from "../../components/storeManager/StoreManagerPageHeader";
 import StoreManagerShell from "../../components/storeManager/StoreManagerShell";
+import StoreManagerLiveConnectionBadge from "../../components/storeManager/deliveries/StoreManagerLiveConnectionBadge";
 import {
   DeliveryMetricCard,
   DeliveryStatusBadge,
@@ -75,6 +76,7 @@ function StoreManagerDeliveriesPage() {
     isRefreshing,
     errorMessage: deliveriesErrorMessage,
     refreshDeliveries,
+    liveStatus,
   } = useStoreManagerDeliveries();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,15 +174,23 @@ function StoreManagerDeliveriesPage() {
         title={t("storeManager.deliveriesPageTitle")}
         description={t("storeManager.deliveriesPageDescription")}
         actions={
-          <button
-            type="button"
-            onClick={refreshDeliveries}
-            disabled={isRefreshing}
-            className="nexora-focus inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[11.5px] font-semibold text-[var(--color-text-secondary)] shadow-sm transition hover:-translate-y-[1px] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
-            {t("common.refresh")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <StoreManagerLiveConnectionBadge
+              status={liveStatus}
+              t={t}
+              compact
+            />
+
+            <button
+              type="button"
+              onClick={refreshDeliveries}
+              disabled={isRefreshing}
+              className="nexora-focus inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[11.5px] font-semibold text-[var(--color-text-secondary)] shadow-sm transition hover:-translate-y-[1px] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+              {t("common.refresh")}
+            </button>
+          </div>
         }
       />
 

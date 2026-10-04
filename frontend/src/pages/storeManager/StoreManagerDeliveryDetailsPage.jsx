@@ -25,6 +25,7 @@ import {
 } from "react-router-dom";
 
 import StoreManagerShell from "../../components/storeManager/StoreManagerShell";
+import StoreManagerLiveConnectionBadge from "../../components/storeManager/deliveries/StoreManagerLiveConnectionBadge";
 import {
   DELIVERY_PROGRESS_STEPS,
   DeliveryField,
@@ -39,6 +40,7 @@ import {
 
 import useStoreManagerContext from "../../hooks/useStoreManagerContext";
 import useStoreManagerDelivery from "../../hooks/useStoreManagerDelivery";
+import useStoreManagerDeliveryTracking from "../../hooks/useStoreManagerDeliveryTracking";
 import useTranslations from "../../hooks/useTranslations";
 
 function StoreManagerDeliveryDetailsPage() {
@@ -66,6 +68,18 @@ function StoreManagerDeliveryDetailsPage() {
     errorCode,
     refreshDelivery,
   } = useStoreManagerDelivery(orderCode);
+
+  const {
+    isLoading: isTrackingLoading,
+    isRefreshing: isTrackingRefreshing,
+    refreshTracking,
+    liveStatus,
+  } = useStoreManagerDeliveryTracking(
+    orderCode,
+    {
+      onInvalidate: refreshDelivery,
+    }
+  );
 
   if (isContextLoading) {
     return <FullPageLoading message={t("storeManager.loadingWorkspace")} />;
@@ -116,6 +130,12 @@ function StoreManagerDeliveryDetailsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <StoreManagerLiveConnectionBadge
+                status={liveStatus}
+                t={t}
+                compact
+              />
+
               {delivery ? (
                 <button
                   type="button"
@@ -131,11 +151,26 @@ function StoreManagerDeliveryDetailsPage() {
 
               <button
                 type="button"
-                onClick={refreshDelivery}
-                disabled={isRefreshing || isDeliveryLoading}
+                onClick={() => {
+                  refreshDelivery();
+                  refreshTracking();
+                }}
+                disabled={
+                  isRefreshing ||
+                  isDeliveryLoading ||
+                  isTrackingRefreshing ||
+                  isTrackingLoading
+                }
                 className="nexora-focus inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--color-primary)] px-3.5 text-[10.5px] font-bold text-white shadow-[0_8px_18px_rgba(15,169,104,0.14)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <RefreshCw size={13.5} className={isRefreshing ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={13.5}
+                  className={
+                    isRefreshing || isTrackingRefreshing
+                      ? "animate-spin"
+                      : ""
+                  }
+                />
                 {t("common.refresh")}
               </button>
             </div>

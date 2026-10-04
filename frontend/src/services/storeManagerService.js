@@ -387,3 +387,39 @@ export async function getStoreManagerDelivery({
 
   return responseData.data.delivery;
 }
+
+/**
+ * Loads the privacy-filtered live tracking view for one Store Manager
+ * delivery. The backend resolves the outlet from the authenticated user;
+ * no outlet or room identifier is sent by the browser.
+ */
+export async function getStoreManagerDeliveryTracking({
+  orderCode,
+  signal,
+} = {}) {
+  const normalizedOrderCode = String(orderCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedOrderCode) {
+    throw new Error("A valid order code is required.");
+  }
+
+  const response = await api.get(
+    `/store-manager/deliveries/${encodeURIComponent(normalizedOrderCode)}/tracking`,
+    { signal }
+  );
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !responseData?.data?.tracking
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager tracking response."
+    );
+  }
+
+  return responseData.data.tracking;
+}

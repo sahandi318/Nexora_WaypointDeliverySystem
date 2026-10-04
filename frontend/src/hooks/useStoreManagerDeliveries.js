@@ -8,6 +8,10 @@ import {
 import {
   getStoreManagerDeliveries,
 } from "../services/storeManagerService";
+import useStoreManagerLiveUpdates from "./useStoreManagerLiveUpdates";
+
+const DELIVERIES_POLL_MS = 45000;
+const LIVE_REFRESH_DEBOUNCE_MS = 250;
 
 function useStoreManagerDeliveries() {
   const [deliveries, setDeliveries] = useState([]);
@@ -15,6 +19,7 @@ function useStoreManagerDeliveries() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const requestIdRef = useRef(0);
+  const liveRefreshTimerRef = useRef(null);
 
   const loadDeliveries = useCallback(async ({
     signal,
@@ -75,12 +80,42 @@ function useStoreManagerDeliveries() {
     [loadDeliveries]
   );
 
+  const scheduleLiveRefresh = useCallback(() => {
+    if (liveRefreshTimerRef.current) {
+      window.clearTimeout(liveRefreshTimerRef.current);
+    }
+
+    liveRefreshTimerRef.current = window.setTimeout(() => {
+      loadDeliveries({ isRefresh: true });
+    }, LIVE_REFRESH_DEBOUNCE_MS);
+  }, [loadDeliveries]);
+
+  const liveConnection = useStoreManagerLiveUpdates({
+    onUpdate: scheduleLiveRefresh,
+    onReconnect: scheduleLiveRefresh,
+  });
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      loadDeliveries({ isRefresh: true });
+    }, DELIVERIES_POLL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+
+      if (liveRefreshTimerRef.current) {
+        window.clearTimeout(liveRefreshTimerRef.current);
+      }
+    };
+  }, [loadDeliveries]);
+
   return {
     deliveries,
     isLoading,
     isRefreshing,
     errorMessage,
     refreshDeliveries,
+    ...liveConnection,
   };
 }
 
