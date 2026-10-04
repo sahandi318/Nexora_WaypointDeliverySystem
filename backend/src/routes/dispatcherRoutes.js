@@ -11,6 +11,13 @@ import {
   getLiveMonitoringTrip,
 } from "../controllers/dispatcherMonitoringController.js";
 
+import {
+  getDispatcherStoreOrder,
+  getDispatcherStoreOrders,
+  postDispatcherConfirmOrder,
+  postDispatcherDeferOrder,
+} from "../controllers/dispatcherOrderController.js";
+
 const router = Router();
 
 const dispatcherAccess = [
@@ -29,6 +36,34 @@ router.get(
   "/live-monitoring/:tripCode",
   ...dispatcherAccess,
   getLiveMonitoringTrip
+);
+
+// ============================================================
+// STORE MANAGER ORDER HANDOFF / DISPATCHER DECISIONS
+// ============================================================
+
+router.get(
+  "/orders",
+  ...dispatcherAccess,
+  getDispatcherStoreOrders
+);
+
+router.get(
+  "/orders/:orderCode",
+  ...dispatcherAccess,
+  getDispatcherStoreOrder
+);
+
+router.post(
+  "/orders/:orderCode/confirm",
+  ...dispatcherAccess,
+  postDispatcherConfirmOrder
+);
+
+router.post(
+  "/orders/:orderCode/defer",
+  ...dispatcherAccess,
+  postDispatcherDeferOrder
 );
 
 export default router;

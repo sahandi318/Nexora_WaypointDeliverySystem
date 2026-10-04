@@ -38,6 +38,15 @@ enum StoreOrderStatus {
 }
 
 // ============================================================
+// STORE ORDER DISPATCHER DECISION
+// ============================================================
+
+enum StoreOrderDecisionType {
+  CONFIRMED
+  DEFERRED
+}
+
+// ============================================================
 // STORE ORDER CUTOFF DECISION
 // ============================================================
 
@@ -160,9 +169,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps  PasswordResetOtp[]
-  liveTripsAsDriver  LiveTrip[]         @relation("LiveTripDriver")
-  createdStoreOrders StoreOrder[]       @relation("StoreOrderCreatedBy")
+  passwordResetOtps     PasswordResetOtp[]
+  liveTripsAsDriver     LiveTrip[]            @relation("LiveTripDriver")
+  createdStoreOrders    StoreOrder[]          @relation("StoreOrderCreatedBy")
+  storeOrderDecisions   StoreOrderDecision[]  @relation("StoreOrderDecisionBy")
 
   @@index([role])
   @@index([outletId])
@@ -441,6 +451,7 @@ model StoreOrder {
 
   items               StoreOrderItem[]
   deliveryAllocations DeliveryAllocation[]
+  dispatcherDecisions StoreOrderDecision[]
 
   @@index([outletId, submittedAt])
   @@index([outletId, status])
@@ -448,6 +459,39 @@ model StoreOrder {
   @@index([createdByUserId])
   @@index([effectiveDispatchDate])
   @@map("store_orders")
+}
+
+
+// ============================================================
+// STORE ORDER DISPATCHER DECISION HISTORY
+// ============================================================
+
+/// Immutable audit trail for Dispatcher decisions on Store Manager orders.
+/// Current state stays on StoreOrder.status; this table records who changed
+/// that state and why, without duplicating the order itself.
+model StoreOrderDecision {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  decidedByUserId Int?  @map("decided_by_user_id")
+  decidedByUser   User? @relation("StoreOrderDecisionBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  decision        StoreOrderDecisionType
+  previousStatus  StoreOrderStatus       @map("previous_status")
+  resultingStatus StoreOrderStatus       @map("resulting_status")
+
+  reason String? @db.VarChar(500)
+
+  effectiveDispatchDate DateTime @map("effective_dispatch_date") @db.Date
+
+  decidedAt DateTime @default(now()) @map("decided_at")
+
+  @@index([storeOrderId, decidedAt])
+  @@index([decidedByUserId])
+  @@index([decision, decidedAt])
+  @@map("store_order_decisions")
 }
 
 // ============================================================
