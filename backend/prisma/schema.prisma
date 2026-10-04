@@ -44,6 +44,7 @@ model Depot {
 
   outlets Outlet[]
   users   User[]
+  liveTrips LiveTrip[]
 
   @@map("depots")
 }
@@ -120,6 +121,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   passwordResetOtps PasswordResetOtp[]
+  liveTripsAsDriver LiveTrip[] @relation("LiveTripDriver")
 
   @@index([role])
   @@index([outletId])
@@ -150,8 +152,8 @@ model PasswordResetOtp {
   // or otherwise invalidated.
   usedAt DateTime?
 
-  // Set after a successful password reset.
-  // Prevents reset authorization from being reused.
+  // Set after Stage 5.5E successfully changes the password.
+  // This prevents the reset authorization from being reused.
   resetCompletedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -161,38 +163,99 @@ model PasswordResetOtp {
   @@map("password_reset_otps")
 }
 
+
 // ============================================================
-// TRANSLATION CACHE
+// LIVE DELIVERY MONITORING
 // ============================================================
 
-model TranslationCache {
+model LiveTrip {
   id Int @id @default(autoincrement())
 
-  // SHA-256 key generated from:
-  //
-  // source language
-  // target language
-  // source text
-  //
-  // The same translation can therefore be reused without
-  // calling the external translation provider again.
-  cacheKey String @unique @db.VarChar(64)
+  tripCode String @unique @db.VarChar(50)
+  deliveryDate DateTime @db.Date
 
-  sourceLanguage String @db.VarChar(10)
-  targetLanguage String @db.VarChar(10)
+  depotId Int?
+  depot Depot? @relation(fields: [depotId], references: [id], onDelete: SetNull)
 
-  sourceText     String @db.Text
-  translatedText String @db.Text
+  vehicleCode String @db.VarChar(50)
+  vehicleType String? @db.VarChar(120)
+  temperature String? @db.VarChar(120)
 
-  // Examples:
-  // google
-  // manual
-  provider String @db.VarChar(40)
+  driverUserId Int?
+  driver User? @relation("LiveTripDriver", fields: [driverUserId], references: [id], onDelete: SetNull)
+  driverName String @db.VarChar(150)
+
+  status String @default("PLANNED") @db.VarChar(40)
+  progressCompleted Int @default(0)
+  progressTotal Int @default(0)
+
+  nextDestination String? @db.VarChar(120)
+  eta String? @db.VarChar(40)
+
+  isDriverOnline Boolean @default(true)
+  currentLat Float?
+  currentLng Float?
+  lastSynchronized DateTime?
+
+  latestDriverUpdate String? @db.Text
+  latestDriverUpdateAt DateTime?
+  routeUpdatedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([sourceLanguage, targetLanguage])
-  @@index([targetLanguage])
-  @@map("translation_cache")
+  stops LiveTripStop[]
+  events LiveTripEvent[]
+
+  @@index([deliveryDate])
+  @@index([depotId, deliveryDate])
+  @@index([driverUserId])
+  @@index([status])
+  @@map("live_trips")
+}
+
+model LiveTripStop {
+  id Int @id @default(autoincrement())
+
+  stopCode String @unique @db.VarChar(50)
+
+  liveTripId Int
+  liveTrip LiveTrip @relation(fields: [liveTripId], references: [id], onDelete: Cascade)
+
+  sequence Int
+  outletCode String @db.VarChar(50)
+  outletName String? @db.VarChar(150)
+  district String? @db.VarChar(100)
+
+  latitude Float?
+  longitude Float?
+
+  plannedEta String? @db.VarChar(40)
+  actualArrival String? @db.VarChar(40)
+
+  status String @default("PENDING") @db.VarChar(40)
+  outcome String? @db.VarChar(60)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([liveTripId, sequence])
+  @@index([outletCode])
+  @@map("live_trip_stops")
+}
+
+model LiveTripEvent {
+  id Int @id @default(autoincrement())
+
+  liveTripId Int
+  liveTrip LiveTrip @relation(fields: [liveTripId], references: [id], onDelete: Cascade)
+
+  type String @db.VarChar(60)
+  message String @db.Text
+  payload Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([liveTripId, createdAt])
+  @@map("live_trip_events")
 }
