@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const MetricCard = ({
   title,
@@ -82,7 +83,42 @@ const forecastData = [
 ];
 
 const FutureCapacityPlanning = () => {
+  const navigate = useNavigate();
   const maxDemand = 600;
+
+  // Temporary frontend capacity value. Replace with backend data later.
+  const availableRefrigeratedCapacity = 200;
+
+  // Find the forecast week with the largest refrigerated-capacity shortfall.
+  // If no week exceeds capacity, no capacity alert is shown.
+  const refrigeratedShortfalls = forecastData
+    .map((item) => ({
+      ...item,
+      shortfall: item.chilled - availableRefrigeratedCapacity,
+    }))
+    .filter((item) => item.shortfall > 0);
+
+  const criticalCapacityAlert =
+    refrigeratedShortfalls.length > 0
+      ? refrigeratedShortfalls.reduce((largest, item) =>
+          item.shortfall > largest.shortfall ? item : largest
+        )
+      : null;
+
+  const handlePlanAllocation = () => {
+    navigate("/dispatcher/planning", {
+      state: criticalCapacityAlert
+        ? {
+            source: "future-capacity",
+            week: criticalCapacityAlert.week,
+            dateRange: criticalCapacityAlert.date,
+            shortfall: criticalCapacityAlert.shortfall,
+            capacityType: "refrigerated",
+            depot: "Kandy",
+          }
+        : undefined,
+    });
+  };
 
   return (
     <div>
@@ -155,7 +191,7 @@ const FutureCapacityPlanning = () => {
                     </span>
 
                     <div
-                      className="w-4 rounded-t bg-[var(--color-success-soft)]0"
+                      className="w-4 rounded-t bg-[var(--color-success)]"
                       style={{
                         height: `${(item.fresh / maxDemand) * 130}px`,
                       }}
@@ -183,7 +219,7 @@ const FutureCapacityPlanning = () => {
                     </span>
 
                     <div
-                      className="w-4 rounded-t bg-[var(--color-warning-soft)]0"
+                      className="w-4 rounded-t bg-[var(--color-warning)]"
                       style={{
                         height: `${(item.tech / maxDemand) * 130}px`,
                       }}
@@ -215,7 +251,7 @@ const FutureCapacityPlanning = () => {
               value="1,010"
               percentage={90}
               status=""
-              color="bg-[var(--color-success-soft)]0"
+              color="bg-[var(--color-success)]"
             />
 
             <CapacityBar
@@ -223,7 +259,7 @@ const FutureCapacityPlanning = () => {
               value="1,120"
               percentage={100}
               status="Sufficient"
-              color="bg-[var(--color-success-soft)]0"
+              color="bg-[var(--color-success)]"
               statusColor="text-[var(--color-success)]"
             />
 
@@ -239,7 +275,7 @@ const FutureCapacityPlanning = () => {
               value="200"
               percentage={50}
               status="Shortfall: 160"
-              color="bg-[var(--color-danger-soft)]0"
+              color="bg-[var(--color-danger)]"
               statusColor="text-[var(--color-danger)]"
             />
           </div>
@@ -325,7 +361,7 @@ const FutureCapacityPlanning = () => {
               value="16 / 20"
               percentage="80%"
               barWidth="80%"
-              barColor="bg-[var(--color-success-soft)]0"
+              barColor="bg-[var(--color-success)]"
             />
 
             <FleetRow
@@ -334,7 +370,7 @@ const FutureCapacityPlanning = () => {
               value="4 / 8"
               percentage="50%"
               barWidth="50%"
-              barColor="bg-[var(--color-warning-soft)]0"
+              barColor="bg-[var(--color-warning)]"
             />
 
             <FleetRow
@@ -350,23 +386,29 @@ const FutureCapacityPlanning = () => {
       </div>
 
       {/* Capacity warning */}
-      <div className="mt-4 flex flex-col gap-3 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-[10px] font-semibold text-[var(--color-danger)]">
-            ⚠ Capacity Alert
-          </p>
+      {criticalCapacityAlert && (
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold text-[var(--color-danger)]">
+              ⚠ Capacity Alert
+            </p>
 
-          <p className="mt-1 text-[9px] text-[var(--color-danger)]">
-            Week 3 has a predicted refrigerated capacity shortfall of 160
-            orders. Consider reallocating vehicles or arranging additional
-            refrigerated trucks.
-          </p>
+            <p className="mt-1 text-[9px] text-[var(--color-danger)]">
+              {criticalCapacityAlert.week} has a predicted refrigerated capacity
+              shortfall of {criticalCapacityAlert.shortfall} orders. Consider
+              reallocating vehicles or arranging additional refrigerated trucks.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePlanAllocation}
+            className="shrink-0 rounded-md border border-[var(--color-primary)] bg-[var(--color-surface)] px-5 py-2 text-[9px] font-medium text-[var(--color-success)]"
+          >
+            ✎ Plan Allocation
+          </button>
         </div>
-
-        <button className="shrink-0 rounded-md border border-[var(--color-primary)] bg-[var(--color-surface)] px-5 py-2 text-[9px] font-medium text-[var(--color-success)]">
-          ✎ Plan Allocation
-        </button>
-      </div>
+      )}
     </div>
   );
 };
