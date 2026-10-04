@@ -254,7 +254,7 @@ function App() {
 
     >
 
-     {!isDispatcherRoute && <ThemeToggle />}
+     {!isDispatcherRoute && !isAuthOnlyRoute && <ThemeToggle />}
 
 
 

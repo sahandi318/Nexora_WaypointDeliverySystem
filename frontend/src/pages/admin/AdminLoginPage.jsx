@@ -182,8 +182,10 @@ function AdminLoginPage() {
     <main
       className="
         relative
-        min-h-screen
-        overflow-hidden
+        min-h-[100dvh]
+        overflow-x-hidden
+        lg:h-[100dvh]
+        lg:overflow-hidden
         bg-[var(--color-bg)]
         text-[var(--color-text)]
         transition-colors
@@ -226,7 +228,9 @@ function AdminLoginPage() {
           relative
           z-10
           grid
-          min-h-screen
+          min-h-[100dvh]
+          lg:h-[100dvh]
+          lg:min-h-0
           lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]
         "
       >
@@ -235,8 +239,11 @@ function AdminLoginPage() {
         <section
           className="
             flex
-            min-h-screen
+            min-h-[100dvh]
             items-center
+            lg:h-[100dvh]
+            lg:min-h-0
+            lg:overflow-hidden
             lg:order-2
             justify-center
             px-4
@@ -245,12 +252,12 @@ function AdminLoginPage() {
             sm:py-14
             lg:min-h-0
             lg:px-12
-            lg:py-12
+            lg:py-6
             xl:px-16
           "
         >
           <div className="w-full max-w-lg">
-            <LoginUtilityBar />
+            <LoginUtilityBar showBackHome showTheme />
 
 
             <div className="mb-7 mt-6 lg:hidden">
