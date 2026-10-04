@@ -355,11 +355,19 @@ export async function initializeLiveMonitoring() {
   const driver = await resolveDriverUser();
   const depot = await resolveDepot(driver);
 
+  // Remove legacy monitoring-only demo rows from earlier development
+  // versions. Real Driver trips and Dispatcher-published plans are kept.
+  await prisma.liveTrip.deleteMany({
+    where: {
+      tripCode: {
+        in: ["TRP002", "TRP003", "TRP004", "TRP005"],
+      },
+    },
+  });
+
   for (const trip of state.trips || []) {
     await upsertTripFromDriverState(trip, driver, depot);
   }
-
-  await ensureAdditionalDemoTrips(depot);
 }
 
 export async function synchronizeDriverState() {

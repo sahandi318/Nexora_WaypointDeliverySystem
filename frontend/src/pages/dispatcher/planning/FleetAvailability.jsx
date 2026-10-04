@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -22,6 +23,10 @@ import {
 
 import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
+
+import {
+  getDispatcherPlanning,
+} from "../../../services/dispatcherPlanningService";
 
 
 function FleetAvailability() {
@@ -81,22 +86,43 @@ function FleetAvailability() {
   ] = useState(false);
 
 
-  /*
-   * No temporary/mock operational data.
-   * These will later come from backend API data.
-   */
+  const [planningData, setPlanningData] = useState({
+    fleet: [],
+    summary: {},
+  });
 
-  const vehicles = [];
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
 
-  const summary = {
-    confirmedOrders: null,
-    allocatedOrders: null,
-    unallocatedOrders: null,
-    deferredOrders: null,
-  };
+  useEffect(() => {
+    const controller = new AbortController();
 
+    getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        setPlanningData(data || { fleet: [], summary: {} });
+        setSelectedVehicleId((current) =>
+          current && data?.fleet?.some((vehicle) => vehicle.vehicleId === current)
+            ? current
+            : data?.fleet?.[0]?.vehicleId || null
+        );
+      })
+      .catch((error) => {
+        if (error?.name !== "CanceledError" && error?.name !== "AbortError") {
+          console.error("Unable to load fleet availability:", error);
+        }
+      });
 
+    return () => controller.abort();
+  }, [selectedDate, selectedDepot]);
+
+  const vehicles = planningData.fleet || [];
+  const summary = planningData.summary || {};
   const selectedVehicle =
+    vehicles.find((vehicle) => vehicle.vehicleId === selectedVehicleId) ||
+    vehicles[0] ||
     null;
 
 
@@ -833,6 +859,8 @@ function FleetAvailability() {
                             <button
                               type="button"
                               className="fleet-more-button"
+                              onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
+                              aria-label={`View ${vehicle.vehicleId}`}
                             >
                               •••
                             </button>

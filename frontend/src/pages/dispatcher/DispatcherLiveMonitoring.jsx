@@ -145,15 +145,15 @@ function RouteMap({ trip }) {
   const center = routeGeometry[0] || stopPoints[0] || [6.9271, 79.8612];
 
   return (
-    <div className="dispatcher-panel dispatcher-map-card">
-      <div className="dispatcher-panel-heading">
+    <div className="dlm-panel dlm-map-card">
+      <div className="dlm-panel-heading">
         Route Map - {trip?.tripCode || "No trip selected"}
       </div>
 
       {trip ? (
         <>
           <MapContainer
-            className="dispatcher-map"
+            className="dlm-map"
             center={center}
             zoom={12}
             scrollWheelZoom
@@ -221,16 +221,16 @@ function RouteMap({ trip }) {
             )}
           </MapContainer>
 
-          <div className="dispatcher-map-legend">
-            <span><i className="dispatcher-dot completed" /> Completed</span>
-            <span><i className="dispatcher-dot vehicle" /> Current Vehicle</span>
-            <span><i className="dispatcher-dot next" /> Next Stop</span>
-            <span><i className="dispatcher-dot pending" /> Pending</span>
+          <div className="dlm-map-legend">
+            <span><i className="dlm-dot completed" /> Completed</span>
+            <span><i className="dlm-dot vehicle" /> Current Vehicle</span>
+            <span><i className="dlm-dot next" /> Next Stop</span>
+            <span><i className="dlm-dot pending" /> Pending</span>
             {liveRoutePoints.length > 1 && <span>Driver road route</span>}
           </div>
         </>
       ) : (
-        <div className="dispatcher-empty">Select an active trip to view its route.</div>
+        <div className="dlm-empty">Select an active trip to view its route.</div>
       )}
     </div>
   );
@@ -331,24 +331,24 @@ export default function DispatcherLiveMonitoring() {
     : 0;
 
   return (
-    <main className="dispatcher-live-page">
-      <div className="dispatcher-live-layout">
-        <aside className="dispatcher-sidebar">
-          <div className="dispatcher-sidebar-brand">
+    <main className="dlm-live-page">
+      <div className="dlm-live-layout">
+        <aside className="dlm-sidebar">
+          <div className="dlm-sidebar-brand">
             <img src={waypointLogo} alt="Waypoint Group" />
             <strong>Waypoint Group</strong>
           </div>
 
-          <nav className="dispatcher-nav" aria-label="Dispatcher navigation">
-            <button type="button" className="dispatcher-nav-item"><Activity size={16} /> Operations Dashboard</button>
-            <button type="button" className="dispatcher-nav-item"><ClipboardList size={16} /> Delivery Planning</button>
-            <button type="button" className="dispatcher-nav-item"><PackageCheck size={16} /> Loading Coordination</button>
-            <button type="button" className="dispatcher-nav-item active"><MapPinned size={16} /> Live Delivery Monitoring</button>
-            <button type="button" className="dispatcher-nav-item" onClick={() => navigate("/dispatcher/reports")}><Clock3 size={16} /> Reports & Capacity</button>
+          <nav className="dlm-nav" aria-label="Dispatcher navigation">
+            <button type="button" className="dlm-nav-item" onClick={() => navigate("/dispatcher/dashboard")}><Activity size={16} /> Operations Dashboard</button>
+            <button type="button" className="dlm-nav-item" onClick={() => navigate("/dispatcher/planning")}><ClipboardList size={16} /> Delivery Planning</button>
+            <button type="button" className="dlm-nav-item" onClick={() => navigate("/dispatcher/loading")}><PackageCheck size={16} /> Loading Coordination</button>
+            <button type="button" className="dlm-nav-item active"><MapPinned size={16} /> Live Delivery Monitoring</button>
+            <button type="button" className="dlm-nav-item" onClick={() => navigate("/dispatcher/reports")}><Clock3 size={16} /> Reports & Capacity</button>
           </nav>
 
-          <div className="dispatcher-sidebar-user">
-            <div className="dispatcher-avatar">{initials(user?.fullName || user?.userId)}</div>
+          <div className="dlm-sidebar-user">
+            <div className="dlm-avatar">{initials(user?.fullName || user?.userId)}</div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 800 }}>{user?.fullName || user?.userId || "Dispatcher"}</div>
               <div style={{ fontSize: 9, opacity: .7 }}>Dispatcher</div>
@@ -356,21 +356,21 @@ export default function DispatcherLiveMonitoring() {
           </div>
         </aside>
 
-        <section className="dispatcher-main">
-          <header className="dispatcher-header">
-            <div className="dispatcher-title">
+        <section className="dlm-main">
+          <header className="dlm-header">
+            <div className="dlm-title">
               <h1>Live Delivery Monitoring</h1>
               <p>Track active trips, monitor route progress and respond to delivery issues.</p>
             </div>
 
-            <div className="dispatcher-filters">
-              <div className="dispatcher-filter" style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <div className="dlm-filters">
+              <div className="dlm-filter" style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <CalendarDays size={15} />
                 <span>{formatSriLankaDate(nowMs)}</span>
               </div>
 
               <select
-                className="dispatcher-filter"
+                className="dlm-filter"
                 value={depotId}
                 onChange={(event) => setDepotId(event.target.value)}
                 aria-label="Depot"
@@ -382,7 +382,7 @@ export default function DispatcherLiveMonitoring() {
               </select>
 
               <select
-                className="dispatcher-filter"
+                className="dlm-filter"
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
                 aria-label="Trip status filter"
@@ -395,47 +395,47 @@ export default function DispatcherLiveMonitoring() {
             </div>
           </header>
 
-          <section className="dispatcher-kpis" aria-label="Live delivery summary">
-            <div className="dispatcher-kpi">
-              <div className="dispatcher-kpi-icon"><Truck size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Active Trips</div><div className="dispatcher-kpi-value">{summary.activeTrips ?? 0}</div></div>
+          <section className="dlm-kpis" aria-label="Live delivery summary">
+            <div className="dlm-kpi">
+              <div className="dlm-kpi-icon"><Truck size={19} /></div>
+              <div><div className="dlm-kpi-label">Active Trips</div><div className="dlm-kpi-value">{summary.activeTrips ?? 0}</div></div>
             </div>
-            <div className="dispatcher-kpi">
-              <div className="dispatcher-kpi-icon"><CheckCircle2 size={19} /></div>
-              <div><div className="dispatcher-kpi-label">On Schedule</div><div className="dispatcher-kpi-value">{summary.onSchedule ?? 0}</div></div>
+            <div className="dlm-kpi">
+              <div className="dlm-kpi-icon"><CheckCircle2 size={19} /></div>
+              <div><div className="dlm-kpi-label">On Schedule</div><div className="dlm-kpi-value">{summary.onSchedule ?? 0}</div></div>
             </div>
-            <div className="dispatcher-kpi warning">
-              <div className="dispatcher-kpi-icon"><Clock3 size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Delayed</div><div className="dispatcher-kpi-value">{summary.delayed ?? 0}</div></div>
+            <div className="dlm-kpi warning">
+              <div className="dlm-kpi-icon"><Clock3 size={19} /></div>
+              <div><div className="dlm-kpi-label">Delayed</div><div className="dlm-kpi-value">{summary.delayed ?? 0}</div></div>
             </div>
-            <div className="dispatcher-kpi offline">
-              <div className="dispatcher-kpi-icon"><WifiOff size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Offline Devices</div><div className="dispatcher-kpi-value">{summary.offlineDevices ?? 0}</div></div>
+            <div className="dlm-kpi offline">
+              <div className="dlm-kpi-icon"><WifiOff size={19} /></div>
+              <div><div className="dlm-kpi-label">Offline Devices</div><div className="dlm-kpi-value">{summary.offlineDevices ?? 0}</div></div>
             </div>
           </section>
 
           {offline && (
-            <div className="dispatcher-offline-alert" role="status">
+            <div className="dlm-offline-alert" role="status">
               <span><strong>Live tracking temporarily unavailable.</strong> Driver appears to be offline. Showing last synchronized progress.</span>
               <strong>Last sync {formatSyncAge(selectedTrip.lastSynchronized, nowMs)}</strong>
             </div>
           )}
 
           {error && (
-            <div className="dispatcher-offline-alert" role="alert">
+            <div className="dlm-offline-alert" role="alert">
               <span>{error}</span>
               <button type="button" onClick={() => loadMonitoring()} style={{ fontWeight: 800 }}>Retry</button>
             </div>
           )}
 
-          <section className="dispatcher-board">
-            <div className="dispatcher-panel">
-              <div className="dispatcher-panel-heading">Active Trips ({trips.length})</div>
-              <div className="dispatcher-trip-list-controls">
+          <section className="dlm-board">
+            <div className="dlm-panel">
+              <div className="dlm-panel-heading">Active Trips ({trips.length})</div>
+              <div className="dlm-trip-list-controls">
                 <div style={{ position: "relative" }}>
                   <Search size={14} style={{ position: "absolute", left: 10, top: 12, color: "var(--color-text-muted)" }} />
                   <input
-                    className="dispatcher-search"
+                    className="dlm-search"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search trip, driver, vehicle..."
@@ -444,9 +444,9 @@ export default function DispatcherLiveMonitoring() {
                 </div>
               </div>
 
-              <div className="dispatcher-trip-list">
+              <div className="dlm-trip-list">
                 {loading ? (
-                  <div className="dispatcher-empty">Loading active trips...</div>
+                  <div className="dlm-empty">Loading active trips...</div>
                 ) : visibleTrips.length ? (
                   visibleTrips.map((trip) => {
                     const percent = trip.progressTotal
@@ -457,62 +457,62 @@ export default function DispatcherLiveMonitoring() {
                       <button
                         type="button"
                         key={trip.tripCode}
-                        className={`dispatcher-trip-card ${trip.tripCode === selectedTripCode ? "selected" : ""}`}
+                        className={`dlm-trip-card ${trip.tripCode === selectedTripCode ? "selected" : ""}`}
                         onClick={() => setSelectedTripCode(trip.tripCode)}
                       >
-                        <div className="dispatcher-trip-card-top">
+                        <div className="dlm-trip-card-top">
                           <div>
-                            <div className="dispatcher-trip-code">{trip.tripCode}</div>
-                            <div className="dispatcher-vehicle-code">{trip.vehicleCode}</div>
+                            <div className="dlm-trip-code">{trip.tripCode}</div>
+                            <div className="dlm-vehicle-code">{trip.vehicleCode}</div>
                           </div>
-                          <span className={`dispatcher-status-pill ${trip.status}`}>{statusLabel(trip.status)}</span>
+                          <span className={`dlm-status-pill ${trip.status}`}>{statusLabel(trip.status)}</span>
                         </div>
-                        <div className="dispatcher-trip-card-mid" style={{ marginTop: 6 }}>
-                          <span className="dispatcher-driver-name">{trip.driverName}</span>
+                        <div className="dlm-trip-card-mid" style={{ marginTop: 6 }}>
+                          <span className="dlm-driver-name">{trip.driverName}</span>
                           <strong style={{ fontSize: 10 }}>{trip.progressCompleted} / {trip.progressTotal}</strong>
                         </div>
-                        <div className="dispatcher-progress"><span style={{ width: `${percent}%` }} /></div>
+                        <div className="dlm-progress"><span style={{ width: `${percent}%` }} /></div>
                       </button>
                     );
                   })
                 ) : (
-                  <div className="dispatcher-empty">No trips match this filter.</div>
+                  <div className="dlm-empty">No trips match this filter.</div>
                 )}
               </div>
             </div>
 
             <RouteMap trip={selectedTrip} />
 
-            <div className="dispatcher-detail-column">
-              <div className="dispatcher-panel">
-                <div className="dispatcher-panel-heading" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <div className="dlm-detail-column">
+              <div className="dlm-panel">
+                <div className="dlm-panel-heading" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                   <span>{selectedTrip ? `${selectedTrip.tripCode} - ${selectedTrip.vehicleCode}` : "Trip Details"}</span>
-                  {selectedTrip && <span className={`dispatcher-status-pill ${selectedTrip.status}`}>{statusLabel(selectedTrip.status)}</span>}
+                  {selectedTrip && <span className={`dlm-status-pill ${selectedTrip.status}`}>{statusLabel(selectedTrip.status)}</span>}
                 </div>
 
                 {selectedTrip ? (
-                  <div className="dispatcher-detail-grid">
-                    <div className="dispatcher-detail-row"><span>Driver</span><strong>{selectedTrip.driverName}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Depot</span><strong>{selectedTrip.depot?.name || "-"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Vehicle Type</span><strong>{selectedTrip.vehicleType || "-"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Temperature</span><strong>{selectedTrip.temperature || "-"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Stops Completed</span><strong>{selectedTrip.progressCompleted} / {selectedTrip.progressTotal}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Next Destination</span><strong>{selectedTrip.nextDestination || "Trip complete"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>ETA</span><strong>{selectedTrip.eta || "-"}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Last Synchronized</span><strong>{formatSyncAge(selectedTrip.lastSynchronized, nowMs)} · {formatSriLankaClock(selectedTrip.lastSynchronized)}</strong></div>
-                    <div className="dispatcher-detail-row"><span>Route Updated</span><strong>{selectedTrip.routeUpdatedAt ? `${formatSyncAge(selectedTrip.routeUpdatedAt, nowMs)} · ${formatSriLankaClock(selectedTrip.routeUpdatedAt)}` : "Waiting for Driver navigation"}</strong></div>
+                  <div className="dlm-detail-grid">
+                    <div className="dlm-detail-row"><span>Driver</span><strong>{selectedTrip.driverName}</strong></div>
+                    <div className="dlm-detail-row"><span>Depot</span><strong>{selectedTrip.depot?.name || "-"}</strong></div>
+                    <div className="dlm-detail-row"><span>Vehicle Type</span><strong>{selectedTrip.vehicleType || "-"}</strong></div>
+                    <div className="dlm-detail-row"><span>Temperature</span><strong>{selectedTrip.temperature || "-"}</strong></div>
+                    <div className="dlm-detail-row"><span>Stops Completed</span><strong>{selectedTrip.progressCompleted} / {selectedTrip.progressTotal}</strong></div>
+                    <div className="dlm-detail-row"><span>Next Destination</span><strong>{selectedTrip.nextDestination || "Trip complete"}</strong></div>
+                    <div className="dlm-detail-row"><span>ETA</span><strong>{selectedTrip.eta || "-"}</strong></div>
+                    <div className="dlm-detail-row"><span>Last Synchronized</span><strong>{formatSyncAge(selectedTrip.lastSynchronized, nowMs)} · {formatSriLankaClock(selectedTrip.lastSynchronized)}</strong></div>
+                    <div className="dlm-detail-row"><span>Route Updated</span><strong>{selectedTrip.routeUpdatedAt ? `${formatSyncAge(selectedTrip.routeUpdatedAt, nowMs)} · ${formatSriLankaClock(selectedTrip.routeUpdatedAt)}` : "Waiting for Driver navigation"}</strong></div>
                   </div>
                 ) : (
-                  <div className="dispatcher-empty">Select a trip.</div>
+                  <div className="dlm-empty">Select a trip.</div>
                 )}
               </div>
 
-              <div className="dispatcher-panel" style={{ marginTop: 12 }}>
-                <div className="dispatcher-panel-heading">Stop Progress</div>
-                <div className="dispatcher-stop-list">
+              <div className="dlm-panel" style={{ marginTop: 12 }}>
+                <div className="dlm-panel-heading">Stop Progress</div>
+                <div className="dlm-stop-list">
                   {(selectedTrip?.stops || []).map((stop) => (
-                    <div className="dispatcher-stop-row" key={stop.stopCode}>
-                      <span className={`dispatcher-stop-number ${stop.status}`}>{stop.sequence}</span>
+                    <div className="dlm-stop-row" key={stop.stopCode}>
+                      <span className={`dlm-stop-number ${stop.status}`}>{stop.sequence}</span>
                       <div>
                         <div style={{ fontWeight: 800 }}>{stop.outletName || stop.outletCode}</div>
                         <div style={{ color: "var(--color-text-muted)", marginTop: 2 }}>{stopLabel(stop.status)}</div>
@@ -526,8 +526,8 @@ export default function DispatcherLiveMonitoring() {
               </div>
 
               {selectedTrip && (
-                <div className="dispatcher-update-card">
-                  <div className="dispatcher-update-title">
+                <div className="dlm-update-card">
+                  <div className="dlm-update-title">
                     <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><MessageSquareText size={16} /> Latest Driver Update</span>
                     <span style={{ color: "var(--color-text-muted)", fontSize: 9 }}>{formatSyncAge(selectedTrip.latestDriverUpdateAt, nowMs)} · {formatSriLankaClock(selectedTrip.latestDriverUpdateAt)}</span>
                   </div>
