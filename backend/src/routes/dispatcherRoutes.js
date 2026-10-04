@@ -7,6 +7,7 @@ import {
 } from "../middleware/authMiddleware.js";
 
 import {
+  getDeliveryReports,
   getLiveMonitoring,
   getLiveMonitoringTrip,
 } from "../controllers/dispatcherMonitoringController.js";
@@ -30,6 +31,12 @@ router.get(
   "/live-monitoring",
   ...dispatcherAccess,
   getLiveMonitoring
+);
+
+router.get(
+  "/delivery-reports",
+  ...dispatcherAccess,
+  getDeliveryReports
 );
 
 router.get(

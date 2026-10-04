@@ -20,6 +20,7 @@ import { getRouteCache, saveRouteCache } from '../../db/offlineDb';
 import useConnectivity from '../../hooks/useConnectivity';
 import { getDriverStop, recordArrival } from '../../services/offlineService';
 import { fetchDrivingRoute, haversineMeters } from '../../services/routingService';
+import { publishDriverRoute } from '../../services/driverMonitoringService';
 
 const demoDriverLocation = {
   lat: Number(import.meta.env.VITE_DEMO_DRIVER_LAT || 6.9088),
@@ -134,6 +135,19 @@ export default function NavigationPage() {
         setRoute(result);
         setRouteState('ready');
         await saveRouteCache(stopId, result);
+
+        const etaLabel = calculateEta(result.durationMinutes);
+        publishDriverRoute({
+          tripId,
+          stopId,
+          routePoints: result.points,
+          currentLocation: driverLocation,
+          distanceKm: result.distanceKm,
+          durationMinutes: result.durationMinutes,
+          etaLabel,
+        }).catch((monitoringError) => {
+          console.warn('Unable to share live route with Dispatcher:', monitoringError);
+        });
       })
       .catch(async (routeFetchError) => {
         if (routeFetchError.name === 'AbortError') return;
@@ -142,6 +156,16 @@ export default function NavigationPage() {
           setRoute(cached);
           setRouteState('ready');
           setRouteError('Live road routing is temporarily unavailable. Using the saved route.');
+
+          publishDriverRoute({
+            tripId,
+            stopId,
+            routePoints: cached.points || [],
+            currentLocation: driverLocation,
+            distanceKm: cached.distanceKm,
+            durationMinutes: cached.durationMinutes,
+            etaLabel: calculateEta(cached.durationMinutes),
+          }).catch(() => {});
         } else {
           setRouteState('error');
           setRouteError('Live road routing is temporarily unavailable. Showing planning values instead.');
@@ -149,7 +173,7 @@ export default function NavigationPage() {
       });
 
     return () => controller.abort();
-  }, [online, driverLocation, destination, stopId]);
+  }, [online, driverLocation, destination, stopId, tripId]);
 
   if (!stop) {
     return <MobileShell>{error ? <div className="error-page">{error}</div> : <LoadingState />}</MobileShell>;

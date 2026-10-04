@@ -72,6 +72,12 @@ import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreate
 import StoreManagerDeliveriesPage from "./pages/storeManager/StoreManagerDeliveriesPage";
 import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDeliveryDetailsPage";
 
+import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
+import ConfirmedOrders from "./pages/dispatcher/planning/ConfirmedOrders";
+import FleetAvailability from "./pages/dispatcher/planning/FleetAvailability";
+import DeliveryPlanner from "./pages/dispatcher/planning/DeliveryPlanner";
+import DeferredOrders from "./pages/dispatcher/planning/DeferredOrders";
+import ReviewPublish from "./pages/dispatcher/planning/ReviewPublish";
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
 import ReceiptDiscrepancyResolution from "./pages/dispatcher/reports/ReceiptDiscrepancyResolution";
@@ -128,7 +134,8 @@ function App() {
   const location =
 
     useLocation();
-
+  const isDispatcherRoute =
+  location.pathname.startsWith("/dispatcher");
 
 
   // Landing navigation and footer belong only to the
@@ -169,7 +176,7 @@ function App() {
 
     >
 
-      <ThemeToggle />
+     {!isDispatcherRoute && <ThemeToggle />}
 
 
 
@@ -880,7 +887,59 @@ function App() {
               DISPATCHER
 
               ===================================================== */}
+          <Route
+            path="/dispatcher/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <DispatcherDashboard />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/dispatcher/planning"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <ConfirmedOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dispatcher/planning/fleet"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <FleetAvailability />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dispatcher/planning/planner"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <DeliveryPlanner />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dispatcher/planning/deferred"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <DeferredOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dispatcher/planning/review"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <ReviewPublish />
+              </ProtectedRoute>
+            }
+          />
 
 
           <Route
