@@ -8,6 +8,10 @@ import {
   ThermometerSun,
   Weight,
 } from "lucide-react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 function getProductImageSource(
   product
@@ -80,36 +84,79 @@ export function QuantityControl({
   onChange,
   maxQuantity = 999,
 }) {
+  const [draftValue, setDraftValue] = useState(
+    value > 0 ? String(value) : ""
+  );
+
+  useEffect(() => {
+    setDraftValue(value > 0 ? String(value) : "");
+  }, [value]);
+
+  function normalizeInput(rawValue) {
+    const digitsOnly = String(rawValue ?? "").replace(/\D/g, "");
+
+    if (!digitsOnly) return "";
+
+    const trimmedLeadingZeros = digitsOnly.replace(/^0+(?=\d)/, "");
+    const normalizedDigits = trimmedLeadingZeros || "0";
+    const boundedValue = Math.min(
+      maxQuantity,
+      Number(normalizedDigits)
+    );
+
+    return String(Number.isFinite(boundedValue) ? boundedValue : 0);
+  }
+
+  function commitNormalizedValue(rawValue) {
+    const normalized = normalizeInput(rawValue);
+
+    if (!normalized) {
+      setDraftValue("");
+      onChange(0);
+      return;
+    }
+
+    setDraftValue(normalized);
+    onChange(normalized);
+  }
+
   return (
-    <div className="flex h-8 shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+    <div className="flex h-10 shrink-0 overflow-hidden rounded-[14px] border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
       <button
         type="button"
-        onClick={() => onChange(value - 1)}
+        onClick={() => commitNormalizedValue(Math.max(0, value - 1))}
         disabled={value <= 0}
         aria-label="Decrease quantity"
-        className="nexora-focus inline-flex h-full w-8 items-center justify-center border-r border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-soft)] disabled:cursor-not-allowed disabled:opacity-35"
+        className="nexora-focus inline-flex h-full w-10 items-center justify-center border-r border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-35"
       >
-        <Minus size={11} />
+        <Minus size={12} />
       </button>
 
       <input
-        type="number"
-        min="0"
-        max={maxQuantity}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={draftValue}
+        onFocus={(event) => event.target.select()}
+        onChange={(event) => {
+          const normalized = normalizeInput(event.target.value);
+          setDraftValue(normalized);
+          onChange(normalized || 0);
+        }}
+        onBlur={() => commitNormalizedValue(draftValue)}
+        placeholder="0"
         aria-label="Quantity"
-        className="nexora-focus h-full w-11 border-0 bg-transparent px-1 text-center text-[10px] font-bold text-[var(--color-text)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="nexora-focus h-full w-14 border-0 bg-transparent px-2 text-center text-[13px] font-extrabold tracking-[0.01em] text-[var(--color-text)] outline-none placeholder:font-bold placeholder:text-[var(--color-text-muted)]"
       />
 
       <button
         type="button"
-        onClick={() => onChange(value + 1)}
+        onClick={() => commitNormalizedValue(Math.min(maxQuantity, value + 1))}
         disabled={value >= maxQuantity}
         aria-label="Increase quantity"
-        className="nexora-focus inline-flex h-full w-8 items-center justify-center border-l border-[var(--color-border)] text-[var(--color-primary)] transition hover:bg-[#16A572]/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
+        className="nexora-focus inline-flex h-full w-10 items-center justify-center border-l border-[var(--color-border)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]/60 hover:text-[var(--color-primary-strong)] disabled:cursor-not-allowed disabled:opacity-35"
       >
-        <Plus size={11} />
+        <Plus size={12} />
       </button>
     </div>
   );
@@ -170,8 +217,8 @@ export function SetupField({
 export function SummaryMetric({ label, value }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-2.5">
-      <p className="text-[7.5px] font-semibold text-[var(--color-text-muted)]">{label}</p>
-      <p className="mt-1 break-words text-[11.5px] font-extrabold text-[var(--color-text)]">{value}</p>
+      <p className="text-[8px] font-semibold tracking-[0.01em] text-[var(--color-text-muted)]">{label}</p>
+      <p className="mt-1 break-words text-[12px] font-extrabold tracking-[0.01em] text-[var(--color-text)]">{value}</p>
     </div>
   );
 }
@@ -183,8 +230,8 @@ export function LogisticsTotal({ icon: Icon, label, value }) {
         <Icon size={13} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[7.5px] font-semibold text-[var(--color-text-muted)]">{label}</p>
-        <p className="mt-0.5 text-[10.5px] font-extrabold text-[var(--color-text)]">{value}</p>
+        <p className="text-[8px] font-semibold tracking-[0.01em] text-[var(--color-text-muted)]">{label}</p>
+        <p className="mt-0.5 text-[11px] font-extrabold tracking-[0.01em] text-[var(--color-text)]">{value}</p>
       </div>
     </div>
   );
@@ -223,15 +270,15 @@ export function OrderTypeCard({
       type="button"
       onClick={onClick}
       disabled={!enabled}
-      className={`nexora-focus relative min-h-[108px] rounded-[15px] border p-3.5 text-left transition ${selected ? "border-[#16A572] bg-[#16A572]/[0.055] shadow-[0_10px_24px_rgba(15,169,104,0.07)]" : enabled ? "border-[var(--color-border)] bg-[var(--color-surface-soft)] hover:border-[#8DE0B6] hover:bg-[#16A572]/[0.025]" : "cursor-not-allowed border-[var(--color-border)] bg-[var(--color-surface-soft)] opacity-55"}`}
+      className={`nexora-focus relative min-h-[112px] rounded-[16px] border p-4 text-left transition ${selected ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]/42 shadow-[0_10px_24px_rgba(15,169,104,0.08)]" : enabled ? "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-soft)]" : "cursor-not-allowed border-[var(--color-border)] bg-[var(--color-surface-soft)] opacity-55"}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${selected ? "bg-[#16A572] text-white" : "bg-[#E9F8F0] text-[#0F6B4F]"}`}>
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${selected ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white" : "border-[var(--color-primary)]/15 bg-[var(--color-primary-soft)]/45 text-[var(--color-primary-strong)]"}`}>
           <Icon size={16} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-[#16A572] bg-[#16A572] text-white" : "border-[var(--color-border)] bg-[var(--color-surface)]"}`}>
+            <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white" : "border-[var(--color-border-strong)] bg-[var(--color-surface)]"}`}>
               {selected && <Check size={9} />}
             </span>
             <p className="text-[12px] font-bold text-[var(--color-text)]">{title}</p>

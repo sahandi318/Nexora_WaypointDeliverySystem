@@ -92,7 +92,7 @@ const ReceiptDiscrepancyResolution = () => {
 
   return (
     <div className="space-y-4">
-      
+
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

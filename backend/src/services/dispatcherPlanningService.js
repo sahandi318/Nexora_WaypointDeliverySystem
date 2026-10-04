@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import prisma from "../config/database.js";
+import { resolveActorScope } from "./dispatcherOrderService.js";
 import { state } from "../mockData.js";
 import {
   emitMonitoringUpdate,
@@ -289,7 +290,12 @@ function makeSuggestedTrips(orders, fleet, drivers) {
 export async function getDispatcherPlanningSnapshot({
   date,
   depotName = null,
-} = {}) {
+} = {}, actor) {
+  // Authentication middleware loads this actor from the database. Request
+  // filters must never expand a Dispatcher's assigned depot scope.
+  const scope = await resolveActorScope(actor);
+  const dispatcherDepotId = actor.role === "DISPATCHER" ? scope.depotId : null;
+  if (dispatcherDepotId) depotName = scope.depotName;
   const { start, end, dateText } = dateRange(date);
 
   const orderWhere = {
@@ -302,7 +308,9 @@ export async function getDispatcherPlanningSnapshot({
     },
   };
 
-  if (depotName && depotName !== "ALL") {
+  if (dispatcherDepotId) {
+    orderWhere.outlet = { depotId: dispatcherDepotId };
+  } else if (depotName && depotName !== "ALL") {
     orderWhere.outlet = {
       depot: {
         name: depotName,
@@ -328,6 +336,7 @@ export async function getDispatcherPlanningSnapshot({
       readCsv("vehicles.csv"),
       prisma.liveTrip.findMany({
         where: {
+          ...(dispatcherDepotId ? { depotId: dispatcherDepotId } : {}),
           deliveryDate: {
             gte: start,
             lte: end,
@@ -342,6 +351,7 @@ export async function getDispatcherPlanningSnapshot({
         where: {
           role: "DRIVER",
           isActive: true,
+          ...(dispatcherDepotId ? { depotId: dispatcherDepotId } : {}),
         },
         include: {
           depot: true,
@@ -351,7 +361,7 @@ export async function getDispatcherPlanningSnapshot({
         },
       }),
       prisma.depot.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...(dispatcherDepotId ? { id: dispatcherDepotId } : {}) },
         select: {
           id: true,
           code: true,

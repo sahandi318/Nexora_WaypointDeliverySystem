@@ -383,6 +383,7 @@ function OrderDetailsContent({
         >
           <SummaryCard
             icon={Box}
+            tone="primary"
             label={t(
               "storeManager.orderDetailsProductLines"
             )}
@@ -395,6 +396,7 @@ function OrderDetailsContent({
 
           <SummaryCard
             icon={Package}
+            tone="success"
             label={t(
               "storeManager.orderDetailsUnits"
             )}
@@ -406,6 +408,7 @@ function OrderDetailsContent({
 
           <SummaryCard
             icon={Weight}
+            tone="warning"
             label={t(
               "storeManager.estimatedWeight"
             )}
@@ -416,6 +419,7 @@ function OrderDetailsContent({
 
           <SummaryCard
             icon={Droplets}
+            tone="info"
             label={t(
               "storeManager.estimatedVolume"
             )}
@@ -1109,68 +1113,24 @@ function SummaryCard({
   icon: Icon,
   label,
   value,
+  tone = "primary",
 }) {
+  const tones = {
+    primary: "border-[var(--color-primary)]/18 bg-[var(--color-primary-soft)]/45 text-[var(--color-primary-strong)]",
+    success: "border-[var(--color-success)]/18 bg-[var(--color-success-soft)]/55 text-[var(--color-success)]",
+    warning: "border-[var(--color-warning)]/18 bg-[var(--color-warning-soft)]/55 text-[var(--color-warning)]",
+    info: "border-[var(--color-info)]/18 bg-[var(--color-info-soft)]/55 text-[var(--color-info)]",
+  };
+
   return (
-    <div
-      className="
-        rounded-[14px]
-        border
-        border-[#C9F0DA]
-        bg-[#16A572]/[0.045]
-        px-4
-        py-3.5
-      "
-    >
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-        "
-      >
-        <div
-          className="
-            flex
-            h-9
-            w-9
-            shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            bg-[#E9F8F0]
-            text-[#0F6B4F]
-          "
-        >
-          <Icon
-            size={15}
-          />
+    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.025)]">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${tones[tone] || tones.primary}`}>
+          <Icon size={15} />
         </div>
-
-        <div
-          className="
-            min-w-0
-          "
-        >
-          <p
-            className="
-              text-[8px]
-              font-semibold
-              text-[var(--color-text-muted)]
-            "
-          >
-            {label}
-          </p>
-
-          <p
-            className="
-              mt-0.5
-              text-[13px]
-              font-extrabold
-              text-[var(--color-text)]
-            "
-          >
-            {value}
-          </p>
+        <div className="min-w-0">
+          <p className="text-[8px] font-semibold text-[var(--color-text-muted)]">{label}</p>
+          <p className="mt-0.5 truncate text-[13px] font-extrabold text-[var(--color-text)]">{value}</p>
         </div>
       </div>
     </div>
@@ -1802,17 +1762,17 @@ function getStatusStyle(
   switch (
     status
   ) {
+    case "CONFIRMED":
+      return "border-[var(--color-success)]/25 bg-[var(--color-success-soft)]/85 text-[var(--color-success)]";
+
     case "DEFERRED":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-700";
+      return "border-[var(--color-danger)]/22 bg-[var(--color-danger-soft)]/78 text-[var(--color-danger)]";
 
     case "CANCELLED":
-      return "border-red-500/20 bg-red-500/10 text-red-600";
-
-    case "CONFIRMED":
-      return "border-sky-500/20 bg-sky-500/[0.08] text-sky-700";
+      return "border-[var(--color-danger)]/25 bg-[var(--color-danger-soft)]/90 text-[var(--color-danger)]";
 
     default:
-      return "border-[#16A572]/20 bg-[#16A572]/10 text-[#0F6B4F]";
+      return "border-[var(--color-warning)]/25 bg-[var(--color-warning-soft)]/85 text-[var(--color-warning)]";
   }
 }
 

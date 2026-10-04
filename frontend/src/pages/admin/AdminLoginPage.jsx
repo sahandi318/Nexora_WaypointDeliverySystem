@@ -31,6 +31,7 @@ import {
 } from "../../utils/roleRoutes";
 
 import waypointLogo from "../../assets/waypoint-logo.png";
+import adminPortalImage from "../../assets/admin/admin-portal-hero.webp";
 
 
 function AdminLoginPage() {
@@ -226,7 +227,7 @@ function AdminLoginPage() {
           z-10
           grid
           min-h-screen
-          lg:grid-cols-[0.9fr_1.1fr]
+          lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]
         "
       >
         {/* ADMIN LOGIN PANEL */}
@@ -236,17 +237,19 @@ function AdminLoginPage() {
             flex
             min-h-screen
             items-center
+            lg:order-2
             justify-center
             px-4
             py-10
             sm:px-8
             sm:py-14
+            lg:min-h-0
             lg:px-12
-            lg:py-16
+            lg:py-12
             xl:px-16
           "
         >
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-lg">
             <LoginUtilityBar />
 
 
@@ -259,20 +262,20 @@ function AdminLoginPage() {
               className="
                 mt-6
                 overflow-hidden
-                rounded-[28px]
+                rounded-[26px]
                 border
-                border-[var(--color-border-strong)]
+                border-[var(--color-border)]
                 bg-[var(--color-surface)]
-                shadow-[var(--shadow-lg)]
+                shadow-[0_24px_70px_rgba(5,65,47,0.12)]
                 transition-colors
                 duration-300
               "
             >
               <div
                 className="
-                  h-1
+                  h-[3px]
                   w-full
-                  bg-[var(--color-primary)]
+                  bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent),transparent)]
                 "
               />
 
@@ -349,8 +352,7 @@ function AdminLoginPage() {
                     text-[var(--color-text-secondary)]
                   "
                 >
-                  Secure access for authorized
-                  Waypoint administrators.
+                  Secure access to account governance, staff administration and protected system controls.
                 </p>
 
 
@@ -760,9 +762,8 @@ function AdminLoginPage() {
             relative
             hidden
             overflow-hidden
-            border-l
-            border-[var(--color-border)]
             bg-[var(--color-sidebar)]
+            lg:order-1
             lg:flex
             lg:flex-col
             lg:justify-between
@@ -770,6 +771,15 @@ function AdminLoginPage() {
             xl:p-16
           "
         >
+          <img
+            src={adminPortalImage}
+            alt="Waypoint administration headquarters"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,26,20,0.10)_0%,rgba(2,35,27,0.32)_44%,rgba(2,28,22,0.88)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(1,27,20,0.28)_0%,rgba(2,43,32,0.08)_58%,rgba(2,29,22,0.18)_100%)]" />
+
           <div
             className="
               absolute
@@ -860,9 +870,8 @@ function AdminLoginPage() {
                 xl:text-6xl
               "
             >
-              Manage with
-              clarity, security
-              and control.
+              Administration built for
+              secure operational control.
             </h2>
 
 
@@ -876,10 +885,7 @@ function AdminLoginPage() {
                 xl:text-lg
               "
             >
-              A dedicated entry point for
-              authorized administrators to
-              manage system access and
-              operational configuration.
+              A dedicated workspace for authorized administrators to manage access, staff accounts and system-level responsibilities with clear role protection.
             </p>
 
 

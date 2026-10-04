@@ -4,6 +4,7 @@ import prisma from "./config/database.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
 import loaderRoutes from "./routes/loaderRoutes.js";
 import translationRoutes from "./routes/translationRoutes.js";
@@ -164,6 +165,15 @@ app.get(
 app.use(
   "/api/auth",
   authRoutes
+);
+
+// ============================================================
+// PUBLIC STORE NETWORK ROUTES
+// ============================================================
+
+app.use(
+  "/api/public",
+  publicRoutes
 );
 
 // ============================================================

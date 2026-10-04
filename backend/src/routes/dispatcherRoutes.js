@@ -7,6 +7,7 @@ import {
 } from "../middleware/authMiddleware.js";
 
 import {
+  getDashboard,
   getDeliveryReports,
   getLiveMonitoring,
   getLiveMonitoringTrip,
@@ -18,6 +19,13 @@ import {
   publishPlanningTrip,
 } from "../controllers/dispatcherPlanningController.js";
 
+import {
+  getDispatcherStoreOrder,
+  getDispatcherStoreOrders,
+  postDispatcherConfirmOrder,
+  postDispatcherDeferOrder,
+} from "../controllers/dispatcherOrderController.js";
+
 const router = Router();
 
 const dispatcherAccess = [
@@ -26,6 +34,7 @@ const dispatcherAccess = [
   authorizeRoles("DISPATCHER", "ADMIN"),
 ];
 
+router.get("/dashboard", ...dispatcherAccess, getDashboard);
 
 router.get(
   "/planning",
@@ -61,6 +70,35 @@ router.get(
   "/live-monitoring/:tripCode",
   ...dispatcherAccess,
   getLiveMonitoringTrip
+);
+
+
+// ============================================================
+// STORE MANAGER ORDER HANDOFF / DISPATCHER DECISIONS
+// ============================================================
+
+router.get(
+  "/orders",
+  ...dispatcherAccess,
+  getDispatcherStoreOrders
+);
+
+router.get(
+  "/orders/:orderCode",
+  ...dispatcherAccess,
+  getDispatcherStoreOrder
+);
+
+router.post(
+  "/orders/:orderCode/confirm",
+  ...dispatcherAccess,
+  postDispatcherConfirmOrder
+);
+
+router.post(
+  "/orders/:orderCode/defer",
+  ...dispatcherAccess,
+  postDispatcherDeferOrder
 );
 
 export default router;

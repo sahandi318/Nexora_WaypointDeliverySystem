@@ -6,15 +6,20 @@ import {
 
 export async function getPlanningSnapshot(req, res, next) {
   try {
-    const requestedDepot = String(req.query.depot || "").trim();
-    const ownDepot = req.user?.depot?.name || null;
+    const requestedDepot = String(
+      req.query.depot || ""
+    ).trim();
 
-    const snapshot = await getDispatcherPlanningSnapshot({
-      date: req.query.date,
-      depotName: requestedDepot && requestedDepot !== "ALL"
-        ? requestedDepot
-        : ownDepot || null,
-    });
+    const snapshot =
+      await getDispatcherPlanningSnapshot({
+        date: req.query.date,
+
+        depotName:
+          requestedDepot &&
+          requestedDepot !== "ALL"
+            ? requestedDepot
+            : null,
+      }, req.user);
 
     return res.status(200).json({
       success: true,

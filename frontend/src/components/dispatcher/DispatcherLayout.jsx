@@ -1,3 +1,5 @@
+import "../../pages/dispatcher/dispatcherDashboard.css";
+
 import ThemeToggle from "../common/ThemeToggle";
 import DispatcherSidebar from "./DispatcherSidebar";
 

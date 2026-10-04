@@ -151,7 +151,7 @@ export default function LoaderWorkspacePage() {
             currentBackendIssue.createdAt,
         }
       : issue;
-  
+
 
   const backendIssueResolved =
     currentBackendIssue
@@ -301,7 +301,7 @@ const [pageTitle, eyebrow] =
   setCheckedItems(
     new Set(loadedItems)
   );
-}, [backendTrip]);  
+}, [backendTrip]);
 
   useEffect(() => {
     if (
@@ -453,7 +453,7 @@ const [pageTitle, eyebrow] =
     behavior: "smooth",
   });
 }
-  
+
 
   function selectDepot(next) {
   setDepotKey(next);
@@ -723,7 +723,7 @@ const [pageTitle, eyebrow] =
     logout();
     navigate('/login', { replace: true });
   }
-  
+
   useEffect(() => {
   if (
     !tripId &&
