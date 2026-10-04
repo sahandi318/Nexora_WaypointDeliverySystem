@@ -66,6 +66,7 @@ function StoreManagerSidebar({
   user,
   outlet,
   depot,
+  issueCount,
   onNavigate,
 }) {
   const navigate =
@@ -276,6 +277,11 @@ function StoreManagerSidebar({
                 )}
                 onNavigate={
                   onNavigate
+                }
+                badgeCount={
+                  item.key === "issues"
+                    ? issueCount
+                    : null
                 }
               />
             )
@@ -536,6 +542,7 @@ function NavigationItem({
   item,
   label,
   onNavigate,
+  badgeCount,
 }) {
   const Icon =
     item.icon;
@@ -619,11 +626,42 @@ function NavigationItem({
 
           <span
             className="
+              min-w-0
+              flex-1
               truncate
             "
           >
             {label}
           </span>
+
+          {Number(badgeCount) > 0 ? (
+            <span
+              aria-label={`${badgeCount} open issues`}
+              title={`${badgeCount} open issues`}
+              className={`
+                ml-auto
+                inline-flex
+                h-[19px]
+                min-w-[19px]
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-[#EF4444]
+                px-1.5
+                text-[9px]
+                font-extrabold
+                leading-none
+                tracking-[-0.02em]
+                text-white
+                shadow-[0_4px_12px_rgba(239,68,68,0.34)]
+                ring-2
+                ${isActive ? "ring-[#0F6B4F]" : "ring-[#0A352A]"}
+              `}
+            >
+              {Number(badgeCount) > 99 ? "99+" : badgeCount}
+            </span>
+          ) : null}
         </>
       )}
     </NavLink>

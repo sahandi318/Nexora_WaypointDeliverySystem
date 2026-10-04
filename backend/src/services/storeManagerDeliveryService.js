@@ -385,6 +385,10 @@ function mapDeliveryDetails(order) {
         unitVolumeM3: decimalToNumber(
           item.product.unitVolumeM3
         ),
+        imageMimeType: item.product.imageMimeType ?? null,
+        imageBase64: item.product.imageData
+          ? Buffer.from(item.product.imageData).toString("base64")
+          : null,
       },
     })),
     dispatcherDecisions: order.dispatcherDecisions.map(

@@ -48,3 +48,66 @@ export async function getDispatcherDashboard(
     recentActivity: (data.recentActivity || []).map((item) => ({ ...item, time: displayTime(item.time) })),
   };
 }
+
+export async function getDispatcherPlanningWorkspace({ date, signal } = {}) {
+  const params = {};
+  if (date) params.date = date;
+
+  const response = await api.get(
+    "/dispatcher/planning/workspace",
+    {
+      params,
+      signal,
+    }
+  );
+
+  const data = response.data?.data ?? response.data;
+  if (!data?.summary || !data?.orders || !Array.isArray(data?.trips)) {
+    throw new Error("Invalid Dispatcher planning response.");
+  }
+  return data;
+}
+
+export async function confirmDispatcherStoreOrder(orderCode) {
+  const response = await api.post(
+    `/dispatcher/orders/${encodeURIComponent(orderCode)}/confirm`
+  );
+  return response.data?.data ?? response.data;
+}
+
+export async function deferDispatcherStoreOrder(
+  orderCode,
+  { reason, nextDeliveryDate }
+) {
+  const response = await api.post(
+    `/dispatcher/orders/${encodeURIComponent(orderCode)}/defer`,
+    {
+      reason,
+      nextDeliveryDate,
+    }
+  );
+  return response.data?.data ?? response.data;
+}
+
+export async function allocateDispatcherPlanningOrder(
+  orderCode,
+  { driverUserId, vehicleCode, vehicleType }
+) {
+  const response = await api.post(
+    `/dispatcher/planning/orders/${encodeURIComponent(orderCode)}/allocate`,
+    {
+      driverUserId: driverUserId || null,
+      vehicleCode,
+      vehicleType,
+    }
+  );
+  return response.data?.data ?? response.data;
+}
+
+export async function publishDispatcherPlanningTrip(tripCode) {
+  const response = await api.post(
+    `/dispatcher/planning/trips/${encodeURIComponent(tripCode)}/publish`,
+    {}
+  );
+  return response.data?.data ?? response.data;
+}

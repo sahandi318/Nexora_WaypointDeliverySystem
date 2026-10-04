@@ -11,14 +11,14 @@ const STATUS_META = {
   AWAITING_DISPATCHER: { tone: "neutral", icon: Clock3 },
   AWAITING_PLAN: { tone: "neutral", icon: Clock3 },
   PLANNING: { tone: "info", icon: Route },
-  SCHEDULED: { tone: "info", icon: Route },
+  SCHEDULED: { tone: "warning", icon: Clock3 },
   READY_FOR_DISPATCH: { tone: "ready", icon: Truck },
   IN_TRANSIT: { tone: "transit", icon: Truck },
   ARRIVING: { tone: "transit", icon: Truck },
   ARRIVED: { tone: "ready", icon: CircleDot },
   DELIVERED: { tone: "success", icon: CheckCircle2 },
   COMPLETED: { tone: "success", icon: CheckCircle2 },
-  DEFERRED: { tone: "warning", icon: AlertTriangle },
+  DEFERRED: { tone: "danger", icon: AlertTriangle },
   DELAYED: { tone: "warning", icon: AlertTriangle },
   PARTIAL: { tone: "warning", icon: AlertTriangle },
   EXCEPTION: { tone: "danger", icon: AlertTriangle },
@@ -29,17 +29,17 @@ const STATUS_CLASSES = {
   neutral:
     "border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)]",
   info:
-    "border-[var(--color-border)] bg-[var(--color-info-soft)] text-[var(--color-info)]",
+    "border-[var(--color-info)]/25 bg-[var(--color-info-soft)]/80 text-[var(--color-info)]",
   ready:
-    "border-[var(--color-border)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
+    "border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)]/70 text-[var(--color-primary-strong)]",
   transit:
-    "border-[var(--color-border)] bg-[var(--color-info-soft)] text-[var(--color-info)]",
+    "border-[var(--color-info)]/25 bg-[var(--color-info-soft)]/85 text-[var(--color-info)]",
   success:
-    "border-[var(--color-border)] bg-[var(--color-success-soft)] text-[var(--color-success)]",
+    "border-[var(--color-success)]/25 bg-[var(--color-success-soft)]/85 text-[var(--color-success)]",
   warning:
-    "border-[var(--color-border)] bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+    "border-[var(--color-warning)]/28 bg-[var(--color-warning-soft)]/85 text-[var(--color-warning)]",
   danger:
-    "border-[var(--color-border)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
+    "border-[var(--color-danger)]/25 bg-[var(--color-danger-soft)]/82 text-[var(--color-danger)]",
 };
 
 export const UPCOMING_STATUSES = new Set([
@@ -110,18 +110,25 @@ export function DeliveryMetricCard({
   detail,
   tone = "default",
 }) {
-  const toneClass =
-    tone === "attention"
-      ? "border-[var(--color-border)] bg-[var(--color-warning-soft)]/55"
-      : tone === "success"
-        ? "border-[var(--color-border)] bg-[var(--color-success-soft)]/45"
-        : tone === "transit"
-          ? "border-[var(--color-border)] bg-[var(--color-info-soft)]/45"
-          : "border-[var(--color-border)] bg-[var(--color-surface)]";
+  const cardTones = {
+    default: "border-[var(--color-border)] bg-[var(--color-surface)]",
+    upcoming: "border-[var(--color-warning)]/28 bg-[linear-gradient(135deg,var(--color-warning-soft)_0%,var(--color-surface)_120%)]",
+    attention: "border-[var(--color-danger)]/25 bg-[linear-gradient(135deg,var(--color-danger-soft)_0%,var(--color-surface)_125%)]",
+    success: "border-[var(--color-success)]/24 bg-[linear-gradient(135deg,var(--color-success-soft)_0%,var(--color-surface)_125%)]",
+    transit: "border-[var(--color-info)]/24 bg-[linear-gradient(135deg,var(--color-info-soft)_0%,var(--color-surface)_125%)]",
+  };
+
+  const iconTones = {
+    default: "border-[var(--color-primary)]/18 bg-[var(--color-primary-soft)]/50 text-[var(--color-primary-strong)]",
+    upcoming: "border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+    attention: "border-[var(--color-danger)]/20 bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
+    success: "border-[var(--color-success)]/20 bg-[var(--color-success-soft)] text-[var(--color-success)]",
+    transit: "border-[var(--color-info)]/20 bg-[var(--color-info-soft)] text-[var(--color-info)]",
+  };
 
   return (
     <article
-      className={`relative overflow-hidden rounded-[18px] border px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)] ${toneClass}`}
+      className={`relative overflow-hidden rounded-[18px] border px-4 py-4 shadow-[0_10px_26px_rgba(15,23,42,0.035)] ${cardTones[tone] || cardTones.default}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -138,7 +145,7 @@ export function DeliveryMetricCard({
           ) : null}
         </div>
 
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
+        <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${iconTones[tone] || iconTones.default}`}>
           <Icon size={16} />
         </span>
       </div>

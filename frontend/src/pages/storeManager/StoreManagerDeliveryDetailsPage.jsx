@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Box,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -26,6 +25,8 @@ import {
 
 import StoreManagerShell from "../../components/storeManager/StoreManagerShell";
 import StoreManagerLiveConnectionBadge from "../../components/storeManager/deliveries/StoreManagerLiveConnectionBadge";
+import StoreManagerLiveTrackingPanel from "../../components/storeManager/deliveries/StoreManagerLiveTrackingPanel";
+import { ProductImage } from "../../components/storeManager/createOrder/CreateOrderShared";
 import {
   DELIVERY_PROGRESS_STEPS,
   DeliveryField,
@@ -70,8 +71,12 @@ function StoreManagerDeliveryDetailsPage() {
   } = useStoreManagerDelivery(orderCode);
 
   const {
+    tracking,
     isLoading: isTrackingLoading,
     isRefreshing: isTrackingRefreshing,
+    errorMessage: trackingErrorMessage,
+    availabilityCode: trackingAvailabilityCode,
+    lastRefreshedAt: trackingLastRefreshedAt,
     refreshTracking,
     liveStatus,
   } = useStoreManagerDeliveryTracking(
@@ -197,14 +202,38 @@ function StoreManagerDeliveryDetailsPage() {
             onAction={refreshDelivery}
           />
         ) : (
-          <DeliveryWorkspace delivery={delivery} language={language} t={t} />
+          <DeliveryWorkspace
+            delivery={delivery}
+            tracking={tracking}
+            isTrackingLoading={isTrackingLoading}
+            isTrackingRefreshing={isTrackingRefreshing}
+            trackingErrorMessage={trackingErrorMessage}
+            trackingAvailabilityCode={trackingAvailabilityCode}
+            trackingLastRefreshedAt={trackingLastRefreshedAt}
+            liveStatus={liveStatus}
+            refreshTracking={refreshTracking}
+            language={language}
+            t={t}
+          />
         )}
       </div>
     </StoreManagerShell>
   );
 }
 
-function DeliveryWorkspace({ delivery, language, t }) {
+function DeliveryWorkspace({
+  delivery,
+  tracking,
+  isTrackingLoading,
+  isTrackingRefreshing,
+  trackingErrorMessage,
+  trackingAvailabilityCode,
+  trackingLastRefreshedAt,
+  liveStatus,
+  refreshTracking,
+  language,
+  t,
+}) {
   const plan = delivery.plan;
   const scheduleDate = plan?.deliveryDate || delivery.effectiveDispatchDate;
   const deliveryWindow = formatWindow(
@@ -220,6 +249,7 @@ function DeliveryWorkspace({ delivery, language, t }) {
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <OverviewCard
           icon={CalendarDays}
+          tone="warning"
           label={t("storeManager.deliveryDetailsScheduledDate")}
           value={formatDeliveryDate(scheduleDate, language)}
           detail={
@@ -230,6 +260,7 @@ function DeliveryWorkspace({ delivery, language, t }) {
         />
         <OverviewCard
           icon={Route}
+          tone="info"
           label={t("storeManager.deliveriesTrip")}
           value={plan?.tripCode || t("storeManager.deliveriesNotAssigned")}
           detail={
@@ -240,17 +271,34 @@ function DeliveryWorkspace({ delivery, language, t }) {
         />
         <OverviewCard
           icon={Package}
+          tone="primary"
           label={t("storeManager.ordersUnits")}
           value={delivery.totalUnits ?? 0}
           detail={`${delivery.items?.length ?? 0} ${t("storeManager.deliveryDetailsProductLines")}`}
         />
         <OverviewCard
           icon={Weight}
+          tone="neutral"
           label={t("storeManager.estimatedWeight")}
           value={formatWeight(delivery.estimatedWeightKg)}
           detail={formatVolume(delivery.estimatedVolumeM3)}
         />
       </section>
+
+      <div className="mt-5">
+        <StoreManagerLiveTrackingPanel
+          tracking={tracking}
+          isLoading={isTrackingLoading}
+          isRefreshing={isTrackingRefreshing}
+          errorMessage={trackingErrorMessage}
+          availabilityCode={trackingAvailabilityCode}
+          lastRefreshedAt={trackingLastRefreshedAt}
+          liveStatus={liveStatus}
+          onRefresh={refreshTracking}
+          language={language}
+          t={t}
+        />
+      </div>
 
       {isAttentionStatus(delivery.deliveryStatus) ? (
         <AttentionPanel delivery={delivery} latestDecision={latestDecision} language={language} t={t} />
@@ -514,15 +562,15 @@ function DeliveryItems({ items, t }) {
               <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0">
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
-                      <Box size={15} />
-                    </span>
+                    <ProductImage product={item.product} />
                     <div className="min-w-0">
                       <p className="max-w-[260px] truncate text-[11px] font-semibold text-[var(--color-text)]">
                         {item.product?.name || "—"}
                       </p>
                       <p className="mt-1 text-[9.5px] text-[var(--color-text-muted)]">
-                        {item.product?.manufacturerBrand || item.product?.category || "—"}
+                        {[item.product?.manufacturerBrand, item.product?.category]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
                       </p>
                     </div>
                   </div>
@@ -555,11 +603,18 @@ function Panel({ title, description, children, noPadding = false }) {
   );
 }
 
-function OverviewCard({ icon: Icon, label, value, detail }) {
+function OverviewCard({ icon: Icon, label, value, detail, tone = "primary" }) {
+  const tones = {
+    primary: "border-[var(--color-primary)]/18 bg-[var(--color-primary-soft)]/45 text-[var(--color-primary-strong)]",
+    info: "border-[var(--color-info)]/20 bg-[var(--color-info-soft)]/55 text-[var(--color-info)]",
+    warning: "border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)]/55 text-[var(--color-warning)]",
+    neutral: "border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)]",
+  };
+
   return (
     <article className="rounded-[18px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
+        <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${tones[tone] || tones.primary}`}>
           <Icon size={16} />
         </span>
         <div className="min-w-0">

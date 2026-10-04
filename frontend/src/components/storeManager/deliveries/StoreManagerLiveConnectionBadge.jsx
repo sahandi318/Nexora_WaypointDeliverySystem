@@ -43,7 +43,7 @@ function getStatusConfig(status, t) {
       label: t("storeManager.liveStatusLive"),
       title: t("storeManager.liveStatusLiveHint"),
       className:
-        "border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)]/55 text-[var(--color-primary-strong)]",
+        "border-[var(--color-success)]/28 bg-[var(--color-success-soft)]/85 text-[var(--color-success)] shadow-[0_4px_12px_rgba(15,169,104,0.08)]",
     };
   }
 
@@ -53,7 +53,7 @@ function getStatusConfig(status, t) {
       label: t("storeManager.liveStatusOffline"),
       title: t("storeManager.liveStatusOfflineHint"),
       className:
-        "border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)]",
+        "border-[var(--color-border-strong)] bg-[var(--color-surface-soft)] text-[var(--color-text-muted)]",
     };
   }
 
@@ -63,7 +63,7 @@ function getStatusConfig(status, t) {
       label: t("storeManager.liveStatusStale"),
       title: t("storeManager.liveStatusStaleHint"),
       className:
-        "border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] text-[var(--color-text)]",
+        "border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)]/90 text-[var(--color-warning)]",
     };
   }
 
@@ -79,7 +79,7 @@ function getStatusConfig(status, t) {
         : t("storeManager.liveStatusConnectingHint"),
     spin: true,
     className:
-      "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]",
+      "border-[var(--color-info)]/22 bg-[var(--color-info-soft)]/65 text-[var(--color-info)]",
   };
 }
 

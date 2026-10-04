@@ -13,6 +13,13 @@ import {
   getLiveMonitoringTrip,
 } from "../controllers/dispatcherMonitoringController.js";
 
+
+import {
+  getPlanningWorkspace,
+  postCreateDraftAllocation,
+  postPublishPlanningTrip,
+} from "../controllers/dispatcherPlanningController.js";
+
 import {
   getDispatcherStoreOrder,
   getDispatcherStoreOrders,
@@ -46,6 +53,29 @@ router.get(
   "/live-monitoring/:tripCode",
   ...dispatcherAccess,
   getLiveMonitoringTrip
+);
+
+
+// ============================================================
+// REAL DISPATCHER DELIVERY PLANNING
+// ============================================================
+
+router.get(
+  "/planning/workspace",
+  ...dispatcherAccess,
+  getPlanningWorkspace
+);
+
+router.post(
+  "/planning/orders/:orderCode/allocate",
+  ...dispatcherAccess,
+  postCreateDraftAllocation
+);
+
+router.post(
+  "/planning/trips/:tripCode/publish",
+  ...dispatcherAccess,
+  postPublishPlanningTrip
 );
 
 // ============================================================

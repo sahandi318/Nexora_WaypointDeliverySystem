@@ -65,12 +65,12 @@ import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 
 
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
-import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModuleEntryPage";
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
 import StoreManagerDeliveriesPage from "./pages/storeManager/StoreManagerDeliveriesPage";
 import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDeliveryDetailsPage";
+import StoreManagerIssuesPage from "./pages/storeManager/StoreManagerIssuesPage";
 
 import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
 import ConfirmedOrders from "./pages/dispatcher/planning/ConfirmedOrders";
@@ -582,11 +582,7 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
-
-                  section="issues"
-
-                />
+                <StoreManagerIssuesPage />
 
               </ProtectedRoute>
 

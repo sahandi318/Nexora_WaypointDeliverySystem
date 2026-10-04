@@ -200,6 +200,7 @@ function StoreManagerDeliveriesPage() {
           label={t("storeManager.deliveriesUpcoming")}
           value={summary.upcoming}
           detail={t("storeManager.deliveriesUpcomingHint")}
+          tone="upcoming"
         />
         <DeliveryMetricCard
           icon={Truck}
