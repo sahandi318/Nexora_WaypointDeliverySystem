@@ -1015,7 +1015,7 @@ function App() {
               "LOADER",
             ]}
           >
-            <RoleWorkspacePage />
+            <LoaderWorkspacePage />
           </ProtectedRoute>
         }
       />

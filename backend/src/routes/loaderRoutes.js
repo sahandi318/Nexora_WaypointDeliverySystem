@@ -101,4 +101,10 @@ router.post(
   postHandover
 );
 
+router.patch(
+  "/testing/issues/:issueId/resolve",
+  requireLoader,
+  patchIssueResolution
+);
+
 export default router;
