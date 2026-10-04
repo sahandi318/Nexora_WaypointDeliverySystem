@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   NavLink,
   Outlet,
@@ -13,6 +13,56 @@ import DispatcherLayout from "../../../components/dispatcher/DispatcherLayout";
  */
 const ReportsCapacity = () => {
   const location = useLocation();
+
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const [minDate, setMinDate] = useState("");
+  const [maxDate, setMaxDate] = useState("");
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [selectedDepot, setSelectedDepot] = useState("Kandy");
+
+  const [selectedStatus, setSelectedStatus] = useState("All Statuses");
+
+  useEffect(() => {
+  const loadCalendarDates = async () => {
+    try {
+      const response = await fetch("/data/calendar.csv");
+      const csvText = await response.text();
+
+      const lines = csvText
+        .trim()
+        .split("\n");
+
+      // Skip CSV header.
+      const rows = lines.slice(1);
+
+      const dates = rows
+        .map((row) => row.split(",")[0].trim())
+        .filter(Boolean);
+
+      if (dates.length === 0) {
+        return;
+      }
+
+      const firstDate = dates[0];
+      const lastDate = dates[dates.length - 1];
+
+      setMinDate(firstDate);
+      setMaxDate(lastDate);
+
+      // Initial report period for frontend testing.
+      setStartDate("2026-06-22");
+      setEndDate("2026-06-27");
+    } catch (error) {
+      console.error("Failed to load calendar.csv:", error);
+    }
+  };
+
+  loadCalendarDates();
+}, []);
 
   // Future Capacity uses a different filter set.
   const isCapacityPage =
@@ -94,90 +144,263 @@ const ReportsCapacity = () => {
                 </button>
 
                 {/* Depot filter */}
-                <button
-                  type="button"
-                  className="
-                    flex h-10 items-center gap-2
-                    rounded-lg border border-[var(--color-border)]
-                    bg-[var(--color-surface)] px-4
-                    text-[11px] text-[var(--color-text-secondary)]
-                  "
-                >
-                  <span className="text-[var(--color-text-muted)]">⌖</span>
+                <div className="relative flex items-center">
+  <span
+    className="
+      pointer-events-none
+      absolute left-3
+      text-[var(--color-text-muted)]
+    "
+  >
+    ⌖
+  </span>
 
-                  <span className="text-[8px] uppercase tracking-wide text-[var(--color-text-muted)]">
-                    Depot
-                  </span>
+  <select
+    value={selectedDepot}
+    onChange={(event) => setSelectedDepot(event.target.value)}
+    className="
+      h-10
+      appearance-none
+      rounded-lg
+      border border-[var(--color-border)]
+      bg-[var(--color-surface)]
+      pl-8 pr-9
+      text-[11px]
+      text-[var(--color-text)]
+      outline-none
+    "
+  >
+    <option value="Kandy">Kandy</option>
+    <option value="Peliyagoda">Peliyagoda</option>
+  </select>
 
-                  <span className="font-medium text-[var(--color-text)]">
-                    Kandy
-                  </span>
-
-                  <span className="ml-1 text-[var(--color-text-secondary)]">
-                    ⌄
-                  </span>
-                </button>
+  <span
+    className="
+      pointer-events-none
+      absolute right-3
+      text-[var(--color-text-secondary)]
+    "
+  >
+    ⌄
+  </span>
+</div>
               </>
             ) : (
               <>
                 {/* Date range */}
-                <button
-                  type="button"
-                  className="
-                    flex h-10 items-center gap-2
-                    rounded-lg border border-[var(--color-border)]
-                    bg-[var(--color-surface)] px-4
-                    text-[11px] text-[var(--color-text-secondary)]
-                  "
-                >
-                  <span className="text-[var(--color-text-muted)]">▣</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowDatePicker((prev) => !prev)}
+                    className="
+                      flex h-10 items-center gap-2
+                      rounded-lg
+                      border border-[var(--color-border)]
+                      bg-[var(--color-surface)]
+                      px-4
+                      text-[11px]
+                      text-[var(--color-text-secondary)]
+                    "
+                  >
+                    <span className="text-[var(--color-text-muted)]">▣</span>
 
-                  <span>
-                    22 Sep 2026 - 29 Sep 2026
-                  </span>
+                    <span>
+                      {startDate && endDate
+                        ? `${formatDate(startDate)} - ${formatDate(endDate)}`
+                        : "Select date range"}
+                    </span>
 
-                  <span className="ml-1 text-[var(--color-text-secondary)]">
-                    ⌄
-                  </span>
-                </button>
+                    <span className="ml-1">⌄</span>
+                  </button>
+
+                  {showDatePicker && (
+                    <div
+                      className="
+                        absolute right-0 top-12 z-50
+                        w-[280px]
+                        rounded-lg
+                        border border-[var(--color-border)]
+                        bg-[var(--color-surface)]
+                        p-4
+                        shadow-lg
+                      "
+                    >
+                      <div className="space-y-3">
+                        <div>
+                          <label
+                            className="
+                              mb-1 block
+                              text-[8px]
+                              text-[var(--color-text-muted)]
+                            "
+                          >
+                            From
+                          </label>
+
+                          <input
+                            type="date"
+                            value={startDate}
+                            min={minDate}
+                            max={endDate || maxDate}
+                            onChange={(event) =>
+                              setStartDate(event.target.value)
+                            }
+                            className="
+                              w-full
+                              rounded-md
+                              border border-[var(--color-border)]
+                              bg-[var(--color-input)]
+                              px-3 py-2
+                              text-[10px]
+                              text-[var(--color-text)]
+                              outline-none
+                            "
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            className="
+                              mb-1 block
+                              text-[8px]
+                              text-[var(--color-text-muted)]
+                            "
+                          >
+                            To
+                          </label>
+
+                          <input
+                            type="date"
+                            value={endDate}
+                            min={startDate || minDate}
+                            max={maxDate}
+                            onChange={(event) =>
+                              setEndDate(event.target.value)
+                            }
+                            className="
+                              w-full
+                              rounded-md
+                              border border-[var(--color-border)]
+                              bg-[var(--color-input)]
+                              px-3 py-2
+                              text-[10px]
+                              text-[var(--color-text)]
+                              outline-none
+                            "
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowDatePicker(false)}
+                          disabled={!startDate || !endDate}
+                          className="
+                            w-full
+                            rounded-md
+                            bg-[var(--color-primary)]
+                            py-2
+                            text-[9px]
+                            font-medium
+                            text-white
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                          "
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Depot */}
-                <button
-                  type="button"
-                  className="
-                    flex h-10 items-center gap-2
-                    rounded-lg border border-[var(--color-border)]
-                    bg-[var(--color-surface)] px-4
-                    text-[11px] text-[var(--color-text-secondary)]
-                  "
-                >
-                  <span className="text-[var(--color-text-muted)]">⌖</span>
+                <div className="relative flex items-center">
+                  <span
+                    className="
+                      pointer-events-none
+                      absolute left-3
+                      text-[var(--color-text-muted)]
+                    "
+                  >
+                    ⌖
+                  </span>
 
-                  <span>Kandy</span>
+                  <select
+                    value={selectedDepot}
+                    onChange={(event) => setSelectedDepot(event.target.value)}
+                    className="
+                      h-10
+                      appearance-none
+                      rounded-lg
+                      border border-[var(--color-border)]
+                      bg-[var(--color-surface)]
+                      pl-8 pr-9
+                      text-[11px]
+                      text-[var(--color-text)]
+                      outline-none
+                      cursor-pointer
+                    "
+                  >
+                    <option value="Kandy">Kandy</option>
+                    <option value="Peliyagoda">Peliyagoda</option>
+                  </select>
 
-                  <span className="ml-1 text-[var(--color-text-secondary)]">
+                  <span
+                    className="
+                      pointer-events-none
+                      absolute right-3
+                      text-[var(--color-text-secondary)]
+                    "
+                  >
                     ⌄
                   </span>
-                </button>
+                </div>
 
                 {/* Trip status */}
-                <button
-                  type="button"
-                  className="
-                    flex h-10 items-center gap-2
-                    rounded-lg border border-[var(--color-border)]
-                    bg-[var(--color-surface)] px-4
-                    text-[11px] text-[var(--color-text-secondary)]
-                  "
-                >
-                  <span className="text-[var(--color-text-muted)]">▽</span>
+                <div className="relative flex items-center">
+                  <span
+                    className="
+                      pointer-events-none
+                      absolute left-3
+                      text-[var(--color-text-muted)]
+                    "
+                  >
+                    ▽
+                  </span>
 
-                  <span>All Statuses</span>
+                  <select
+                    value={selectedStatus}
+                    onChange={(event) => setSelectedStatus(event.target.value)}
+                    className="
+                      h-10
+                      appearance-none
+                      rounded-lg
+                      border border-[var(--color-border)]
+                      bg-[var(--color-surface)]
+                      pl-8 pr-9
+                      text-[11px]
+                      text-[var(--color-text)]
+                      outline-none
+                      cursor-pointer
+                    "
+                  >
+                    <option value="All Statuses">All Statuses</option>
+                    <option value="All Delivered">All Delivered</option>
+                    <option value="Partially Delivered">Partially Delivered</option>
+                    <option value="Issue to Review">Issue to Review</option>
+                    <option value="Receipt Pending">Receipt Pending</option>
+                  </select>
 
-                  <span className="ml-1 text-[var(--color-text-secondary)]">
+                  <span
+                    className="
+                      pointer-events-none
+                      absolute right-3
+                      text-[var(--color-text-secondary)]
+                    "
+                  >
                     ⌄
                   </span>
-                </button>
+                </div>
               </>
             )}
           </div>
@@ -225,11 +448,30 @@ const ReportsCapacity = () => {
             SELECTED REPORT PAGE
             ===================================================== */}
         <section>
-          <Outlet />
+          <Outlet
+  context={{
+    startDate,
+    endDate,
+    selectedDepot,
+    selectedStatus,
+  }}
+/>
         </section>
       </div>
     </DispatcherLayout>
   );
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(`${dateString}T00:00:00`);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 export default ReportsCapacity;
