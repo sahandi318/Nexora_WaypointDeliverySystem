@@ -4,6 +4,18 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
+import ReviewPublish
+  from "./pages/dispatcher/planning/ReviewPublish";
+import DeferredOrders
+  from "./pages/dispatcher/planning/DeferredOrders";
+import DeliveryPlanner
+  from "./pages/dispatcher/planning/DeliveryPlanner";
+import FleetAvailability
+  from "./pages/dispatcher/planning/FleetAvailability";
+import ConfirmedOrders
+  from "./pages/dispatcher/planning/ConfirmedOrders";
+import DispatcherDashboard
+  from "./pages/dispatcher/DispatcherDashboard";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -68,9 +80,15 @@ function App() {
   } = useAuth();
 
 
+  const location = useLocation();
+
+  const isDispatcherRoute =
+    location.pathname.startsWith("/dispatcher");
+
   const showPublicNavbar =
     !isInitializing &&
-    !user;
+    !user &&
+    !isDispatcherRoute;
 
 
   return (
@@ -315,7 +333,23 @@ function App() {
       {/* =====================================================
        DISPATCHER
        ===================================================== */}
+      <Route
+        path="/dispatcher/dashboard"
+        element={<DispatcherDashboard />}
+      />
+      <Route
+        path="/dispatcher/planning/review"
+        element={<ReviewPublish />}
+      />
+      <Route
+        path="/dispatcher/planning/deferred"
+        element={<DeferredOrders />}
+      />
 
+      <Route
+        path="/dispatcher/planning/planner"
+        element={<DeliveryPlanner />}
+      />
       <Route
         path="/dispatcher/reports"
         element={
@@ -324,7 +358,14 @@ function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/dispatcher/planning"
+        element={<ConfirmedOrders />}
+      />
+      <Route
+        path="/dispatcher/planning/fleet"
+        element={<FleetAvailability />}
+      />
       <Route
         path="/dispatcher/*"
         element={
