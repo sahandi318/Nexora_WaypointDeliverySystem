@@ -39,20 +39,18 @@ function DeliveryPlanner() {
     useNavigate();
 
 
-  const [
-    selectedDate,
-    setSelectedDate,
-  ] = useState(
-    new Date()
-      .toISOString()
-      .split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(
+    sessionStorage.getItem("dispatcherPlanningDate") ||
+        new Date().toISOString().split("T")[0]
+    );
 
 
-  const [
-    selectedDepot,
-    setSelectedDepot,
-  ] = useState("ALL");
+  const [selectedDepot, setSelectedDepot] =
+    useState(
+        sessionStorage.getItem(
+        "dispatcherPlanningDepot"
+        ) || "ALL"
+    );
 
 
   const [planningData, setPlanningData] = useState({
