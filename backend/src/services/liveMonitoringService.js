@@ -368,10 +368,13 @@ function storeManagerOutletRoom(outletCode) {
  * even if their browser attempts to supply another outlet code.
  */
 export async function getPublishedStoreManagerOutletRoomsForTrip(
-  tripCode
+  tripCode,
+  { stopCode = null } = {}
 ) {
   const normalizedTripCode =
     String(tripCode ?? "").trim();
+  const normalizedStopCode =
+    String(stopCode ?? "").trim();
 
   if (!normalizedTripCode) return [];
 
@@ -380,6 +383,9 @@ export async function getPublishedStoreManagerOutletRoomsForTrip(
       liveTrip: {
         tripCode: normalizedTripCode,
       },
+      ...(normalizedStopCode
+        ? { stopCode: normalizedStopCode }
+        : {}),
       deliveryAllocations: {
         some: {
           status: "PUBLISHED",
@@ -410,13 +416,35 @@ export async function getPublishedStoreManagerOutletRoomsForTrip(
  * actual delivery details. We never push another outlet's stop, coordinates,
  * route geometry, POD payload, or downstream route data through the socket.
  */
+export function classifyStoreManagerDeliverySocketReason(reason) {
+  const normalizedReason = String(reason || "").toUpperCase();
+
+  if (normalizedReason.includes("ROUTE")) return "ETA_POSITION";
+  if (normalizedReason.includes("ARRIV")) return "ARRIVAL";
+  if (normalizedReason.includes("OUTCOME")) return "OUTCOME";
+  if (normalizedReason.includes("POD")) return "POD";
+  if (normalizedReason.includes("EXCEPTION")) return "EXCEPTION";
+  if (normalizedReason.includes("COMPLETE")) return "COMPLETION";
+  if (normalizedReason.includes("ONLINE") || normalizedReason.includes("OFFLINE")) {
+    return "PRESENCE";
+  }
+
+  return "STATUS";
+}
+
 export function buildSafeStoreManagerDeliverySocketPayload(
   payload = {}
 ) {
+  const reason =
+    String(payload.reason || "delivery-update");
+
   return {
     at: new Date().toISOString(),
-    reason:
-      String(payload.reason || "delivery-update"),
+    reason,
+    eventKind:
+      classifyStoreManagerDeliverySocketReason(
+        reason
+      ),
     tripCode:
       payload.tripCode
         ? String(payload.tripCode)
@@ -433,7 +461,17 @@ export async function emitStoreManagerDeliveryUpdate(
 
   const rooms =
     await getPublishedStoreManagerOutletRoomsForTrip(
-      payload.tripCode
+      payload.tripCode,
+      {
+        // Stop-scoped driver updates (route, arrival, outcome, POD, exception)
+        // refresh only the affected outlet. Trip-wide changes such as driver
+        // presence, synchronization, or stop completion can refresh all
+        // published outlets because they change remaining-stop progress.
+        stopCode:
+          payload.notifyTripOutlets
+            ? null
+            : payload.stopCode || null,
+      }
     );
 
   if (rooms.length === 0) return rooms;
@@ -727,6 +765,10 @@ export async function recordDriverWorkflowEvent({
     reason: type.toLowerCase(),
     tripCode: trip.tripId,
     stopCode: stop?.stopId || null,
+    // Completion changes the stops-remaining calculation for later outlets,
+    // so every published Store Manager delivery on the trip may refresh.
+    notifyTripOutlets:
+      type === COMPLETION_EVENT_TYPE,
   });
 
   return { ok: true, recordedAt: now.toISOString() };

@@ -409,6 +409,34 @@ function mapDeliveryDetails(order) {
   };
 }
 
+export function resolveStoreManagerTrackingEta(
+  trip,
+  stop
+) {
+  const isCurrentDestination =
+    normalizeState(trip?.nextDestination) &&
+    normalizeState(trip?.nextDestination) ===
+      normalizeState(stop?.outletCode);
+
+  // liveTrip.eta is continuously refreshed by the Driver route-progress
+  // endpoint and applies only to the driver's current destination. For later
+  // outlets, keep the published/planned stop ETA rather than leaking the ETA
+  // of another stop.
+  if (isCurrentDestination && trip?.eta) {
+    return {
+      value: trip.eta,
+      source: "LIVE",
+    };
+  }
+
+  return {
+    value: stop?.plannedEta ?? null,
+    source: stop?.plannedEta
+      ? "PLANNED"
+      : "UNAVAILABLE",
+  };
+}
+
 function mapSafeTracking(order, allocation) {
   const stop = allocation.liveTripStop;
   const trip = stop.liveTrip;
@@ -419,6 +447,12 @@ function mapSafeTracking(order, allocation) {
       candidate.sequence < stop.sequence &&
       !isStopFinished(candidate)
   ).length;
+
+  const trackingEta =
+    resolveStoreManagerTrackingEta(
+      trip,
+      stop
+    );
 
   return {
     orderCode: order.orderCode,
@@ -464,7 +498,8 @@ function mapSafeTracking(order, allocation) {
       longitude: stop.longitude,
       stopsRemainingBeforeOutlet: pendingBeforeOutlet,
     },
-    eta: stop.plannedEta ?? trip.eta ?? null,
+    eta: trackingEta.value,
+    etaSource: trackingEta.source,
   };
 }
 
