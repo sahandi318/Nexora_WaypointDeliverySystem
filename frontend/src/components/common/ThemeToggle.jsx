@@ -21,11 +21,6 @@ function ThemeToggle({
     useLocation();
 
   const usesInlineThemeControl =
-    location.pathname === "/" ||
-    location.pathname === "/login" ||
-    location.pathname === "/forgot-password" ||
-    location.pathname === "/verify-reset-otp" ||
-    location.pathname === "/reset-password" ||
     location.pathname.startsWith(
       "/store-manager"
     );

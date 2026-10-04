@@ -23,7 +23,6 @@ function dateOnly(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 }
-
 function SummaryCard({ title, value, type, icon }) {
   const styles = {
     green: "bg-[var(--color-success-soft)] text-[var(--color-success)]",

@@ -26,6 +26,9 @@ import {
 
 import StoreManagerPageHeader from "../../components/storeManager/StoreManagerPageHeader";
 import StoreManagerShell from "../../components/storeManager/StoreManagerShell";
+import {
+  DeliveryMetricCard,
+} from "../../components/storeManager/deliveries/StoreManagerDeliveryUI";
 
 import useStoreManagerContext from "../../hooks/useStoreManagerContext";
 import useStoreManagerOrders from "../../hooks/useStoreManagerOrders";
@@ -316,7 +319,7 @@ function StoreManagerOrdersPage() {
           xl:grid-cols-4
         "
       >
-        <SummaryCard
+        <DeliveryMetricCard
           icon={ClipboardList}
           label={t(
             "storeManager.ordersTotal"
@@ -324,9 +327,10 @@ function StoreManagerOrdersPage() {
           value={
             summary.total
           }
+          tone="transit"
         />
 
-        <SummaryCard
+        <DeliveryMetricCard
           icon={Clock3}
           label={t(
             "storeManager.ordersSubmitted"
@@ -334,9 +338,10 @@ function StoreManagerOrdersPage() {
           value={
             summary.submitted
           }
+          tone="upcoming"
         />
 
-        <SummaryCard
+        <DeliveryMetricCard
           icon={TriangleAlert}
           label={t(
             "storeManager.ordersDeferred"
@@ -344,10 +349,10 @@ function StoreManagerOrdersPage() {
           value={
             summary.deferred
           }
-          tone="warning"
+          tone="attention"
         />
 
-        <SummaryCard
+        <DeliveryMetricCard
           icon={CheckCircle2}
           label={t(
             "storeManager.ordersConfirmed"
@@ -355,7 +360,7 @@ function StoreManagerOrdersPage() {
           value={
             summary.confirmed
           }
-          tone="confirmed"
+          tone="success"
         />
       </section>
 
@@ -836,91 +841,6 @@ function StoreManagerOrdersPage() {
   );
 }
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  tone = "default",
-}) {
-  const styles = {
-    default:
-      "bg-[#E9F8F0] text-[#0F6B4F]",
-
-    warning:
-      "bg-amber-500/10 text-amber-700",
-
-    confirmed:
-      "bg-sky-500/[0.08] text-sky-700",
-  };
-
-  return (
-    <div
-      className="
-        rounded-[18px]
-        border
-        border-[var(--color-border)]
-        bg-[var(--color-surface)]
-        px-4
-        py-4
-        shadow-[0_8px_22px_rgba(15,23,42,0.03)]
-      "
-    >
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-        "
-      >
-        <div
-          className={`
-            flex
-            h-9
-            w-9
-            shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            ${
-              styles[
-                tone
-              ]
-            }
-          `}
-        >
-          <Icon
-            size={16}
-          />
-        </div>
-
-        <div>
-          <p
-            className="
-              text-[9px]
-              font-semibold
-              text-[var(--color-text-muted)]
-            "
-          >
-            {label}
-          </p>
-
-          <p
-            className="
-              mt-0.5
-              text-xl
-              font-extrabold
-              tracking-[-0.035em]
-              text-[var(--color-text)]
-            "
-          >
-            {value}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function TableHeading({
   children,
 }) {
@@ -951,13 +871,13 @@ function OrderTableRow({
 }) {
   return (
     <tr
-      className="
+      className={`
         border-b
         border-[var(--color-border)]
         transition
         last:border-b-0
-        hover:bg-[#16A572]/[0.025]
-      "
+        ${getOrderRowStyle(order.status)}
+      `}
     >
       <td
         className="
@@ -989,6 +909,7 @@ function OrderTableRow({
             order.submittedAt
           )}
         </p>
+
 
         {order.storeManagerNote && (
           <div
@@ -1197,9 +1118,11 @@ function OrderMobileCard({
 }) {
   return (
     <article
-      className="
+      className={`
+        border-l-[3px]
         p-4
-      "
+        ${getOrderMobileStyle(order.status)}
+      `}
     >
       <div
         className="
@@ -1245,6 +1168,7 @@ function OrderMobileCard({
           t={t}
         />
       </div>
+
 
       <div
         className="
@@ -1391,6 +1315,8 @@ function OrderMobileCard({
   );
 }
 
+
+
 function MetricLine({
   icon: Icon,
   value,
@@ -1517,21 +1443,8 @@ function StatusBadge({
 }) {
   return (
     <span
-      className={`
-        inline-flex
-        items-center
-        rounded-full
-        border
-        px-2.5
-        py-1
-        text-[8px]
-        font-bold
-        uppercase
-        tracking-[0.07em]
-        ${getStatusStyle(
-          status
-        )}
-      `}
+      className="inline-flex items-center rounded-full border px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.065em] shadow-sm"
+      style={getStatusBadgeStyle(status)}
     >
       {getStatusLabel(
         status,
@@ -2006,23 +1919,63 @@ function getStatusLabel(
   );
 }
 
-function getStatusStyle(
-  status
-) {
-  switch (
-    status
-  ) {
+function getStatusBadgeStyle(status) {
+  switch (status) {
+    case "CONFIRMED":
+      return {
+        color: "#047857",
+        backgroundColor: "#D1FAE5",
+        borderColor: "#34D399",
+        boxShadow: "0 3px 10px rgba(16,185,129,0.16)",
+      };
+
     case "DEFERRED":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-700";
+      return {
+        color: "#B42318",
+        backgroundColor: "#FEE2E2",
+        borderColor: "#F87171",
+        boxShadow: "0 3px 10px rgba(239,68,68,0.16)",
+      };
 
     case "CANCELLED":
-      return "border-red-500/20 bg-red-500/10 text-red-600";
-
-    case "CONFIRMED":
-      return "border-sky-500/20 bg-sky-500/[0.08] text-sky-700";
+      return {
+        color: "#BE123C",
+        backgroundColor: "#FFE4E6",
+        borderColor: "#FB7185",
+        boxShadow: "0 3px 10px rgba(244,63,94,0.16)",
+      };
 
     default:
-      return "border-[#16A572]/20 bg-[#16A572]/10 text-[#0F6B4F]";
+      return {
+        color: "#92400E",
+        backgroundColor: "#FEF3C7",
+        borderColor: "#FBBF24",
+        boxShadow: "0 3px 10px rgba(245,158,11,0.16)",
+      };
+  }
+}
+
+function getOrderRowStyle(status) {
+  switch (status) {
+    case "CONFIRMED":
+      return "hover:bg-emerald-50/55 dark:hover:bg-emerald-400/[0.045]";
+    case "DEFERRED":
+    case "CANCELLED":
+      return "hover:bg-red-50/55 dark:hover:bg-red-400/[0.045]";
+    default:
+      return "hover:bg-amber-50/55 dark:hover:bg-amber-400/[0.045]";
+  }
+}
+
+function getOrderMobileStyle(status) {
+  switch (status) {
+    case "CONFIRMED":
+      return "border-l-emerald-400 bg-emerald-50/25 dark:bg-emerald-400/[0.025]";
+    case "DEFERRED":
+    case "CANCELLED":
+      return "border-l-red-400 bg-red-50/25 dark:bg-red-400/[0.025]";
+    default:
+      return "border-l-amber-400 bg-amber-50/25 dark:bg-amber-400/[0.025]";
   }
 }
 

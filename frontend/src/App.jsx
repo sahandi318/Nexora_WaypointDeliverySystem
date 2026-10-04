@@ -10,6 +10,10 @@ import {
 
 } from "react-router-dom";
 
+import {
+  useEffect,
+} from "react";
+
 
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -70,6 +74,9 @@ import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModule
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
+import StoreManagerDeliveriesPage from "./pages/storeManager/StoreManagerDeliveriesPage";
+import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDeliveryDetailsPage";
+import StoreManagerIssuesPage from "./pages/storeManager/StoreManagerIssuesPage";
 
 import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
 import DispatcherLiveMonitoring from "./pages/dispatcher/DispatcherLiveMonitoring";
@@ -129,32 +136,101 @@ import {
 
 // ============================================================
 
+const publicNavbarPaths = new Set([
+  "/",
+  "/login",
+  "/admin/login",
+  "/admin/register",
+  "/forgot-password",
+  "/verify-reset-otp",
+  "/reset-password",
+]);
+
+const authOnlyPaths = new Set([
+  "/login",
+  "/admin/login",
+]);
+
 
 
 function App() {
-
   const location =
 
     useLocation();
+
+  useEffect(() => {
+    const animationFrame =
+      window.requestAnimationFrame(
+        () => {
+          if (location.hash) {
+            const targetId =
+              decodeURIComponent(
+                location.hash.slice(1)
+              );
+
+            document
+              .getElementById(targetId)
+              ?.scrollIntoView({
+                block: "start",
+              });
+
+            return;
+          }
+
+          if (
+            document.scrollingElement
+          ) {
+            document.scrollingElement.scrollTop =
+              0;
+            document.scrollingElement.scrollLeft =
+              0;
+          }
+
+          document.body.scrollTop =
+            0;
+          document.body.scrollLeft =
+            0;
+        }
+      );
+
+    return () =>
+      window.cancelAnimationFrame(
+        animationFrame
+      );
+  }, [
+    location.pathname,
+    location.search,
+    location.hash,
+  ]);
+
+  const isAuthOnlyRoute =
+    authOnlyPaths.has(
+      location.pathname
+    );
+
+  const showPublicNavbar =
+    publicNavbarPaths.has(
+      location.pathname
+    ) && !isAuthOnlyRoute;
+
   const isDispatcherRoute =
   location.pathname.startsWith("/dispatcher");
 
+  const isStoreManagerRoute =
+    location.pathname.startsWith("/store-manager");
 
-  // Landing navigation and footer belong only to the
+  const isLoaderRoute =
+    location.pathname.startsWith("/loader");
 
-  // public landing page.
-
-  const showLandingChrome =
-
-    location.pathname === "/";
-
-
-
-  // Reports pages use the fixed Dispatcher sidebar.
-
-  const isDispatcherReportsRoute =
-
-    location.pathname.startsWith("/dispatcher/reports");
+  const footerContainerClassName =
+    isDispatcherRoute &&
+    location.pathname !== "/dispatcher/live"
+      ? "ml-[75px] w-[calc(100%-75px)] min-[761px]:ml-[242px] min-[761px]:w-[calc(100%-242px)]"
+      : isStoreManagerRoute
+        ? "w-full lg:ml-[236px] lg:w-[calc(100%-236px)]"
+        : isLoaderRoute
+          ? "w-full lg:ml-[248px] lg:w-[calc(100%-248px)]"
+          : "w-full";
 
 
 
@@ -178,12 +254,11 @@ function App() {
 
     >
 
-     {!isDispatcherRoute && <ThemeToggle />}
+     {!isDispatcherRoute && !isAuthOnlyRoute && <ThemeToggle />}
 
 
 
-      {showLandingChrome && (
-
+      {showPublicNavbar && (
         <LandingNavbar />
 
       )}
@@ -197,9 +272,7 @@ function App() {
           flex-1
 
           ${
-
-            showLandingChrome
-
+            showPublicNavbar
               ? "pt-16 sm:pt-20"
 
               : ""
@@ -532,11 +605,33 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
+                <StoreManagerDeliveriesPage />
 
-                  section="deliveries"
+              </ProtectedRoute>
 
-                />
+            }
+
+          />
+
+
+
+          <Route
+
+            path="/store-manager/deliveries/:orderCode"
+
+            element={
+
+              <ProtectedRoute
+
+                allowedRoles={[
+
+                  "STORE_MANAGER",
+
+                ]}
+
+              >
+
+                <StoreManagerDeliveryDetailsPage />
 
               </ProtectedRoute>
 
@@ -562,11 +657,7 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
-
-                  section="issues"
-
-                />
+                <StoreManagerIssuesPage />
 
               </ProtectedRoute>
 
@@ -1281,28 +1372,15 @@ function App() {
 
       </div>
 
-
-
-      {showLandingChrome ? (
-
-        <Footer />
-
-      ) : isDispatcherReportsRoute ? (
-
+      {!isAuthOnlyRoute ? (
         <div
-
-          className="ml-[230px]"
-
-          style={{ width: "calc(100% - 230px)" }}
-
+          className={
+            footerContainerClassName
+          }
         >
-
           <Footer />
-
         </div>
-
       ) : null}
-
     </div>
 
   );

@@ -61,6 +61,7 @@ export async function getLoaderTrip(req, res) {
   }
 }
 
+
 // ============================================================
 // LOADING ITEMS
 // ============================================================
@@ -157,17 +158,17 @@ export async function postLoadingIssue(req, res) {
       depotId: req.user?.depotId,
       itemId,
 
-      issueType,
+    issueType,
 
-      expectedQty:
-        expected,
+    expectedQty:
+      expected,
 
-      usableQty:
-        usable,
+    usableQty:
+      usable,
 
-      reason,
+    reason,
 
-      note,
+    note,
 
       loaderUser: req.user,
     });

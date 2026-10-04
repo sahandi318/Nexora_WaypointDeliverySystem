@@ -237,13 +237,11 @@ function LoginPage() {
   return (
     <main
       className="
-        min-h-dvh
+        min-h-[100dvh]
         bg-[var(--color-bg)]
-        text-[var(--color-text)]
-
-        lg:h-dvh
-        lg:min-h-0
+        lg:h-[100dvh]
         lg:overflow-hidden
+        text-[var(--color-text)]
       "
       style={{
         fontFamily:
@@ -253,9 +251,9 @@ function LoginPage() {
       <div
         className="
           grid
-          min-h-dvh
+          min-h-[100dvh]
 
-          lg:h-full
+          lg:h-[100dvh]
           lg:min-h-0
           lg:grid-cols-[minmax(0,1.08fr)_minmax(450px,0.92fr)]
         "
@@ -268,11 +266,9 @@ function LoginPage() {
           className="
             relative
             hidden
-            min-h-0
             overflow-hidden
 
             lg:block
-            lg:h-full
           "
         >
           <img
@@ -485,13 +481,12 @@ function LoginPage() {
         <section
           className="
             relative
-            min-h-dvh
+            min-h-[100dvh]
             overflow-x-hidden
-            bg-[var(--color-bg)]
-
-            lg:h-full
+            lg:h-[100dvh]
             lg:min-h-0
-            lg:overflow-y-auto
+            lg:overflow-hidden
+            bg-[var(--color-bg)]
           "
         >
           <div
@@ -530,18 +525,20 @@ function LoginPage() {
               z-10
               mx-auto
               flex
-              min-h-dvh
+              min-h-[100dvh]
               w-full
+              lg:h-full
+              lg:min-h-0
               max-w-[610px]
               flex-col
               px-5
-              py-[clamp(1rem,2.8vh,1.75rem)]
+              py-4
 
               sm:px-8
+              sm:py-6
 
-              lg:h-full
-              lg:min-h-0
               lg:px-[clamp(2rem,3.2vw,3rem)]
+              lg:py-5
             "
           >
             <div
@@ -549,7 +546,7 @@ function LoginPage() {
                 shrink-0
               "
             >
-              <LoginUtilityBar />
+              <LoginUtilityBar showBackHome showTheme />
             </div>
 
             {/* MOBILE BRAND */}
@@ -570,15 +567,22 @@ function LoginPage() {
               className="
                 flex
                 flex-1
-                items-center
+                items-start
                 justify-center
-                py-[clamp(1rem,3vh,2.5rem)]
+                pb-8
+                pt-8
+                sm:pb-10
+                sm:pt-10
+                lg:pb-5
+                lg:pt-5
+                xl:pt-7
               "
             >
               <div
                 className="
                   w-full
                   max-w-[470px]
+                  shrink-0
                 "
               >
                 <div
@@ -715,7 +719,6 @@ function LoginPage() {
                           name="identifier"
                           type="text"
                           autoComplete="username"
-                          autoFocus
                           value={
                             identifier
                           }

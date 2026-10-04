@@ -109,7 +109,7 @@ function CreateOrderReviewStep({
             value={formatDate(setup?.cutoff?.effectiveDispatchDate)}
           />
 
-          <div className="rounded-[16px] border border-[#AEE3C7] bg-[#F1FBF6] p-2.5 shadow-[0_8px_18px_rgba(15,169,104,0.045)]">
+          <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface-soft)]/55 p-2.5 shadow-[0_8px_18px_rgba(15,169,104,0.04)]">
             <div className="grid grid-cols-2 gap-2">
               <ReviewSummaryMetric
                 label={t("storeManager.createOrderSelectedItems")}
@@ -285,30 +285,30 @@ function ReviewProductRow({
           />
         </div>
 
-        <div className="rounded-[15px] border border-[#B9E6CF] bg-[#EFFAF4] px-3 py-2.5">
-          <p className="text-[7.5px] font-semibold text-[#507064]">
+        <div className="rounded-[15px] border border-[var(--color-border)] bg-[var(--color-surface-soft)]/65 px-3 py-2.5">
+          <p className="text-[7.5px] font-semibold text-[var(--color-text-muted)]">
             {t("storeManager.createOrderQuantity")}
           </p>
 
-          <p className="mt-0.5 text-[13px] font-extrabold text-[#0B5C43]">
+          <p className="mt-0.5 text-[13px] font-extrabold text-[var(--color-primary-strong)]">
             {item.quantity}
           </p>
 
-          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[#D5EDE1] pt-2">
+          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[var(--color-border)] pt-2">
             <div>
-              <p className="text-[6.5px] font-semibold text-[#6A7D75]">
+              <p className="text-[6.5px] font-semibold text-[var(--color-text-muted)]">
                 {t("storeManager.orderDetailsLineWeight")}
               </p>
-              <p className="mt-0.5 text-[8.5px] font-bold text-[#263C34]">
+              <p className="mt-0.5 text-[8.5px] font-bold text-[var(--color-text)]">
                 {formatWeight(lineWeight)}
               </p>
             </div>
 
             <div>
-              <p className="text-[6.5px] font-semibold text-[#6A7D75]">
+              <p className="text-[6.5px] font-semibold text-[var(--color-text-muted)]">
                 {t("storeManager.orderDetailsLineVolume")}
               </p>
-              <p className="mt-0.5 text-[8.5px] font-bold text-[#263C34]">
+              <p className="mt-0.5 text-[8.5px] font-bold text-[var(--color-text)]">
                 {formatTotalVolume(lineVolume)}
               </p>
             </div>
@@ -324,12 +324,12 @@ function ReviewItemMetric({
   value,
 }) {
   return (
-    <div className="rounded-[14px] border border-[#C9E5D6] bg-[#F1FAF5] px-3 py-2.5">
-      <p className="text-[7.5px] font-semibold text-[#59756A]">
+    <div className="rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface-soft)]/60 px-3 py-2.5">
+      <p className="text-[7.5px] font-semibold text-[var(--color-text-muted)]">
         {label}
       </p>
 
-      <p className="mt-1 text-[10.5px] font-extrabold text-[#10251D]">
+      <p className="mt-1 text-[10.5px] font-extrabold text-[var(--color-text)]">
         {value}
       </p>
     </div>
@@ -340,7 +340,7 @@ function ReviewDetailPill({
   children,
 }) {
   return (
-    <span className="rounded-md border border-[#CDE4D8] bg-[#F2F8F5] px-1.5 py-0.5 text-[7px] font-semibold text-[#35594B]">
+    <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-1.5 py-0.5 text-[7px] font-semibold text-[var(--color-text-secondary)]">
       {children}
     </span>
   );
@@ -351,12 +351,12 @@ function ReviewSummaryMetric({
   value,
 }) {
   return (
-    <div className="rounded-xl border border-[#C6EBD7] bg-white px-3.5 py-3 shadow-[0_4px_12px_rgba(15,169,104,0.035)]">
-      <p className="text-[8.5px] font-bold text-[#527466]">
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3 shadow-[0_4px_12px_rgba(15,169,104,0.03)]">
+      <p className="text-[8.5px] font-bold text-[var(--color-text-muted)]">
         {label}
       </p>
 
-      <p className="mt-1 text-[16px] font-extrabold tracking-[-0.025em] text-[#0B5C43]">
+      <p className="mt-1 text-[16px] font-extrabold tracking-[-0.025em] text-[var(--color-text)]">
         {value}
       </p>
     </div>
@@ -369,17 +369,17 @@ function ReviewLogisticsTotal({
   value,
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[#C6EBD7] bg-white px-3.5 py-3 shadow-[0_4px_12px_rgba(15,169,104,0.035)]">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E4F8EE] text-[#0F7A58]">
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3 shadow-[0_4px_12px_rgba(15,169,104,0.03)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary-soft)]/55 text-[var(--color-primary-strong)]">
         <Icon size={15} strokeWidth={2.2} />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-[8.5px] font-bold text-[#527466]">
+        <p className="text-[8.5px] font-bold text-[var(--color-text-muted)]">
           {label}
         </p>
 
-        <p className="mt-0.5 text-[14px] font-extrabold tracking-[-0.02em] text-[#0B5C43]">
+        <p className="mt-0.5 text-[14px] font-extrabold tracking-[-0.02em] text-[var(--color-text)]">
           {value}
         </p>
       </div>

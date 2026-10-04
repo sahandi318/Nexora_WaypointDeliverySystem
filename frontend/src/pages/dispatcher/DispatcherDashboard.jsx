@@ -30,10 +30,13 @@ import {
   getDispatcherDashboard,
 } from "../../services/dispatcherService";
 
+import useAuth from "../../hooks/useAuth";
 import "./dispatcherDashboard.css";
 
 
 function DispatcherDashboard() {
+  const { user } = useAuth();
+  const [retry, setRetry] = useState(0);
   const navigate =
     useNavigate();
 
@@ -66,9 +69,7 @@ function DispatcherDashboard() {
     selectedDate,
     setSelectedDate,
   ] = useState(
-    new Date()
-      .toISOString()
-      .split("T")[0]
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Colombo" }).format(new Date())
   );
 
 
@@ -110,14 +111,6 @@ function DispatcherDashboard() {
         }
 
 
-        /*
-         * No mock data is inserted here.
-         *
-         * Until the backend endpoint is
-         * connected, the UI displays
-         * empty values instead.
-         */
-
         setDashboardData(null);
 
         setError(
@@ -142,6 +135,7 @@ function DispatcherDashboard() {
   }, [
     selectedDate,
     selectedDepot,
+    retry,
   ]);
 
 
@@ -192,6 +186,7 @@ function DispatcherDashboard() {
   const displayValue = (
     value
   ) => {
+    if (loading) return <span className="dashboard-skeleton" aria-label="Loading" />;
     if (
       value === 0 ||
       value
@@ -251,7 +246,9 @@ function DispatcherDashboard() {
 
           <select
             className="dashboard-filter depot-select"
-            value={selectedDepot}
+            aria-label="Depot"
+            disabled={user?.role === "DISPATCHER"}
+            value={user?.role === "DISPATCHER" ? user.depot?.code || "ALL" : selectedDepot}
             onChange={(event) =>
               setSelectedDepot(
                 event.target.value
@@ -259,17 +256,16 @@ function DispatcherDashboard() {
             }
           >
 
-            <option value="ALL">
-              All Depots
-            </option>
-
-            <option value="Peliyagoda">
-              Peliyagoda
-            </option>
-
-            <option value="Kandy">
-              Kandy
-            </option>
+            {user?.role === "DISPATCHER" ? (
+              <option value={user.depot?.code || "ALL"}>{user.depot?.name || "No depot assigned"}</option>
+            ) : (
+              <>
+                <option value="ALL">All Depots</option>
+                {(dashboardData?.depots || []).map((depot) => (
+                  <option key={depot.id} value={depot.code}>{depot.name}</option>
+                ))}
+              </>
+            )}
 
           </select>
 
@@ -291,8 +287,9 @@ function DispatcherDashboard() {
       ====================================================== */}
 
       {error && (
-        <div className="dashboard-message">
-          {error}
+        <div className="dashboard-message" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry</button>
         </div>
       )}
 
@@ -714,7 +711,7 @@ function DispatcherDashboard() {
 
 
                     <span className="live-status-progress">
-                      {item.progress ||
+                      {item.progress ??
                         "—"}
                     </span>
 

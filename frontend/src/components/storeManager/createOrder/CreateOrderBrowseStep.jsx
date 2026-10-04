@@ -203,20 +203,20 @@ function ProductCatalogRow({ product, quantity, onQuantity, t }) {
     <article
       className={`px-4 py-4 transition ${
         selected
-          ? "bg-[#16A572]/[0.04]"
+          ? "bg-[#16A572]/[0.05] ring-1 ring-[#16A572]/10"
           : "hover:bg-[var(--color-surface-soft)]"
       }`}
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_210px_150px] lg:items-center">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px_170px] lg:items-center">
         <div className="flex min-w-0 items-start gap-3.5">
           <ProductImage product={product} large />
 
           <div className="min-w-0 flex-1 pt-0.5">
-            <p className="text-[12px] font-extrabold leading-5 text-[#10251D] dark:text-[var(--color-text)]">
+            <p className="text-[13.5px] font-extrabold leading-5 tracking-[0.01em] text-[#10251D] dark:text-[var(--color-text)]">
               {product.name}
             </p>
 
-            <p className="mt-0.5 break-all text-[8.8px] font-semibold text-[#597067] dark:text-[var(--color-text-muted)]">
+            <p className="mt-0.5 break-all text-[9.4px] font-semibold tracking-[0.01em] text-[#4D665C] dark:text-[var(--color-text-muted)]">
               {product.manufacturerBrand} · {product.sku}
             </p>
 
@@ -271,12 +271,12 @@ function ProductCatalogRow({ product, quantity, onQuantity, t }) {
 
 function ProductMetric({ label, value }) {
   return (
-    <div className="rounded-[14px] border border-[#C9E5D6] bg-[#F1FAF5] px-3 py-2.5">
-      <p className="text-[7.5px] font-semibold text-[#59756A]">
+    <div className="rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface-soft)]/60 px-3 py-2.5">
+      <p className="text-[8px] font-semibold text-[var(--color-text-muted)]">
         {label}
       </p>
 
-      <p className="mt-1 text-[10.5px] font-extrabold text-[#10251D]">
+      <p className="mt-1 text-[10.5px] font-extrabold text-[var(--color-text)]">
         {value}
       </p>
     </div>
@@ -331,7 +331,7 @@ function CatalogPagination({ pagination, onPage, t }) {
 
   return (
     <div className="flex flex-col gap-3 border-t border-[var(--color-border)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-[8.5px] font-semibold text-[var(--color-text-muted)]">
+      <p className="text-[8.6px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
         {t("storeManager.catalogShowing")
           .replace("{from}", String(pagination.from))
           .replace("{to}", String(pagination.to))
@@ -399,7 +399,7 @@ function SelectedOrderSummary({ selectedItems, totals, submitError, onQuantity, 
             onClick={onClearSelected}
             className="nexora-focus inline-flex min-h-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-2.5 text-[8.5px] font-bold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
           >
-            Clear all
+            {t("storeManager.createOrderClearAll")}
           </button>
         )}
       </div>
@@ -430,7 +430,7 @@ function SelectedOrderSummary({ selectedItems, totals, submitError, onQuantity, 
                   type="button"
                   onClick={() => onQuantity(item.product, 0)}
                   aria-label={`Remove ${item.product.name}`}
-                  title="Remove item"
+                  title={t("storeManager.createOrderRemoveItem")}
                   className="nexora-focus inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-transparent text-[var(--color-danger)] transition hover:border-red-500/15 hover:bg-red-500/[0.07]"
                 >
                   <X size={12} />

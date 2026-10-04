@@ -38,7 +38,7 @@ export async function getPlanningSnapshot(req, res, next) {
             ? requestedDepot
             : null,
         orderId: req.query.orderId,
-      });
+      }, req.user);
 
     return res.status(200).json({
       success: true,

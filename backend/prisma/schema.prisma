@@ -38,6 +38,15 @@ enum StoreOrderStatus {
 }
 
 // ============================================================
+// STORE ORDER DISPATCHER DECISION
+// ============================================================
+
+enum StoreOrderDecisionType {
+  CONFIRMED
+  DEFERRED
+}
+
+// ============================================================
 // STORE ORDER CUTOFF DECISION
 // ============================================================
 
@@ -53,6 +62,34 @@ enum StoreOrderCutoffDecision {
 enum StoreOrderType {
   AMBIENT_DRY
   CHILLED
+}
+
+// ============================================================
+// DELIVERY ALLOCATION STATUS
+// ============================================================
+
+enum DeliveryAllocationStatus {
+  ALLOCATED
+  PUBLISHED
+  CANCELLED
+}
+
+// ============================================================
+// STORE MANAGER ISSUE LIFECYCLE
+// ============================================================
+
+enum StoreManagerIssueStatus {
+  OPEN
+  RESOLVED
+}
+
+enum StoreManagerIssueCategory {
+  DELIVERY_SHORTFALL
+  DAMAGED_GOODS
+  LATE_DELIVERY
+  DELIVERY_EXCEPTION
+  ORDER_PROBLEM
+  OTHER
 }
 
 // ============================================================
@@ -107,8 +144,9 @@ model Outlet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users       User[]
-  storeOrders StoreOrder[]
+  users              User[]
+  storeOrders        StoreOrder[]
+  storeManagerIssues StoreManagerIssue[]
 
   @@index([depotId])
   @@index([district])
@@ -152,10 +190,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps       PasswordResetOtp[]
-  liveTripsAsDriver       LiveTrip[]         @relation("LiveTripDriver")
-  createdStoreOrders      StoreOrder[]       @relation("StoreOrderCreatedBy")
-  dispatcherDeliveryPlans DeliveryPlan[]     @relation("DispatcherDeliveryPlans")
+  passwordResetOtps          PasswordResetOtp[]
+  liveTripsAsDriver          LiveTrip[]           @relation("LiveTripDriver")
+  createdStoreOrders         StoreOrder[]         @relation("StoreOrderCreatedBy")
+  storeOrderDecisions        StoreOrderDecision[] @relation("StoreOrderDecisionBy")
+  dispatcherDeliveryPlans    DeliveryPlan[]       @relation("DispatcherDeliveryPlans")
+  confirmedDeliveryReceipts  DeliveryAllocation[] @relation("DeliveryReceiptConfirmedBy")
+  reportedStoreManagerIssues StoreManagerIssue[]  @relation("StoreManagerIssueReportedBy")
+  resolvedStoreManagerIssues StoreManagerIssue[]  @relation("StoreManagerIssueResolvedBy")
+
+  loaderTrips           LoaderTripState[] @relation("LoaderTripUser")
+  loadingIssuesReported LoadingIssue[]    @relation("LoadingIssueLoader")
+  loadingIssuesResolved LoadingIssue[]    @relation("LoadingIssueResolver")
+  loaderHandovers       DriverHandover[]  @relation("HandoverLoader")
+  driverHandovers       DriverHandover[]  @relation("HandoverDriver")
 
   @@index([role])
   @@index([outletId])
@@ -266,8 +314,10 @@ model LiveTrip {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stops             LiveTripStop[]
-  events            LiveTripEvent[]
+  stops  LiveTripStop[]
+  events LiveTripEvent[]
+
+  loaderState       LoaderTripState?
   loadingExceptions LoadingException[]
 
   @@index([deliveryDate])
@@ -306,6 +356,12 @@ model LiveTripStop {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  storeOrderId Int? @map("store_order_id")
+
+  storeOrder StoreOrder? @relation(fields: [storeOrderId], references: [id], onDelete: SetNull)
+
+  deliveryAllocations DeliveryAllocation[]
 
   @@index([liveTripId, sequence])
   @@index([outletCode])
@@ -431,9 +487,14 @@ model StoreOrder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items             StoreOrderItem[]
-  tripAllocations   TripOrderAllocation[]
-  loadingExceptions LoadingException[]
+  liveTripStops LiveTripStop[]
+
+  items               StoreOrderItem[]
+  deliveryAllocations DeliveryAllocation[]
+  dispatcherDecisions StoreOrderDecision[]
+  tripAllocations     TripOrderAllocation[]
+  loadingExceptions   LoadingException[]
+  storeManagerIssues  StoreManagerIssue[]
 
   @@index([outletId, submittedAt])
   @@index([outletId, status])
@@ -441,6 +502,38 @@ model StoreOrder {
   @@index([createdByUserId])
   @@index([effectiveDispatchDate])
   @@map("store_orders")
+}
+
+// ============================================================
+// STORE ORDER DISPATCHER DECISION HISTORY
+// ============================================================
+
+/// Immutable audit trail for Dispatcher decisions on Store Manager orders.
+/// Current state stays on StoreOrder.status; this table records who changed
+/// that state and why, without duplicating the order itself.
+model StoreOrderDecision {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  decidedByUserId Int?  @map("decided_by_user_id")
+  decidedByUser   User? @relation("StoreOrderDecisionBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  decision        StoreOrderDecisionType
+  previousStatus  StoreOrderStatus       @map("previous_status")
+  resultingStatus StoreOrderStatus       @map("resulting_status")
+
+  reason String? @db.VarChar(500)
+
+  effectiveDispatchDate DateTime @map("effective_dispatch_date") @db.Date
+
+  decidedAt DateTime @default(now()) @map("decided_at")
+
+  @@index([storeOrderId, decidedAt])
+  @@index([decidedByUserId])
+  @@index([decision, decidedAt])
+  @@map("store_order_decisions")
 }
 
 // ============================================================
@@ -460,9 +553,253 @@ model StoreOrderItem {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  loadingItems LoadingItem[]
+
   @@unique([orderId, productId])
   @@index([productId])
   @@map("store_order_items")
+}
+
+// ============================================================
+// STORE MANAGER ISSUE
+// ============================================================
+
+model StoreManagerIssue {
+  id Int @id @default(autoincrement())
+
+  issueCode String @unique @map("issue_code") @db.VarChar(50)
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  outletId Int    @map("outlet_id")
+  outlet   Outlet @relation(fields: [outletId], references: [id])
+
+  reportedByUserId Int  @map("reported_by_user_id")
+  reportedByUser   User @relation("StoreManagerIssueReportedBy", fields: [reportedByUserId], references: [id])
+
+  category    StoreManagerIssueCategory
+  description String                    @db.VarChar(1000)
+  status      StoreManagerIssueStatus   @default(OPEN)
+
+  reportedAt DateTime @default(now()) @map("reported_at")
+
+  resolvedByUserId Int?  @map("resolved_by_user_id")
+  resolvedByUser   User? @relation("StoreManagerIssueResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  resolutionNote String?   @map("resolution_note") @db.VarChar(1000)
+  resolvedAt     DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([outletId, status, reportedAt])
+  @@index([storeOrderId, status])
+  @@index([reportedByUserId])
+  @@index([resolvedByUserId])
+  @@map("store_manager_issues")
+}
+
+// ============================================================
+// LOADER TRIP STATE
+// ============================================================
+
+model LoaderTripState {
+  id Int @id @default(autoincrement())
+
+  liveTripId Int      @unique @map("live_trip_id")
+  liveTrip   LiveTrip @relation(fields: [liveTripId], references: [id], onDelete: Cascade)
+
+  loaderUserId Int?  @map("loader_user_id")
+  loaderUser   User? @relation("LoaderTripUser", fields: [loaderUserId], references: [id], onDelete: SetNull)
+
+  status String @default("NOT_STARTED") @db.VarChar(40)
+
+  dock String? @db.VarChar(60)
+
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  loadingItems LoadingItem[]
+  verification LoadingVerification?
+  handover     DriverHandover?
+
+  @@index([loaderUserId])
+  @@index([status])
+  @@map("loader_trip_states")
+}
+
+// ============================================================
+// LOADING ITEM
+// ============================================================
+
+model LoadingItem {
+  id Int @id @default(autoincrement())
+
+  loaderTripId Int             @map("loader_trip_id")
+  loaderTrip   LoaderTripState @relation(fields: [loaderTripId], references: [id], onDelete: Cascade)
+
+  storeOrderItemId Int?            @map("store_order_item_id")
+  storeOrderItem   StoreOrderItem? @relation(fields: [storeOrderItemId], references: [id], onDelete: SetNull)
+
+  stopCode String @map("stop_code") @db.VarChar(50)
+
+  itemCode String @map("item_code") @db.VarChar(80)
+  itemName String @map("item_name") @db.VarChar(180)
+
+  expectedQty Int @map("expected_qty")
+  loadedQty   Int @default(0) @map("loaded_qty")
+
+  unit String @default("units") @db.VarChar(40)
+
+  status String @default("PENDING") @db.VarChar(40)
+
+  loadedAt DateTime? @map("loaded_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  issues LoadingIssue[]
+
+  @@unique([loaderTripId, itemCode])
+  @@index([storeOrderItemId])
+  @@index([stopCode])
+  @@map("loading_items")
+}
+
+// ============================================================
+// LOADING ISSUE
+// ============================================================
+
+model LoadingIssue {
+  id Int @id @default(autoincrement())
+
+  loadingItemId Int         @map("loading_item_id")
+  loadingItem   LoadingItem @relation(fields: [loadingItemId], references: [id], onDelete: Cascade)
+
+  loaderUserId Int  @map("loader_user_id")
+  loaderUser   User @relation("LoadingIssueLoader", fields: [loaderUserId], references: [id])
+
+  issueType String @map("issue_type") @db.VarChar(40)
+
+  expectedQty Int @map("expected_qty")
+  usableQty   Int @map("usable_qty")
+
+  reason String  @db.VarChar(255)
+  note   String? @db.Text
+
+  status String @default("PENDING") @db.VarChar(40)
+
+  resolution String? @db.Text
+
+  resolvedByUserId Int?  @map("resolved_by_user_id")
+  resolvedByUser   User? @relation("LoadingIssueResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  resolvedAt DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([loaderUserId])
+  @@index([resolvedByUserId])
+  @@map("loading_issues")
+}
+
+// ============================================================
+// LOADING VERIFICATION
+// ============================================================
+
+model LoadingVerification {
+  id Int @id @default(autoincrement())
+
+  loaderTripId Int             @unique @map("loader_trip_id")
+  loaderTrip   LoaderTripState @relation(fields: [loaderTripId], references: [id], onDelete: Cascade)
+
+  countVerified       Boolean @default(false) @map("count_verified")
+  secureVerified      Boolean @default(false) @map("secure_verified")
+  temperatureVerified Boolean @default(false) @map("temperature_verified")
+  docsVerified        Boolean @default(false) @map("docs_verified")
+
+  completedAt DateTime? @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("loading_verifications")
+}
+
+// ============================================================
+// DRIVER HANDOVER
+// ============================================================
+
+model DriverHandover {
+  id Int @id @default(autoincrement())
+
+  loaderTripId Int             @unique @map("loader_trip_id")
+  loaderTrip   LoaderTripState @relation(fields: [loaderTripId], references: [id], onDelete: Cascade)
+
+  loaderUserId Int  @map("loader_user_id")
+  loaderUser   User @relation("HandoverLoader", fields: [loaderUserId], references: [id])
+
+  driverUserId Int?  @map("driver_user_id")
+  driverUser   User? @relation("HandoverDriver", fields: [driverUserId], references: [id], onDelete: SetNull)
+
+  sealNumber   String? @map("seal_number") @db.VarChar(80)
+  handoverCode String? @map("handover_code") @db.VarChar(40)
+
+  handedOverAt DateTime @default(now()) @map("handed_over_at")
+
+  @@index([loaderUserId])
+  @@index([driverUserId])
+  @@map("driver_handovers")
+}
+
+// ============================================================
+// DELIVERY ALLOCATION BRIDGE
+// ============================================================
+
+/// Connects a confirmed Store Manager order to the exact live trip stop
+/// that will deliver it. This bridge keeps the business order lifecycle
+/// separate from transport execution while still allowing multiple store
+/// orders to share the same outlet stop.
+model DeliveryAllocation {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  liveTripStopId Int          @map("live_trip_stop_id")
+  liveTripStop   LiveTripStop @relation(fields: [liveTripStopId], references: [id], onDelete: Cascade)
+
+  status DeliveryAllocationStatus @default(ALLOCATED)
+
+  // Snapshot of the StoreOrder total units at allocation time.
+  // The dispatcher does not provide this value from the browser.
+  allocatedUnits Int @map("allocated_units")
+
+  allocatedAt DateTime  @default(now()) @map("allocated_at")
+  publishedAt DateTime? @map("published_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  cancellationReason String? @map("cancellation_reason") @db.VarChar(500)
+
+  receivedConfirmedAt       DateTime? @map("received_confirmed_at")
+  receivedConfirmedByUserId Int?      @map("received_confirmed_by_user_id")
+  receivedConfirmedBy       User?     @relation("DeliveryReceiptConfirmedBy", fields: [receivedConfirmedByUserId], references: [id], onDelete: SetNull)
+  receivedConfirmationNote  String?   @map("received_confirmation_note") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([storeOrderId, liveTripStopId])
+  @@index([storeOrderId, status])
+  @@index([liveTripStopId, status])
+  @@index([receivedConfirmedByUserId])
+  @@map("delivery_allocations")
 }
 
 // ============================================================

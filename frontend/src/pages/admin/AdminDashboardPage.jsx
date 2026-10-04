@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
+  Trash2,
   UserCheck,
   Users,
   UserX,
@@ -66,7 +68,7 @@ function AdminDashboardPage() {
     setPagination,
   ] = useState({
     page: 1,
-    limit: 12,
+    limit: 8,
     total: 0,
     totalPages: 1,
   });
@@ -90,6 +92,21 @@ function AdminDashboardPage() {
     errorMessage,
     setErrorMessage,
   ] = useState("");
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
+
+  const [
+    accountToDelete,
+    setAccountToDelete,
+  ] = useState(null);
+
+  const [
+    deletingAccountId,
+    setDeletingAccountId,
+  ] = useState(null);
 
   const [
     refreshKey,
@@ -126,7 +143,7 @@ function AdminDashboardPage() {
                   String(page),
 
                 limit:
-                  "12",
+                  "8",
               });
 
             const response =
@@ -144,7 +161,7 @@ function AdminDashboardPage() {
               response.data.pagination ||
               {
                 page: 1,
-                limit: 12,
+                limit: 8,
                 total: 0,
                 totalPages: 1,
               }
@@ -211,10 +228,87 @@ function AdminDashboardPage() {
   }
 
 
+  function requestAccountRemoval(
+    account
+  ) {
+    setErrorMessage("");
+    setSuccessMessage("");
+    setAccountToDelete(
+      account
+    );
+  }
+
+
+  function cancelAccountRemoval() {
+    if (deletingAccountId) {
+      return;
+    }
+
+    setAccountToDelete(null);
+  }
+
+
+  async function confirmAccountRemoval() {
+    if (
+      !accountToDelete ||
+      deletingAccountId
+    ) {
+      return;
+    }
+
+
+    try {
+      setDeletingAccountId(
+        accountToDelete.id
+      );
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      const response =
+        await api.delete(
+          `/admin/accounts/${accountToDelete.id}`
+        );
+
+      setAccountToDelete(null);
+      setSuccessMessage(
+        response.data?.message ||
+        "Staff account removed successfully."
+      );
+
+      if (
+        accounts.length === 1 &&
+        page > 1
+      ) {
+        setPage(
+          (current) =>
+            Math.max(
+              current - 1,
+              1
+            )
+        );
+      } else {
+        setRefreshKey(
+          (current) =>
+            current + 1
+        );
+      }
+    } catch (error) {
+      setAccountToDelete(null);
+      setErrorMessage(
+        error.response?.data
+          ?.message ||
+        "Unable to remove the staff account."
+      );
+    } finally {
+      setDeletingAccountId(null);
+    }
+  }
+
+
   return (
     <AdminShell
       title="Account directory"
-      description="Search, review and filter all administrator and operational staff accounts from one secure workspace."
+      description="Search, review and manage operational staff accounts from one secure workspace. Administrator profiles remain protected."
     >
       <SummaryGrid
         summary={summary}
@@ -356,41 +450,30 @@ function AdminDashboardPage() {
                 py-4
               "
             >
-              <div>
-                <h2 className="font-bold">
-                  Existing accounts
-                </h2>
+              <h2 className="font-bold">
+                Existing staff accounts
+              </h2>
+            </div>
 
-                <p
-                  className="
-                    mt-1
-                    text-xs
-                    text-[var(--color-text-muted)]
-                  "
-                >
-                  {pagination.total}{" "}
-                  matching account
-                  {pagination.total === 1
-                    ? ""
-                    : "s"}
-                </p>
-              </div>
 
+            {successMessage ? (
               <div
                 className="
-                  rounded-full
-                  bg-[var(--color-primary-soft)]
-                  px-3
-                  py-1.5
-                  text-xs
-                  font-bold
-                  text-[var(--color-primary)]
+                  m-5
+                  rounded-xl
+                  border
+                  border-[var(--color-success)]
+                  bg-[var(--color-success-soft)]
+                  px-4
+                  py-3
+                  text-sm
+                  font-semibold
+                  text-[var(--color-success)]
                 "
               >
-                Page {pagination.page} of{" "}
-                {pagination.totalPages}
+                {successMessage}
               </div>
-            </div>
+            ) : null}
 
 
             {errorMessage ? (
@@ -417,10 +500,14 @@ function AdminDashboardPage() {
               <>
                 <DesktopAccountTable
                   accounts={accounts}
+                  deletingAccountId={deletingAccountId}
+                  onDelete={requestAccountRemoval}
                 />
 
                 <MobileAccountCards
                   accounts={accounts}
+                  deletingAccountId={deletingAccountId}
+                  onDelete={requestAccountRemoval}
                 />
               </>
             )}
@@ -450,6 +537,17 @@ function AdminDashboardPage() {
           </div>
         </section>
       </div>
+
+
+      <DeleteAccountDialog
+        account={accountToDelete}
+        isDeleting={
+          deletingAccountId ===
+          accountToDelete?.id
+        }
+        onCancel={cancelAccountRemoval}
+        onConfirm={confirmAccountRemoval}
+      />
     </AdminShell>
   );
 }
@@ -461,7 +559,7 @@ function SummaryGrid({
   const cards = [
     {
       label:
-        "Total accounts",
+        "Total staff",
       value:
         summary.total,
       icon:
@@ -469,7 +567,7 @@ function SummaryGrid({
     },
     {
       label:
-        "Active",
+        "Active staff",
       value:
         summary.active,
       icon:
@@ -477,7 +575,7 @@ function SummaryGrid({
     },
     {
       label:
-        "Inactive",
+        "Inactive staff",
       value:
         summary.inactive,
       icon:
@@ -485,7 +583,7 @@ function SummaryGrid({
     },
     {
       label:
-        "Administrators",
+        "Protected admins",
       value:
         summary.admins,
       icon:
@@ -647,8 +745,7 @@ function FilterPanel({
             )
           }
           options={[
-            ["ALL", "All roles"],
-            ["ADMIN", "Administrator"],
+            ["ALL", "All staff roles"],
             ["STORE_MANAGER", "Store Manager"],
             ["DISPATCHER", "Dispatcher"],
             ["LOADER", "Loader"],
@@ -775,6 +872,8 @@ function FilterSelect({
 
 function DesktopAccountTable({
   accounts,
+  deletingAccountId,
+  onDelete,
 }) {
   return (
     <div
@@ -784,7 +883,7 @@ function DesktopAccountTable({
         md:block
       "
     >
-      <table className="w-full min-w-[880px] text-left">
+      <table className="w-full min-w-[1020px] text-left">
         <thead
           className="
             bg-[var(--color-surface-soft)]
@@ -809,6 +908,9 @@ function DesktopAccountTable({
             </th>
             <th className="px-5 py-3 font-bold">
               Password
+            </th>
+            <th className="px-5 py-3 text-right font-bold">
+              Actions
             </th>
           </tr>
         </thead>
@@ -868,6 +970,17 @@ function DesktopAccountTable({
                   }
                 />
               </td>
+
+              <td className="px-5 py-4 text-right">
+                <RemoveAccountButton
+                  account={account}
+                  isDeleting={
+                    deletingAccountId ===
+                    account.id
+                  }
+                  onDelete={onDelete}
+                />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -879,6 +992,8 @@ function DesktopAccountTable({
 
 function MobileAccountCards({
   accounts,
+  deletingAccountId,
+  onDelete,
 }) {
   return (
     <div className="divide-y divide-[var(--color-border)] md:hidden">
@@ -957,8 +1072,237 @@ function MobileAccountCards({
               account={account}
             />
           </div>
+
+          <div className="mt-4 flex justify-end">
+            <RemoveAccountButton
+              account={account}
+              isDeleting={
+                deletingAccountId ===
+                account.id
+              }
+              onDelete={onDelete}
+            />
+          </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+
+function RemoveAccountButton({
+  account,
+  isDeleting,
+  onDelete,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        onDelete(account)
+      }
+      disabled={isDeleting}
+      className="
+        nexora-focus
+        inline-flex
+        h-9
+        items-center
+        justify-center
+        gap-1.5
+        rounded-lg
+        border
+        border-[var(--color-danger)]
+        bg-[var(--color-danger-soft)]
+        px-3
+        text-xs
+        font-bold
+        text-[var(--color-danger)]
+        transition
+        hover:brightness-95
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+      aria-label={`Remove ${account.fullName}`}
+    >
+      <Trash2 size={14} />
+      {isDeleting
+        ? "Removing..."
+        : "Remove"}
+    </button>
+  );
+}
+
+
+function DeleteAccountDialog({
+  account,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}) {
+  if (!account) {
+    return null;
+  }
+
+
+  return (
+    <div
+      className="
+        fixed
+        inset-0
+        z-[260]
+        flex
+        items-center
+        justify-center
+        bg-black/55
+        px-4
+        py-8
+        backdrop-blur-sm
+      "
+      role="presentation"
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          onCancel();
+        }
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-account-title"
+        className="
+          w-full
+          max-w-md
+          rounded-2xl
+          border
+          border-[var(--color-border)]
+          bg-[var(--color-surface)]
+          p-5
+          shadow-2xl
+          sm:p-6
+        "
+      >
+        <div
+          className="
+            flex
+            h-11
+            w-11
+            items-center
+            justify-center
+            rounded-xl
+            bg-[var(--color-danger-soft)]
+            text-[var(--color-danger)]
+          "
+        >
+          <AlertTriangle size={21} />
+        </div>
+
+        <h2
+          id="delete-account-title"
+          className="mt-4 text-lg font-bold"
+        >
+          Remove staff profile?
+        </h2>
+
+        <p
+          className="
+            mt-2
+            text-sm
+            leading-6
+            text-[var(--color-text-secondary)]
+          "
+        >
+          This permanently removes
+          {" "}
+          <strong className="text-[var(--color-text)]">
+            {account.fullName}
+          </strong>
+          {" "}
+          ({account.userId}) from the system.
+          This action cannot be undone.
+        </p>
+
+        <div
+          className="
+            mt-4
+            rounded-xl
+            border
+            border-[var(--color-border)]
+            bg-[var(--color-surface-soft)]
+            px-3
+            py-3
+            text-xs
+            text-[var(--color-text-muted)]
+          "
+        >
+          Administrator profiles are protected by the backend and cannot be removed here.
+        </div>
+
+        <div
+          className="
+            mt-6
+            flex
+            flex-col-reverse
+            gap-2
+            sm:flex-row
+            sm:justify-end
+          "
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="
+              nexora-focus
+              h-10
+              rounded-xl
+              border
+              border-[var(--color-border)]
+              bg-[var(--color-surface)]
+              px-4
+              text-sm
+              font-bold
+              text-[var(--color-text-secondary)]
+              transition
+              hover:bg-[var(--color-surface-soft)]
+              disabled:opacity-50
+            "
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="
+              nexora-focus
+              inline-flex
+              h-10
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-[var(--color-danger)]
+              px-4
+              text-sm
+              font-bold
+              text-white
+              transition
+              hover:brightness-95
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
+          >
+            <Trash2 size={15} />
+            {isDeleting
+              ? "Removing..."
+              : "Remove profile"}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1133,19 +1477,7 @@ function Pagination({
         sm:px-5
       "
     >
-      <p
-        className="
-          text-xs
-          text-[var(--color-text-muted)]
-        "
-      >
-        {pagination.total} result
-        {pagination.total === 1
-          ? ""
-          : "s"}
-      </p>
-
-      <div className="flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
           onClick={onPrevious}

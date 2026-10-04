@@ -7,6 +7,7 @@ import {
 } from "../middleware/authMiddleware.js";
 
 import {
+  getDashboard,
   getDeliveryReports,
   getLiveMonitoring,
   getLiveMonitoringTrip,
@@ -24,6 +25,13 @@ import {
   savePlanningDraft,
 } from "../controllers/dispatcherPlanningController.js";
 import { getDispatcherDashboard } from "../controllers/dispatcherMonitoringController.js";
+
+import {
+  getDispatcherStoreOrder,
+  getDispatcherStoreOrders,
+  postDispatcherConfirmOrder,
+  postDispatcherDeferOrder,
+} from "../controllers/dispatcherOrderController.js";
 
 const router = Router();
 
@@ -109,6 +117,35 @@ router.get(
   "/live-monitoring/:tripCode",
   ...dispatcherAccess,
   getLiveMonitoringTrip
+);
+
+
+// ============================================================
+// STORE MANAGER ORDER HANDOFF / DISPATCHER DECISIONS
+// ============================================================
+
+router.get(
+  "/orders",
+  ...dispatcherAccess,
+  getDispatcherStoreOrders
+);
+
+router.get(
+  "/orders/:orderCode",
+  ...dispatcherAccess,
+  getDispatcherStoreOrder
+);
+
+router.post(
+  "/orders/:orderCode/confirm",
+  ...dispatcherAccess,
+  postDispatcherConfirmOrder
+);
+
+router.post(
+  "/orders/:orderCode/defer",
+  ...dispatcherAccess,
+  postDispatcherDeferOrder
 );
 
 export default router;

@@ -75,9 +75,19 @@ function Card({ className = '', children }) {
 export default function LoaderWorkspacePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const loaderName = user?.fullName ||user?.name || "Loader User";
+  const assignedDepotName = user?.depot?.name || user?.depotName ||"";
+  const assignedDepotCode = user?.depot?.code || user?.depotCode ||"";
   const connectivity = useConnectivity();
   const isOnline = typeof connectivity === 'boolean' ? connectivity : connectivity?.isOnline ?? true;
-
+  const assignedDepotKey = assignedDepotName
+    .toLowerCase()
+    .includes("kandy") ||
+  assignedDepotCode
+    .toLowerCase()
+    .includes("kdy")
+    ? "kandy"
+    : "peliyagoda";
   const [view, setView] = useState('dashboard');
   const [depotKey, setDepotKey] = useState(user?.depot?.name?.toLowerCase() || 'peliyagoda');
   const [tripId, setTripId] = useState('');
@@ -143,7 +153,7 @@ export default function LoaderWorkspacePage() {
             currentBackendIssue.createdAt,
         }
       : issue;
-  
+
 
   const backendIssueResolved =
     currentBackendIssue
@@ -253,7 +263,23 @@ const [pageTitle, eyebrow] =
   titleMap.dashboard;
 
   
-  
+  useEffect(() => {
+  if (!user) {
+    return;
+  }
+
+  const key =
+    user?.depot?.name
+      ?.toLowerCase()
+      .includes("kandy") ||
+    user?.depot?.code
+      ?.toLowerCase()
+      .includes("kdy")
+      ? "kandy"
+      : "peliyagoda";
+
+  setDepotKey(key);
+}, [user]);
   useEffect(() => {
   if (!backendTrip?.stops) {
     return;
@@ -277,7 +303,7 @@ const [pageTitle, eyebrow] =
   setCheckedItems(
     new Set(loadedItems)
   );
-}, [backendTrip]);  
+}, [backendTrip]);
 
   useEffect(() => {
     if (
@@ -424,14 +450,15 @@ const [pageTitle, eyebrow] =
     behavior: "smooth",
   });
 }
-  
+
 
   function selectDepot(next) {
-    setDepotKey(next);
-    setTripId("");
-    setFilter('all');
-    setView('dashboard');
-  }
+  setDepotKey(next);
+  setTripId(null);
+  setBackendTrip(null);
+  setFilter('all');
+  setView('dashboard');
+}
 /*
   function toggleLoaded(id) {
     setCheckedItems((current) => {
@@ -705,8 +732,20 @@ const [pageTitle, eyebrow] =
     logout();
     navigate('/login', { replace: true });
   }
-  
 
+  useEffect(() => {
+  if (
+    !tripId &&
+    backendDashboard?.trips?.length
+  ) {
+    setTripId(
+      backendDashboard.trips[0].id
+    );
+  }
+}, [
+  backendDashboard,
+  tripId,
+]);
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -736,7 +775,24 @@ const [pageTitle, eyebrow] =
             <div className="mb-3 flex items-start gap-2.5 text-[11px] leading-5 text-[var(--color-sidebar-muted)]"><ShieldCheck size={17} className="mt-0.5 shrink-0" /><p>Loading progress and exceptions are recorded against the active shift.</p></div>
             <div className="border-t border-white/10 pt-3">
               <div className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-black">{(user?.name || 'Loader').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</div>
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-black">
+  {loaderName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()}
+</div>
+
+<div className="min-w-0 flex-1">
+  <p className="truncate text-xs font-bold">
+    {loaderName}
+  </p>
+
+  <p className="truncate text-[10px] text-[var(--color-sidebar-muted)]">
+    Loader · {assignedDepotName || "Depot not assigned"}
+  </p>
+</div>
                 <div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{user?.name || 'Loader User'}</p><p className="text-[10px] text-[var(--color-sidebar-muted)]">Loader · Shift A</p></div>
                 <button onClick={handleLogout} title="Logout" className="rounded-lg p-2 text-[var(--color-sidebar-muted)] hover:bg-white/10 hover:text-white"><LogOut size={16} /></button>
               </div>

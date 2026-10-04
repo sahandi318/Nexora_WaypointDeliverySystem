@@ -651,6 +651,7 @@ function numericId(value, label) {
   return id;
 }
 
+ HEAD
 function isVanOnly(outlet) {
   return [outlet?.parkingConstraint, outlet?.dockType]
     .filter(Boolean)
@@ -890,6 +891,84 @@ export async function saveDispatcherDraft({
       include: planInclude(),
     });
   }, { isolationLevel: "Serializable" });
+
+  return {
+    stopId: `${tripCode}-STOP${String(index + 1).padStart(2, "0")}`,
+    storeOrderId: order.id,
+    position: index + 1,
+    outletId: outlet?.outletCode || `OUT-${order.outletId}`,
+    orderId: order.orderCode,
+    district: outlet?.district || "",
+    windowOpen: outlet?.windowOpenTime || null,
+    windowClose: outlet?.windowCloseTime || null,
+    plannedArrival: outlet?.windowOpenTime || null,
+    arrivalTime: null,
+    tempRequirement: orderTemperature(order),
+    expectedUnits: order.totalUnits,
+    loadedUnits: order.totalUnits,
+    deliveredQuantity: null,
+    unloadingPoint: outlet?.dockType || "Standard unloading",
+    vehicleAccess: outlet?.parkingConstraint || "Normal access",
+    mallWindow: outlet?.mallWindow || null,
+    mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.latitude}%2C${coords.longitude}`,
+    destination: coords,
+    etaMinutes: null,
+    distanceKm: null,
+    status: index === 0 ? "next" : "pending",
+    completed: false,
+    outcome: null,
+    pod: null,
+    exception: null,
+  };
+
+}
+
+async function publishStoreManagerAllocationsForTrip({
+  orders,
+  driverTrip,
+  liveTrip,
+}) {
+  const persistedStops = await prisma.liveTripStop.findMany({
+    where: {
+      liveTripId: liveTrip.id,
+    },
+    select: {
+      stopCode: true,
+      outletCode: true,
+    },
+  });
+
+  const persistedStopByCode = new Map(
+    persistedStops.map((stop) => [stop.stopCode, stop])
+  );
+  const driverStopByOrderCode = new Map(
+    driverTrip.stops.map((stop) => [stop.orderId, stop])
+  );
+
+  const publishedAllocations = [];
+
+  for (const order of orders) {
+    const driverStop = driverStopByOrderCode.get(order.orderCode);
+    const persistedStop = driverStop
+      ? persistedStopByCode.get(driverStop.stopId)
+      : null;
+
+    if (!driverStop || !persistedStop) {
+      throw new Error(
+        `Published stop mapping is unavailable for order ${order.orderCode}.`
+      );
+    }
+
+    const allocation = await allocateConfirmedStoreOrderToStop({
+      orderCode: order.orderCode,
+      stopCode: persistedStop.stopCode,
+    });
+
+    const published = await publishDeliveryAllocation(allocation.id);
+    publishedAllocations.push(published);
+  }
+
+  return publishedAllocations;
 }
 
 export async function publishDispatcherPlan({

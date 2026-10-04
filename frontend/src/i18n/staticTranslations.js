@@ -1540,7 +1540,464 @@ const STATIC_TRANSLATIONS = {
 
       "Review scheduled and active deliveries for your assigned outlet.",
 
+    "storeManager.liveStatusLive":
+      "Live",
 
+    "storeManager.liveStatusLiveHint":
+      "Live delivery updates are connected.",
+
+    "storeManager.liveStatusConnecting":
+      "Connecting",
+
+    "storeManager.liveStatusConnectingHint":
+      "Connecting to live delivery updates.",
+
+    "storeManager.liveStatusReconnecting":
+      "Reconnecting",
+
+    "storeManager.liveStatusReconnectingHint":
+      "Restoring live delivery updates.",
+
+    "storeManager.liveStatusStale":
+      "Delayed",
+
+    "storeManager.liveStatusStaleHint":
+      "Live updates are delayed; periodic refresh is still active.",
+
+    "storeManager.liveStatusOffline":
+      "Offline",
+
+    "storeManager.liveStatusOfflineHint":
+      "The device is offline; showing the latest synchronized delivery data.",
+
+
+
+
+    "storeManager.liveTrackingTitle":
+      "Live delivery tracking",
+
+    "storeManager.liveTrackingDescription":
+      "Track the vehicle, ETA and progress toward your assigned outlet.",
+
+    "storeManager.liveTrackingEta":
+      "ETA",
+
+    "storeManager.liveTrackingEtaLive":
+      "Live driver ETA",
+
+    "storeManager.liveTrackingEtaPlanned":
+      "Published plan ETA",
+
+    "storeManager.liveTrackingStopsRemaining":
+      "Stops before you",
+
+    "storeManager.liveTrackingStopsRemainingHint":
+      "Pending stops before your outlet",
+
+    "storeManager.liveTrackingDriverOnline":
+      "Driver online",
+
+    "storeManager.liveTrackingDriverOnlineHint":
+      "Live driver updates are currently available.",
+
+    "storeManager.liveTrackingDriverOffline":
+      "Driver offline",
+
+    "storeManager.liveTrackingDriverOfflineHint":
+      "Showing the latest synchronized tracking information.",
+
+    "storeManager.liveTrackingOwnOutlet":
+      "Your assigned outlet",
+
+    "storeManager.liveTrackingMapTitle":
+      "Live vehicle position",
+
+    "storeManager.liveTrackingMapPrivacy":
+      "Only your outlet and the current delivery vehicle are shown.",
+
+    "storeManager.liveTrackingVehicleMarker":
+      "Delivery vehicle",
+
+    "storeManager.liveTrackingOutletMarker":
+      "Your outlet",
+
+    "storeManager.liveTrackingMapUnavailable":
+      "Live map position is not available yet",
+
+    "storeManager.liveTrackingMapUnavailableHint":
+      "The map will appear when the published trip provides a vehicle or outlet position.",
+
+    "storeManager.liveTrackingSyncTitle":
+      "Tracking updates",
+
+    "storeManager.liveTrackingLastDriverUpdate":
+      "Latest driver update",
+
+    "storeManager.liveTrackingLastSynchronized":
+      "Last synchronized",
+
+    "storeManager.liveTrackingLastRefreshed":
+      "Last refreshed",
+
+    "storeManager.liveTrackingStop":
+      "Your stop",
+
+    "storeManager.liveTrackingStopSequence":
+      "Stop sequence",
+
+    "storeManager.liveTrackingCurrentState":
+      "Current delivery state",
+
+    "storeManager.liveTrackingTripStatus":
+      "Trip status",
+
+    "storeManager.liveTrackingStopStatus":
+      "Your stop status",
+
+    "storeManager.liveTrackingLoading":
+      "Loading live tracking...",
+
+    "storeManager.liveTrackingLoadingHint":
+      "Checking the latest published trip information for your outlet.",
+
+    "storeManager.liveTrackingAwaitingPublish":
+      "Live tracking will start after the plan is published",
+
+    "storeManager.liveTrackingAwaitingPublishHint":
+      "The dispatcher has not published this delivery trip yet. This page will update automatically when tracking becomes available.",
+
+    "storeManager.liveTrackingAwaitingPlan":
+      "Awaiting delivery planning",
+
+    "storeManager.liveTrackingAwaitingPlanHint":
+      "This confirmed order has not been allocated to a trip yet. Tracking will appear here after planning and publication.",
+
+    "storeManager.liveTrackingLoadFailed":
+      "Unable to load live tracking",
+
+    "storeManager.liveTrackingFinalTitle":
+      "Final delivery state",
+
+    "storeManager.liveTrackingCompletedValue":
+      "Completed",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "Live ETA is no longer required for this completed stop.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "Your outlet stop has been completed.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "The driver recorded a full delivery. Confirm receipt below if your store has received the goods.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "The driver recorded a partial delivery. Review what was received and report any discrepancy before confirming receipt.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "The driver could not complete this delivery. Review the issue details before taking further action.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "Your store has confirmed receipt. Live movement tracking for this delivery is complete.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt confirmed",
+
+    "storeManager.deliveriesUpcoming":
+      "Upcoming",
+
+    "storeManager.deliveriesUpcomingHint":
+      "Planned or awaiting dispatch",
+
+    "storeManager.deliveriesInTransit":
+      "In transit",
+
+    "storeManager.deliveriesInTransitHint":
+      "Moving toward your outlet",
+
+    "storeManager.deliveriesCompleted":
+      "Completed",
+
+    "storeManager.deliveriesCompletedHint":
+      "Delivered or completed",
+
+    "storeManager.deliveriesAttention":
+      "Needs attention",
+
+    "storeManager.deliveriesAttentionHint":
+      "Deferred, partial or exception",
+
+    "storeManager.deliveriesSearch":
+      "Search deliveries",
+
+    "storeManager.deliveriesSearchPlaceholder":
+      "Search order, trip or vehicle",
+
+    "storeManager.deliveriesStageFilter":
+      "Filter by delivery stage",
+
+    "storeManager.deliveriesDateFilter":
+      "Filter by delivery date",
+
+    "storeManager.deliveriesShowing":
+      "Showing {shown} of {total}",
+
+    "storeManager.deliveriesClearFilters":
+      "Clear filters",
+
+    "storeManager.deliveriesAllStages":
+      "All stages",
+
+    "storeManager.deliveriesLoading":
+      "Loading deliveries...",
+
+    "storeManager.deliveriesLoadingDescription":
+      "Checking the latest delivery plan for your assigned outlet.",
+
+    "storeManager.deliveriesLoadFailed":
+      "Unable to load deliveries",
+
+    "storeManager.deliveriesNoMatchesTitle":
+      "No deliveries match these filters",
+
+    "storeManager.deliveriesNoMatchesDescription":
+      "Change the search or filters to see other delivery records.",
+
+    "storeManager.deliveriesEmptyTitle":
+      "No deliveries yet",
+
+    "storeManager.deliveriesEmptyDescription":
+      "Confirmed and deferred orders will appear here as delivery planning begins.",
+
+    "storeManager.deliveriesOrder":
+      "Order",
+
+    "storeManager.deliveriesStatus":
+      "Status",
+
+    "storeManager.deliveriesSchedule":
+      "Schedule",
+
+    "storeManager.deliveriesTrip":
+      "Trip",
+
+    "storeManager.deliveriesVehicle":
+      "Vehicle",
+
+    "storeManager.deliveriesLoad":
+      "Load",
+
+    "storeManager.deliveriesAction":
+      "Action",
+
+    "storeManager.deliveriesPlannedEta":
+      "Planned ETA",
+
+    "storeManager.deliveriesEtaPending":
+      "ETA pending",
+
+    "storeManager.deliveriesAwaitingAssignment":
+      "Awaiting trip assignment",
+
+    "storeManager.deliveriesNotAssigned":
+      "Not assigned",
+
+    "storeManager.deliveriesViewDetails":
+      "View details",
+
+    "storeManager.deliveryStatusAwaitingDispatcher":
+      "Awaiting dispatcher",
+
+    "storeManager.deliveryStatusAwaitingPlan":
+      "Awaiting plan",
+
+    "storeManager.deliveryStatusPlanning":
+      "Planning",
+
+    "storeManager.deliveryStatusScheduled":
+      "Scheduled",
+
+    "storeManager.deliveryStatusReadyForDispatch":
+      "Ready for dispatch",
+
+    "storeManager.deliveryStatusInTransit":
+      "In transit",
+
+    "storeManager.deliveryStatusArriving":
+      "Arriving",
+
+    "storeManager.deliveryStatusArrived":
+      "Arrived",
+
+    "storeManager.deliveryStatusDelivered":
+      "Delivered",
+
+    "storeManager.deliveryStatusReceived":
+      "Received",
+
+    "storeManager.deliveryStatusCompleted":
+      "Completed",
+
+    "storeManager.deliveryStatusDeferred":
+      "Deferred",
+
+    "storeManager.deliveryStatusDelayed":
+      "Delayed",
+
+    "storeManager.deliveryStatusPartial":
+      "Partial delivery",
+
+    "storeManager.deliveryStatusException":
+      "Delivery exception",
+
+    "storeManager.deliveryStatusCancelled":
+      "Cancelled",
+
+    "storeManager.deliveryDetailsBack":
+      "Back to deliveries",
+
+    "storeManager.deliveryDetailsDescription":
+      "Review the published schedule, transport assignment and order load for this delivery.",
+
+    "storeManager.deliveryDetailsViewOrder":
+      "View order",
+
+    "storeManager.deliveryDetailsLoading":
+      "Loading delivery details...",
+
+    "storeManager.deliveryDetailsNotFound":
+      "Delivery not found",
+
+    "storeManager.deliveryDetailsLoadFailed":
+      "Unable to load delivery",
+
+    "storeManager.deliveryDetailsUnavailable":
+      "This delivery is not available for your assigned outlet.",
+
+    "storeManager.deliveryDetailsScheduledDate":
+      "Delivery date",
+
+    "storeManager.deliveryDetailsProductLines":
+      "product lines",
+
+    "storeManager.deliveryDetailsProgress":
+      "Delivery progress",
+
+    "storeManager.deliveryDetailsProgressDescription":
+      "Current position in the delivery workflow.",
+
+    "storeManager.deliveryDetailsItems":
+      "Delivery items",
+
+    "storeManager.deliveryDetailsItemsDescription":
+      "Order lines expected in this delivery.",
+
+    "storeManager.deliveryDetailsNotes":
+      "Store notes",
+
+    "storeManager.deliveryDetailsNotesDescription":
+      "Note submitted with the original store order.",
+
+    "storeManager.deliveryDetailsActualArrival":
+      "Actual arrival",
+
+    "storeManager.deliveryDetailsSchedule":
+      "Delivery schedule",
+
+    "storeManager.deliveryDetailsScheduleDescription":
+      "Published date, ETA and receiving window.",
+
+    "storeManager.deliveryDetailsTransport":
+      "Transport assignment",
+
+    "storeManager.deliveryDetailsTransportDescription":
+      "Trip, vehicle, driver and depot information when assigned.",
+
+    "storeManager.deliveryDetailsDriver":
+      "Driver",
+
+    "storeManager.deliveryDetailsTemperature":
+      "Temperature",
+
+    "storeManager.deliveryDetailsOrderContext":
+      "Order context",
+
+    "storeManager.deliveryDetailsOrderContextDescription":
+      "Processing dates and cutoff decision for the linked order.",
+
+    "storeManager.deliveryDetailsRequestedDate":
+      "Requested date",
+
+    "storeManager.deliveryDetailsAttentionDescription":
+      "This delivery requires operational attention before normal completion.",
+
+    "storeManager.deliveryDetailsProgressAttention":
+      "The normal progress path is paused while this delivery requires attention.",
+
+    "storeManager.receiptReadyTitle":
+      "Delivery ready for receipt confirmation",
+
+    "storeManager.receiptReadyDescription":
+      "The driver marked this delivery as delivered. Confirm once the goods have been received at your outlet.",
+
+    "storeManager.receiptPartialTitle":
+      "Partial delivery received",
+
+    "storeManager.receiptPartialDescription":
+      "The driver recorded a partial delivery. Review the shortage before confirming receipt.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "I understand this delivery was partial and I have checked the received quantity before confirming.",
+
+    "storeManager.receiptNotePlaceholder":
+      "Optional receiving note...",
+
+    "storeManager.receiptConfirmAction":
+      "Confirm received",
+
+    "storeManager.receiptConfirming":
+      "Confirming...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt confirmed.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "This delivery was already confirmed as received.",
+
+    "storeManager.receiptConfirmationFailed":
+      "Unable to confirm this delivery as received.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt confirmed",
+
+    "storeManager.receiptConfirmedDescription":
+      "This delivery has been acknowledged by the Store Manager.",
+
+    "storeManager.receiptConfirmedAt":
+      "Confirmed at",
+
+    "storeManager.receiptConfirmedBy":
+      "Confirmed by",
+
+    "storeManager.deliveryDetailsNoItems":
+      "No delivery items are available.",
+
+    "storeManager.deliveryDetailsProduct":
+      "Product",
+
+    "storeManager.deliveryDetailsSku":
+      "Item ID",
+
+    "storeManager.deliveryDetailsHandling":
+      "Handling",
+
+    "storeManager.deliveryDetailsQuantity":
+      "Quantity",
+
+    "storeManager.deliveryDetailsUnitWeight":
+      "Unit weight",
+
+    "storeManager.deliveryDetailsLineWeight":
+      "Line weight",
 
     "storeManager.issuesPageTitle":
 
@@ -1553,6 +2010,78 @@ const STATIC_TRANSLATIONS = {
       "Review delivery and receipt issues reported for your assigned outlet.",
 
 
+
+    "storeManager.dashboardOrdersInProgress": "Orders in progress",
+    "storeManager.dashboardUpcomingDeliveries": "Upcoming deliveries",
+    "storeManager.dashboardLiveDeliveries": "In transit",
+    "storeManager.dashboardNeedsAttention": "Needs attention",
+    "storeManager.dashboardNextDelivery": "Next active delivery",
+    "storeManager.dashboardNextDeliveryDescription": "Your closest scheduled or in-progress delivery.",
+    "storeManager.dashboardRecentOrders": "Recent orders",
+    "storeManager.dashboardRecentOrdersDescription": "Latest orders submitted for this outlet.",
+    "storeManager.dashboardViewDeliveries": "View deliveries",
+    "storeManager.dashboardViewOrders": "View orders",
+    "storeManager.dashboardTrackDelivery": "Track delivery",
+    "storeManager.dashboardNoDeliveries": "No upcoming deliveries",
+    "storeManager.dashboardNoOrders": "No orders yet",
+    "storeManager.dashboardAttentionDescription": "Deferrals, partial deliveries and exceptions.",
+    "storeManager.dashboardNoAttention": "Operations look clear",
+    "storeManager.dashboardNoAttentionDescription": "No delivery requires attention right now.",
+    "storeManager.dashboardOutletOperations": "Outlet operations",
+    "storeManager.dashboardOutletOperationsDescription": "Trusted receiving constraints for this outlet.",
+    "storeManager.createOrderClearAll": "Clear all",
+    "storeManager.createOrderRemoveItem": "Remove item",
+    "storeManager.issuesOpen": "Open issues",
+    "storeManager.issuesSearch": "Search issues",
+    "storeManager.issuesSearchPlaceholder": "Search order, status or trip",
+    "storeManager.issuesTypeFilter": "Filter issue type",
+    "storeManager.issuesAllTypes": "All issue types",
+    "storeManager.issuesShowing": "Showing {shown} of {total}",
+    "storeManager.issuesSourceNote": "Issues shown here are persisted records for this outlet with an Open / Resolved lifecycle.",
+    "storeManager.issuesNoMatches": "No matching issues",
+    "storeManager.issuesNoMatchesDescription": "Try another search or issue type.",
+    "storeManager.issuesEmptyTitle": "No delivery issues",
+    "storeManager.issuesEmptyDescription": "No issue records have been reported for this outlet yet.",
+    "storeManager.issuesOrder": "Order",
+    "storeManager.issuesIssueType": "Issue type",
+    "storeManager.issuesReason": "Reason / context",
+    "storeManager.issuesSchedule": "Delivery date",
+    "storeManager.issuesAction": "Action",
+    "storeManager.issuesViewDelivery": "View delivery",
+    "storeManager.issuesOperationalAttention": "Operational attention is required for this delivery.",
+    "storeManager.issuesResolved": "Resolved",
+    "storeManager.issuesTotal": "Total issues",
+    "storeManager.issuesReport": "Report issue",
+    "storeManager.issuesReportTitle": "Report an order or delivery issue",
+    "storeManager.issuesReportDescription": "Create a real issue record for an order that belongs to your assigned outlet.",
+    "storeManager.issuesOrderCode": "Order code",
+    "storeManager.issuesCategory": "Category",
+    "storeManager.issuesDescription": "Description",
+    "storeManager.issuesDescriptionPlaceholder": "Describe what happened...",
+    "storeManager.issuesReporting": "Reporting...",
+    "storeManager.issuesSubmitReport": "Submit report",
+    "storeManager.issuesCreateSuccess": "Issue reported successfully.",
+    "storeManager.issuesCreateFailed": "Unable to report this issue.",
+    "storeManager.issuesAllStatuses": "All statuses",
+    "storeManager.issuesOpenStatus": "Open",
+    "storeManager.issuesReportedAt": "Reported",
+    "storeManager.issuesReportedBy": "Reported by",
+    "storeManager.issuesResolvedAt": "Resolved",
+    "storeManager.issuesResolvedBy": "Resolved by",
+    "storeManager.issuesResolutionNote": "Resolution note",
+    "storeManager.issuesResolutionPlaceholder": "Add a short resolution note (optional)...",
+    "storeManager.issuesResolve": "Resolve",
+    "storeManager.issuesMarkResolved": "Mark resolved",
+    "storeManager.issuesResolveFailed": "Unable to resolve this issue.",
+    "storeManager.issuesLoadFailed": "Unable to load issues",
+    "storeManager.issuesLoading": "Loading issues",
+    "storeManager.issuesLoadingDescription": "Loading persisted issue records for your outlet.",
+    "storeManager.issuesCategoryDeliveryShortfall": "Delivery shortfall",
+    "storeManager.issuesCategoryDamagedGoods": "Damaged goods",
+    "storeManager.issuesCategoryLateDelivery": "Late delivery",
+    "storeManager.issuesCategoryDeliveryException": "Delivery exception",
+    "storeManager.issuesCategoryOrderProblem": "Order problem",
+    "storeManager.issuesCategoryOther": "Other",
 
     "storeManager.moduleFoundationReady":
 
@@ -3794,7 +4323,464 @@ const STATIC_TRANSLATIONS = {
 
       "ඔබට අනුයුක්ත වෙළඳසැල සඳහා නියමිත සහ ක්‍රියාත්මක බෙදාහැරීම් බලන්න.",
 
+    "storeManager.liveStatusLive":
+      "සජීවී",
 
+    "storeManager.liveStatusLiveHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන සම්බන්ධ වී ඇත.",
+
+    "storeManager.liveStatusConnecting":
+      "සම්බන්ධ වෙමින්",
+
+    "storeManager.liveStatusConnectingHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන වෙත සම්බන්ධ වෙමින් පවතී.",
+
+    "storeManager.liveStatusReconnecting":
+      "නැවත සම්බන්ධ වෙමින්",
+
+    "storeManager.liveStatusReconnectingHint":
+      "සජීවී බෙදාහැරීම් යාවත්කාලීන නැවත සම්බන්ධ කරමින් පවතී.",
+
+    "storeManager.liveStatusStale":
+      "ප්‍රමාදයි",
+
+    "storeManager.liveStatusStaleHint":
+      "සජීවී යාවත්කාලීන ප්‍රමාදයි; කාලානුරූප යාවත්කාලීන කිරීම තවම ක්‍රියාත්මකයි.",
+
+    "storeManager.liveStatusOffline":
+      "නොබැඳි",
+
+    "storeManager.liveStatusOfflineHint":
+      "උපාංගය නොබැඳිය; අවසන් සමමුහුර්ත කළ බෙදාහැරීම් දත්ත පෙන්වයි.",
+
+
+
+
+    "storeManager.liveTrackingTitle":
+      "සජීවී බෙදාහැරීම් නිරීක්ෂණය",
+
+    "storeManager.liveTrackingDescription":
+      "ඔබගේ outlet එක වෙත එන වාහනය, ETA සහ delivery ප්‍රගතිය නිරීක්ෂණය කරන්න.",
+
+    "storeManager.liveTrackingEta":
+      "ETA",
+
+    "storeManager.liveTrackingEtaLive":
+      "සජීවී driver ETA",
+
+    "storeManager.liveTrackingEtaPlanned":
+      "Published plan ETA",
+
+    "storeManager.liveTrackingStopsRemaining":
+      "ඔබට පෙර stops",
+
+    "storeManager.liveTrackingStopsRemainingHint":
+      "ඔබගේ outlet එකට පෙර ඉතිරි stops",
+
+    "storeManager.liveTrackingDriverOnline":
+      "රියදුරු online",
+
+    "storeManager.liveTrackingDriverOnlineHint":
+      "සජීවී driver updates දැනට ලැබේ.",
+
+    "storeManager.liveTrackingDriverOffline":
+      "රියදුරු offline",
+
+    "storeManager.liveTrackingDriverOfflineHint":
+      "අවසන් synchronized tracking දත්ත පෙන්වයි.",
+
+    "storeManager.liveTrackingOwnOutlet":
+      "ඔබගේ assigned outlet",
+
+    "storeManager.liveTrackingMapTitle":
+      "සජීවී වාහන ස්ථානය",
+
+    "storeManager.liveTrackingMapPrivacy":
+      "ඔබගේ outlet එක සහ වත්මන් delivery vehicle එක පමණක් පෙන්වයි.",
+
+    "storeManager.liveTrackingVehicleMarker":
+      "Delivery vehicle",
+
+    "storeManager.liveTrackingOutletMarker":
+      "ඔබගේ outlet",
+
+    "storeManager.liveTrackingMapUnavailable":
+      "සජීවී map position එක තවම ලබා ගත නොහැක",
+
+    "storeManager.liveTrackingMapUnavailableHint":
+      "Published trip එකෙන් vehicle හෝ outlet position එක ලැබුණු විට map එක පෙන්වයි.",
+
+    "storeManager.liveTrackingSyncTitle":
+      "Tracking updates",
+
+    "storeManager.liveTrackingLastDriverUpdate":
+      "අවසන් driver update",
+
+    "storeManager.liveTrackingLastSynchronized":
+      "අවසන් synchronized",
+
+    "storeManager.liveTrackingLastRefreshed":
+      "අවසන් refresh කළ වේලාව",
+
+    "storeManager.liveTrackingStop":
+      "ඔබගේ stop",
+
+    "storeManager.liveTrackingStopSequence":
+      "Stop sequence",
+
+    "storeManager.liveTrackingCurrentState":
+      "වත්මන් delivery තත්ත්වය",
+
+    "storeManager.liveTrackingTripStatus":
+      "Trip තත්ත්වය",
+
+    "storeManager.liveTrackingStopStatus":
+      "ඔබගේ stop තත්ත්වය",
+
+    "storeManager.liveTrackingLoading":
+      "සජීවී tracking පූරණය වෙමින්...",
+
+    "storeManager.liveTrackingLoadingHint":
+      "ඔබගේ outlet එක සඳහා නවතම published trip දත්ත පරීක්ෂා කරමින්.",
+
+    "storeManager.liveTrackingAwaitingPublish":
+      "Plan එක publish කළ පසු live tracking ආරම්භ වේ",
+
+    "storeManager.liveTrackingAwaitingPublishHint":
+      "Dispatcher තවම මෙම delivery trip එක publish කර නැත. Tracking ලැබුණු විට මෙම පිටුව ස්වයංක්‍රීයව යාවත්කාලීන වේ.",
+
+    "storeManager.liveTrackingAwaitingPlan":
+      "Delivery planning සඳහා බලා සිටී",
+
+    "storeManager.liveTrackingAwaitingPlanHint":
+      "මෙම confirmed order එක තවම trip එකකට allocate කර නැත. Planning සහ publish කිරීමෙන් පසු tracking මෙහි පෙන්වයි.",
+
+    "storeManager.liveTrackingLoadFailed":
+      "සජීවී tracking පූරණය කළ නොහැක",
+
+    "storeManager.liveTrackingFinalTitle":
+      "අවසන් delivery තත්ත්වය",
+
+    "storeManager.liveTrackingCompletedValue":
+      "සම්පූර්ණයි",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "මෙම stop එක සම්පූර්ණ නිසා live ETA තවදුරටත් අවශ්‍ය නොවේ.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "ඔබගේ outlet stop එක සම්පූර්ණයි.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "Driver full delivery එක record කර ඇත. Goods ලැබී ඇත්නම් පහතින් receipt confirm කරන්න.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "Driver partial delivery එක record කර ඇත. ලැබුණු items පරීක්ෂා කර discrepancy එකක් තිබේ නම් issue එකක් report කර receipt confirm කරන්න.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "Driverට මෙම delivery එක සම්පූර්ණ කළ නොහැකි විය. ඊළඟ action එකට පෙර issue details බලන්න.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "ඔබගේ store එක receipt තහවුරු කර ඇත. මෙම delivery එකේ live movement tracking සම්පූර්ණයි.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt තහවුරු කළේ",
+
+    "storeManager.deliveriesUpcoming":
+      "ඉදිරියට ඇති",
+
+    "storeManager.deliveriesUpcomingHint":
+      "සැලසුම් කළ හෝ dispatch සඳහා බලා සිටින",
+
+    "storeManager.deliveriesInTransit":
+      "ගමන් මඟේ",
+
+    "storeManager.deliveriesInTransitHint":
+      "ඔබගේ outlet එක වෙත ගමන් කරමින්",
+
+    "storeManager.deliveriesCompleted":
+      "සම්පූර්ණ",
+
+    "storeManager.deliveriesCompletedHint":
+      "බෙදාහැරූ හෝ සම්පූර්ණ කළ",
+
+    "storeManager.deliveriesAttention":
+      "අවධානය අවශ්‍ය",
+
+    "storeManager.deliveriesAttentionHint":
+      "කල් දැමූ, අර්ධ හෝ exception",
+
+    "storeManager.deliveriesSearch":
+      "බෙදාහැරීම් සොයන්න",
+
+    "storeManager.deliveriesSearchPlaceholder":
+      "Order, trip හෝ vehicle සොයන්න",
+
+    "storeManager.deliveriesStageFilter":
+      "Delivery අදියර අනුව පෙරහන් කරන්න",
+
+    "storeManager.deliveriesDateFilter":
+      "Delivery දිනය අනුව පෙරහන් කරන්න",
+
+    "storeManager.deliveriesShowing":
+      "{total} න් {shown} ක් පෙන්වයි",
+
+    "storeManager.deliveriesClearFilters":
+      "පෙරහන් ඉවත් කරන්න",
+
+    "storeManager.deliveriesAllStages":
+      "සියලු අදියර",
+
+    "storeManager.deliveriesLoading":
+      "බෙදාහැරීම් පූරණය වෙමින්...",
+
+    "storeManager.deliveriesLoadingDescription":
+      "ඔබගේ outlet එක සඳහා නවතම delivery plan එක පරීක්ෂා කරමින්.",
+
+    "storeManager.deliveriesLoadFailed":
+      "බෙදාහැරීම් පූරණය කළ නොහැක",
+
+    "storeManager.deliveriesNoMatchesTitle":
+      "මෙම පෙරහන් වලට ගැළපෙන බෙදාහැරීම් නැත",
+
+    "storeManager.deliveriesNoMatchesDescription":
+      "වෙනත් delivery records බැලීමට සෙවුම හෝ පෙරහන් වෙනස් කරන්න.",
+
+    "storeManager.deliveriesEmptyTitle":
+      "තවම බෙදාහැරීම් නැත",
+
+    "storeManager.deliveriesEmptyDescription":
+      "Delivery planning ආරම්භ වූ විට confirmed සහ deferred orders මෙහි පෙන්වයි.",
+
+    "storeManager.deliveriesOrder":
+      "ඇණවුම",
+
+    "storeManager.deliveriesStatus":
+      "තත්ත්වය",
+
+    "storeManager.deliveriesSchedule":
+      "කාලසටහන",
+
+    "storeManager.deliveriesTrip":
+      "Trip",
+
+    "storeManager.deliveriesVehicle":
+      "වාහනය",
+
+    "storeManager.deliveriesLoad":
+      "Load",
+
+    "storeManager.deliveriesAction":
+      "ක්‍රියාව",
+
+    "storeManager.deliveriesPlannedEta":
+      "සැලසුම් කළ ETA",
+
+    "storeManager.deliveriesEtaPending":
+      "ETA බලාපොරොත්තුවෙන්",
+
+    "storeManager.deliveriesAwaitingAssignment":
+      "Trip assignment සඳහා බලා සිටී",
+
+    "storeManager.deliveriesNotAssigned":
+      "අනුයුක්ත කර නැත",
+
+    "storeManager.deliveriesViewDetails":
+      "විස්තර බලන්න",
+
+    "storeManager.deliveryStatusAwaitingDispatcher":
+      "Dispatcher සඳහා බලා සිටී",
+
+    "storeManager.deliveryStatusAwaitingPlan":
+      "Plan සඳහා බලා සිටී",
+
+    "storeManager.deliveryStatusPlanning":
+      "සැලසුම් කරමින්",
+
+    "storeManager.deliveryStatusScheduled":
+      "නියමිත",
+
+    "storeManager.deliveryStatusReadyForDispatch":
+      "Dispatch සඳහා සූදානම්",
+
+    "storeManager.deliveryStatusInTransit":
+      "ගමන් මඟේ",
+
+    "storeManager.deliveryStatusArriving":
+      "ළඟා වෙමින්",
+
+    "storeManager.deliveryStatusArrived":
+      "ළඟා විය",
+
+    "storeManager.deliveryStatusDelivered":
+      "බෙදාහැර ඇත",
+
+    "storeManager.deliveryStatusReceived":
+      "ලැබුණු බව තහවුරුයි",
+
+    "storeManager.deliveryStatusCompleted":
+      "සම්පූර්ණ",
+
+    "storeManager.deliveryStatusDeferred":
+      "කල් දැමූ",
+
+    "storeManager.deliveryStatusDelayed":
+      "ප්‍රමාද",
+
+    "storeManager.deliveryStatusPartial":
+      "අර්ධ බෙදාහැරීම",
+
+    "storeManager.deliveryStatusException":
+      "Delivery exception",
+
+    "storeManager.deliveryStatusCancelled":
+      "අවලංගු කළ",
+
+    "storeManager.deliveryDetailsBack":
+      "බෙදාහැරීම් වෙත ආපසු",
+
+    "storeManager.deliveryDetailsDescription":
+      "මෙම delivery එකේ published schedule, transport assignment සහ order load එක බලන්න.",
+
+    "storeManager.deliveryDetailsViewOrder":
+      "ඇණවුම බලන්න",
+
+    "storeManager.deliveryDetailsLoading":
+      "Delivery විස්තර පූරණය වෙමින්...",
+
+    "storeManager.deliveryDetailsNotFound":
+      "Delivery එක හමු නොවීය",
+
+    "storeManager.deliveryDetailsLoadFailed":
+      "Delivery එක පූරණය කළ නොහැක",
+
+    "storeManager.deliveryDetailsUnavailable":
+      "මෙම delivery එක ඔබගේ assigned outlet එකට ලබා ගත නොහැක.",
+
+    "storeManager.deliveryDetailsScheduledDate":
+      "Delivery දිනය",
+
+    "storeManager.deliveryDetailsProductLines":
+      "product lines",
+
+    "storeManager.deliveryDetailsProgress":
+      "Delivery ප්‍රගතිය",
+
+    "storeManager.deliveryDetailsProgressDescription":
+      "Delivery workflow එකේ වත්මන් අදියර.",
+
+    "storeManager.deliveryDetailsItems":
+      "Delivery items",
+
+    "storeManager.deliveryDetailsItemsDescription":
+      "මෙම delivery එකෙන් ලැබීමට නියමිත order lines.",
+
+    "storeManager.deliveryDetailsNotes":
+      "Store සටහන්",
+
+    "storeManager.deliveryDetailsNotesDescription":
+      "මුල් store order එක සමඟ යැවූ සටහන.",
+
+    "storeManager.deliveryDetailsActualArrival":
+      "සැබෑ පැමිණීම",
+
+    "storeManager.deliveryDetailsSchedule":
+      "Delivery කාලසටහන",
+
+    "storeManager.deliveryDetailsScheduleDescription":
+      "Published දිනය, ETA සහ receiving window.",
+
+    "storeManager.deliveryDetailsTransport":
+      "Transport assignment",
+
+    "storeManager.deliveryDetailsTransportDescription":
+      "අනුයුක්ත වූ විට trip, vehicle, driver සහ depot විස්තර.",
+
+    "storeManager.deliveryDetailsDriver":
+      "රියදුරු",
+
+    "storeManager.deliveryDetailsTemperature":
+      "උෂ්ණත්වය",
+
+    "storeManager.deliveryDetailsOrderContext":
+      "Order context",
+
+    "storeManager.deliveryDetailsOrderContextDescription":
+      "සම්බන්ධිත order එකේ processing dates සහ cutoff decision.",
+
+    "storeManager.deliveryDetailsRequestedDate":
+      "ඉල්ලා ඇති දිනය",
+
+    "storeManager.deliveryDetailsAttentionDescription":
+      "සාමාන්‍ය completion එකට පෙර මෙම delivery එකට මෙහෙයුම් අවධානය අවශ්‍යයි.",
+
+    "storeManager.deliveryDetailsProgressAttention":
+      "මෙම delivery එකට අවධානය අවශ්‍ය බැවින් සාමාන්‍ය progress path එක නවතා ඇත.",
+
+    "storeManager.receiptReadyTitle":
+      "Delivery ලැබීම තහවුරු කිරීමට සූදානම්",
+
+    "storeManager.receiptReadyDescription":
+      "Driver මෙම delivery එක delivered ලෙස සලකුණු කර ඇත. භාණ්ඩ outlet එකට ලැබුණු පසු තහවුරු කරන්න.",
+
+    "storeManager.receiptPartialTitle":
+      "අර්ධ delivery එකක් ලැබී ඇත",
+
+    "storeManager.receiptPartialDescription":
+      "Driver විසින් partial delivery එකක් වාර්තා කර ඇත. Receipt confirm කිරීමට පෙර අඩුව පරීක්ෂා කරන්න.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "මෙය partial delivery එකක් බව මම අවබෝධ කරගෙන ඇති අතර confirm කිරීමට පෙර ලැබුණු ප්‍රමාණය පරීක්ෂා කළෙමි.",
+
+    "storeManager.receiptNotePlaceholder":
+      "අමතර receiving සටහනක්...",
+
+    "storeManager.receiptConfirmAction":
+      "ලැබුණු බව තහවුරු කරන්න",
+
+    "storeManager.receiptConfirming":
+      "තහවුරු කරමින්...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt එක තහවුරු කරන ලදී.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "මෙම delivery එක දැනටමත් ලැබුණු බව තහවුරු කර ඇත.",
+
+    "storeManager.receiptConfirmationFailed":
+      "මෙම delivery එක ලැබුණු බව තහවුරු කළ නොහැක.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt තහවුරු කර ඇත",
+
+    "storeManager.receiptConfirmedDescription":
+      "මෙම delivery එක Store Manager විසින් ලැබුණු බව පිළිගෙන ඇත.",
+
+    "storeManager.receiptConfirmedAt":
+      "තහවුරු කළ වේලාව",
+
+    "storeManager.receiptConfirmedBy":
+      "තහවුරු කළේ",
+
+    "storeManager.deliveryDetailsNoItems":
+      "Delivery items ලබා ගත නොහැක.",
+
+    "storeManager.deliveryDetailsProduct":
+      "නිෂ්පාදනය",
+
+    "storeManager.deliveryDetailsSku":
+      "Item ID",
+
+    "storeManager.deliveryDetailsHandling":
+      "Handling",
+
+    "storeManager.deliveryDetailsQuantity":
+      "ප්‍රමාණය",
+
+    "storeManager.deliveryDetailsUnitWeight":
+      "ඒකක බර",
+
+    "storeManager.deliveryDetailsLineWeight":
+      "Line බර",
 
     "storeManager.issuesPageTitle":
 
@@ -3807,6 +4793,78 @@ const STATIC_TRANSLATIONS = {
       "ඔබට අනුයුක්ත වෙළඳසැල සඳහා වාර්තා කළ delivery සහ receipt ගැටලු බලන්න.",
 
 
+
+    "storeManager.dashboardOrdersInProgress": "ක්‍රියාත්මක ඇණවුම්",
+    "storeManager.dashboardUpcomingDeliveries": "ඉදිරි බෙදාහැරීම්",
+    "storeManager.dashboardLiveDeliveries": "ගමන් කරමින්",
+    "storeManager.dashboardNeedsAttention": "අවධානය අවශ්‍ය",
+    "storeManager.dashboardNextDelivery": "ඊළඟ සක්‍රීය බෙදාහැරීම",
+    "storeManager.dashboardNextDeliveryDescription": "ඔබගේ වෙළඳසැලට ළඟම නියමිත හෝ ගමන් කරන බෙදාහැරීම.",
+    "storeManager.dashboardRecentOrders": "මෑත ඇණවුම්",
+    "storeManager.dashboardRecentOrdersDescription": "මෙම වෙළඳසැලෙන් ඉදිරිපත් කළ නවතම ඇණවුම්.",
+    "storeManager.dashboardViewDeliveries": "බෙදාහැරීම් බලන්න",
+    "storeManager.dashboardViewOrders": "ඇණවුම් බලන්න",
+    "storeManager.dashboardTrackDelivery": "බෙදාහැරීම නිරීක්ෂණය කරන්න",
+    "storeManager.dashboardNoDeliveries": "ඉදිරි බෙදාහැරීම් නොමැත",
+    "storeManager.dashboardNoOrders": "තවම ඇණවුම් නොමැත",
+    "storeManager.dashboardAttentionDescription": "කල්දැමීම්, අර්ධ බෙදාහැරීම් සහ exceptions.",
+    "storeManager.dashboardNoAttention": "මෙහෙයුම් සාමාන්‍යයි",
+    "storeManager.dashboardNoAttentionDescription": "දැනට අවධානය අවශ්‍ය බෙදාහැරීමක් නොමැත.",
+    "storeManager.dashboardOutletOperations": "වෙළඳසැල් මෙහෙයුම්",
+    "storeManager.dashboardOutletOperationsDescription": "මෙම වෙළඳසැලේ trusted receiving constraints.",
+    "storeManager.createOrderClearAll": "සියල්ල ඉවත් කරන්න",
+    "storeManager.createOrderRemoveItem": "අයිතමය ඉවත් කරන්න",
+    "storeManager.issuesOpen": "විවෘත ගැටලු",
+    "storeManager.issuesSearch": "ගැටලු සොයන්න",
+    "storeManager.issuesSearchPlaceholder": "Order, status හෝ trip සොයන්න",
+    "storeManager.issuesTypeFilter": "ගැටලු වර්ගය පෙරහන් කරන්න",
+    "storeManager.issuesAllTypes": "සියලු ගැටලු වර්ග",
+    "storeManager.issuesShowing": "{total} න් {shown} පෙන්වයි",
+    "storeManager.issuesSourceNote": "මෙහි පෙන්වන්නේ මෙම වෙළඳසැලට database එකේ සුරකින ලද Open / Resolved ගැටලු records ය.",
+    "storeManager.issuesNoMatches": "ගැලපෙන ගැටලු නොමැත",
+    "storeManager.issuesNoMatchesDescription": "වෙනත් සෙවුමක් හෝ ගැටලු වර්ගයක් උත්සාහ කරන්න.",
+    "storeManager.issuesEmptyTitle": "බෙදාහැරීම් ගැටලු නොමැත",
+    "storeManager.issuesEmptyDescription": "මෙම වෙළඳසැල සඳහා තවම ගැටලු record කර නොමැත.",
+    "storeManager.issuesOrder": "ඇණවුම",
+    "storeManager.issuesIssueType": "ගැටලු වර්ගය",
+    "storeManager.issuesReason": "හේතුව / විස්තරය",
+    "storeManager.issuesSchedule": "බෙදාහැරීමේ දිනය",
+    "storeManager.issuesAction": "ක්‍රියාව",
+    "storeManager.issuesViewDelivery": "බෙදාහැරීම බලන්න",
+    "storeManager.issuesOperationalAttention": "මෙම බෙදාහැරීමට මෙහෙයුම් අවධානය අවශ්‍යයි.",
+    "storeManager.issuesResolved": "විසඳූ",
+    "storeManager.issuesTotal": "මුළු ගැටලු",
+    "storeManager.issuesReport": "ගැටලුවක් වාර්තා කරන්න",
+    "storeManager.issuesReportTitle": "ඇණවුම් / බෙදාහැරීම් ගැටලුවක් වාර්තා කරන්න",
+    "storeManager.issuesReportDescription": "ඔබගේ වෙළඳසැලට අදාළ ඇණවුමක් සඳහා සැබෑ issue record එකක් සාදන්න.",
+    "storeManager.issuesOrderCode": "ඇණවුම් කේතය",
+    "storeManager.issuesCategory": "වර්ගය",
+    "storeManager.issuesDescription": "විස්තරය",
+    "storeManager.issuesDescriptionPlaceholder": "සිදු වූ දේ කෙටියෙන් සඳහන් කරන්න...",
+    "storeManager.issuesReporting": "වාර්තා කරමින්...",
+    "storeManager.issuesSubmitReport": "වාර්තාව යවන්න",
+    "storeManager.issuesCreateSuccess": "ගැටලුව සාර්ථකව වාර්තා විය.",
+    "storeManager.issuesCreateFailed": "ගැටලුව වාර්තා කළ නොහැක.",
+    "storeManager.issuesAllStatuses": "සියලු තත්ත්ව",
+    "storeManager.issuesOpenStatus": "විවෘත",
+    "storeManager.issuesReportedAt": "වාර්තා කළේ",
+    "storeManager.issuesReportedBy": "වාර්තා කළ පුද්ගලයා",
+    "storeManager.issuesResolvedAt": "විසඳූ වේලාව",
+    "storeManager.issuesResolvedBy": "විසඳූ පුද්ගලයා",
+    "storeManager.issuesResolutionNote": "විසඳුම් සටහන",
+    "storeManager.issuesResolutionPlaceholder": "විසඳුම ගැන කෙටි සටහනක් (optional)...",
+    "storeManager.issuesResolve": "විසඳන්න",
+    "storeManager.issuesMarkResolved": "විසඳූ ලෙස සලකුණු කරන්න",
+    "storeManager.issuesResolveFailed": "ගැටලුව විසඳූ ලෙස update කළ නොහැක.",
+    "storeManager.issuesLoadFailed": "ගැටලු load කළ නොහැක",
+    "storeManager.issuesLoading": "ගැටලු load කරමින්",
+    "storeManager.issuesLoadingDescription": "ඔබගේ වෙළඳසැලේ issue records load කරමින් පවතී.",
+    "storeManager.issuesCategoryDeliveryShortfall": "බෙදාහැරීම් අඩුව",
+    "storeManager.issuesCategoryDamagedGoods": "හානි වූ භාණ්ඩ",
+    "storeManager.issuesCategoryLateDelivery": "ප්‍රමාද බෙදාහැරීම",
+    "storeManager.issuesCategoryDeliveryException": "බෙදාහැරීම් exception",
+    "storeManager.issuesCategoryOrderProblem": "ඇණවුම් ගැටලුව",
+    "storeManager.issuesCategoryOther": "වෙනත්",
 
     "storeManager.moduleFoundationReady":
 
@@ -6048,7 +7106,464 @@ const STATIC_TRANSLATIONS = {
 
       "உங்களுக்கு ஒதுக்கப்பட்ட கடைக்கான திட்டமிடப்பட்ட மற்றும் செயலில் உள்ள விநியோகங்களைப் பார்வையிடவும்.",
 
+    "storeManager.liveStatusLive":
+      "நேரலை",
 
+    "storeManager.liveStatusLiveHint":
+      "நேரலை விநியோக புதுப்பிப்புகள் இணைக்கப்பட்டுள்ளன.",
+
+    "storeManager.liveStatusConnecting":
+      "இணைக்கிறது",
+
+    "storeManager.liveStatusConnectingHint":
+      "நேரலை விநியோக புதுப்பிப்புகளுடன் இணைக்கிறது.",
+
+    "storeManager.liveStatusReconnecting":
+      "மீண்டும் இணைக்கிறது",
+
+    "storeManager.liveStatusReconnectingHint":
+      "நேரலை விநியோக புதுப்பிப்புகளை மீண்டும் இணைக்கிறது.",
+
+    "storeManager.liveStatusStale":
+      "தாமதம்",
+
+    "storeManager.liveStatusStaleHint":
+      "நேரலை புதுப்பிப்புகள் தாமதமாகின்றன; காலமுறை புதுப்பிப்பு தொடர்ந்து செயலில் உள்ளது.",
+
+    "storeManager.liveStatusOffline":
+      "ஆஃப்லைன்",
+
+    "storeManager.liveStatusOfflineHint":
+      "சாதனம் ஆஃப்லைனில் உள்ளது; கடைசியாக ஒத்திசைக்கப்பட்ட விநியோக தரவு காட்டப்படுகிறது.",
+
+
+
+
+    "storeManager.liveTrackingTitle":
+      "நேரலை விநியோக கண்காணிப்பு",
+
+    "storeManager.liveTrackingDescription":
+      "உங்கள் outlet நோக்கி வரும் வாகனம், ETA மற்றும் delivery முன்னேற்றத்தை கண்காணிக்கவும்.",
+
+    "storeManager.liveTrackingEta":
+      "ETA",
+
+    "storeManager.liveTrackingEtaLive":
+      "நேரலை driver ETA",
+
+    "storeManager.liveTrackingEtaPlanned":
+      "Published plan ETA",
+
+    "storeManager.liveTrackingStopsRemaining":
+      "உங்களுக்கு முன் stops",
+
+    "storeManager.liveTrackingStopsRemainingHint":
+      "உங்கள் outletக்கு முன் மீதமுள்ள stops",
+
+    "storeManager.liveTrackingDriverOnline":
+      "ஓட்டுநர் online",
+
+    "storeManager.liveTrackingDriverOnlineHint":
+      "நேரலை driver updates தற்போது கிடைக்கின்றன.",
+
+    "storeManager.liveTrackingDriverOffline":
+      "ஓட்டுநர் offline",
+
+    "storeManager.liveTrackingDriverOfflineHint":
+      "கடைசியாக synchronized செய்யப்பட்ட tracking தகவல் காட்டப்படுகிறது.",
+
+    "storeManager.liveTrackingOwnOutlet":
+      "உங்கள் assigned outlet",
+
+    "storeManager.liveTrackingMapTitle":
+      "நேரலை வாகன இருப்பிடம்",
+
+    "storeManager.liveTrackingMapPrivacy":
+      "உங்கள் outlet மற்றும் தற்போதைய delivery vehicle மட்டும் காட்டப்படும்.",
+
+    "storeManager.liveTrackingVehicleMarker":
+      "Delivery vehicle",
+
+    "storeManager.liveTrackingOutletMarker":
+      "உங்கள் outlet",
+
+    "storeManager.liveTrackingMapUnavailable":
+      "நேரலை map position இன்னும் கிடைக்கவில்லை",
+
+    "storeManager.liveTrackingMapUnavailableHint":
+      "Published trip vehicle அல்லது outlet position வழங்கியதும் map காட்டப்படும்.",
+
+    "storeManager.liveTrackingSyncTitle":
+      "Tracking updates",
+
+    "storeManager.liveTrackingLastDriverUpdate":
+      "கடைசி driver update",
+
+    "storeManager.liveTrackingLastSynchronized":
+      "கடைசியாக synchronized",
+
+    "storeManager.liveTrackingLastRefreshed":
+      "கடைசியாக refresh செய்த நேரம்",
+
+    "storeManager.liveTrackingStop":
+      "உங்கள் stop",
+
+    "storeManager.liveTrackingStopSequence":
+      "Stop sequence",
+
+    "storeManager.liveTrackingCurrentState":
+      "தற்போதைய delivery நிலை",
+
+    "storeManager.liveTrackingTripStatus":
+      "Trip நிலை",
+
+    "storeManager.liveTrackingStopStatus":
+      "உங்கள் stop நிலை",
+
+    "storeManager.liveTrackingLoading":
+      "நேரலை tracking ஏற்றப்படுகிறது...",
+
+    "storeManager.liveTrackingLoadingHint":
+      "உங்கள் outletக்கான சமீபத்திய published trip தகவல் சரிபார்க்கப்படுகிறது.",
+
+    "storeManager.liveTrackingAwaitingPublish":
+      "Plan publish ஆன பிறகு live tracking தொடங்கும்",
+
+    "storeManager.liveTrackingAwaitingPublishHint":
+      "Dispatcher இந்த delivery tripஐ இன்னும் publish செய்யவில்லை. Tracking கிடைத்ததும் இந்த page தானாக புதுப்பிக்கப்படும்.",
+
+    "storeManager.liveTrackingAwaitingPlan":
+      "Delivery planning காத்திருக்கிறது",
+
+    "storeManager.liveTrackingAwaitingPlanHint":
+      "இந்த confirmed order இன்னும் tripக்கு allocate செய்யப்படவில்லை. Planning மற்றும் publish ஆனதும் tracking இங்கே தோன்றும்.",
+
+    "storeManager.liveTrackingLoadFailed":
+      "நேரலை trackingஐ ஏற்ற முடியவில்லை",
+
+    "storeManager.liveTrackingFinalTitle":
+      "இறுதி delivery நிலை",
+
+    "storeManager.liveTrackingCompletedValue":
+      "முடிந்தது",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "இந்த stop முடிந்ததால் live ETA இனி தேவையில்லை.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "உங்கள் outlet stop முடிந்தது.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "Driver முழு delivery பதிவு செய்துள்ளார். பொருட்கள் கிடைத்திருந்தால் கீழே receipt confirm செய்யவும்.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "Driver partial delivery பதிவு செய்துள்ளார். கிடைத்த பொருட்களை சரிபார்த்து discrepancy இருந்தால் issue report செய்து receipt confirm செய்யவும்.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "Driver இந்த deliveryஐ முடிக்க முடியவில்லை. அடுத்த நடவடிக்கைக்கு முன் issue detailsஐ பார்க்கவும்.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "உங்கள் store receiptஐ உறுதிப்படுத்தியுள்ளது. இந்த deliveryக்கான live movement tracking முடிந்தது.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt உறுதி",
+
+    "storeManager.deliveriesUpcoming":
+      "வரவிருப்பவை",
+
+    "storeManager.deliveriesUpcomingHint":
+      "திட்டமிடப்பட்டவை அல்லது dispatch காத்திருப்பவை",
+
+    "storeManager.deliveriesInTransit":
+      "பயணத்தில்",
+
+    "storeManager.deliveriesInTransitHint":
+      "உங்கள் கடையை நோக்கி வருகிறது",
+
+    "storeManager.deliveriesCompleted":
+      "முடிக்கப்பட்டவை",
+
+    "storeManager.deliveriesCompletedHint":
+      "வழங்கப்பட்ட அல்லது முடிக்கப்பட்ட delivery",
+
+    "storeManager.deliveriesAttention":
+      "கவனம் தேவை",
+
+    "storeManager.deliveriesAttentionHint":
+      "ஒத்திவைப்பு, பகுதி அல்லது exception",
+
+    "storeManager.deliveriesSearch":
+      "விநியோகங்களை தேடவும்",
+
+    "storeManager.deliveriesSearchPlaceholder":
+      "Order, trip அல்லது vehicle தேடவும்",
+
+    "storeManager.deliveriesStageFilter":
+      "Delivery கட்டப்படி வடிகட்டவும்",
+
+    "storeManager.deliveriesDateFilter":
+      "Delivery தேதிப்படி வடிகட்டவும்",
+
+    "storeManager.deliveriesShowing":
+      "{total} இல் {shown} காட்டப்படுகிறது",
+
+    "storeManager.deliveriesClearFilters":
+      "வடிகட்டிகளை நீக்கவும்",
+
+    "storeManager.deliveriesAllStages":
+      "அனைத்து கட்டங்களும்",
+
+    "storeManager.deliveriesLoading":
+      "விநியோகங்கள் ஏற்றப்படுகின்றன...",
+
+    "storeManager.deliveriesLoadingDescription":
+      "உங்கள் கடைக்கான சமீபத்திய delivery plan சரிபார்க்கப்படுகிறது.",
+
+    "storeManager.deliveriesLoadFailed":
+      "விநியோகங்களை ஏற்ற முடியவில்லை",
+
+    "storeManager.deliveriesNoMatchesTitle":
+      "இந்த வடிகட்டிகளுக்கு பொருந்தும் delivery இல்லை",
+
+    "storeManager.deliveriesNoMatchesDescription":
+      "வேறு delivery records பார்க்க தேடல் அல்லது வடிகட்டிகளை மாற்றவும்.",
+
+    "storeManager.deliveriesEmptyTitle":
+      "இன்னும் விநியோகங்கள் இல்லை",
+
+    "storeManager.deliveriesEmptyDescription":
+      "Delivery planning தொடங்கும்போது confirmed மற்றும் deferred orders இங்கே தோன்றும்.",
+
+    "storeManager.deliveriesOrder":
+      "ஆர்டர்",
+
+    "storeManager.deliveriesStatus":
+      "நிலை",
+
+    "storeManager.deliveriesSchedule":
+      "அட்டவணை",
+
+    "storeManager.deliveriesTrip":
+      "Trip",
+
+    "storeManager.deliveriesVehicle":
+      "வாகனம்",
+
+    "storeManager.deliveriesLoad":
+      "Load",
+
+    "storeManager.deliveriesAction":
+      "செயல்",
+
+    "storeManager.deliveriesPlannedEta":
+      "திட்டமிட்ட ETA",
+
+    "storeManager.deliveriesEtaPending":
+      "ETA நிலுவையில்",
+
+    "storeManager.deliveriesAwaitingAssignment":
+      "Trip assignment காத்திருக்கிறது",
+
+    "storeManager.deliveriesNotAssigned":
+      "ஒதுக்கப்படவில்லை",
+
+    "storeManager.deliveriesViewDetails":
+      "விவரங்களை பார்க்க",
+
+    "storeManager.deliveryStatusAwaitingDispatcher":
+      "Dispatcher காத்திருக்கிறது",
+
+    "storeManager.deliveryStatusAwaitingPlan":
+      "Plan காத்திருக்கிறது",
+
+    "storeManager.deliveryStatusPlanning":
+      "திட்டமிடப்படுகிறது",
+
+    "storeManager.deliveryStatusScheduled":
+      "திட்டமிடப்பட்டது",
+
+    "storeManager.deliveryStatusReadyForDispatch":
+      "Dispatchக்கு தயார்",
+
+    "storeManager.deliveryStatusInTransit":
+      "பயணத்தில்",
+
+    "storeManager.deliveryStatusArriving":
+      "வருகிறது",
+
+    "storeManager.deliveryStatusArrived":
+      "வந்தடைந்தது",
+
+    "storeManager.deliveryStatusDelivered":
+      "வழங்கப்பட்டது",
+
+    "storeManager.deliveryStatusReceived":
+      "பெறப்பட்டது",
+
+    "storeManager.deliveryStatusCompleted":
+      "முடிந்தது",
+
+    "storeManager.deliveryStatusDeferred":
+      "ஒத்திவைக்கப்பட்டது",
+
+    "storeManager.deliveryStatusDelayed":
+      "தாமதம்",
+
+    "storeManager.deliveryStatusPartial":
+      "பகுதி விநியோகம்",
+
+    "storeManager.deliveryStatusException":
+      "Delivery exception",
+
+    "storeManager.deliveryStatusCancelled":
+      "ரத்து செய்யப்பட்டது",
+
+    "storeManager.deliveryDetailsBack":
+      "விநியோகங்களுக்கு திரும்பவும்",
+
+    "storeManager.deliveryDetailsDescription":
+      "இந்த delivery-ன் published schedule, transport assignment மற்றும் order load-ஐ பார்க்கவும்.",
+
+    "storeManager.deliveryDetailsViewOrder":
+      "ஆர்டரை பார்க்க",
+
+    "storeManager.deliveryDetailsLoading":
+      "Delivery விவரங்கள் ஏற்றப்படுகின்றன...",
+
+    "storeManager.deliveryDetailsNotFound":
+      "Delivery கிடைக்கவில்லை",
+
+    "storeManager.deliveryDetailsLoadFailed":
+      "Delivery-ஐ ஏற்ற முடியவில்லை",
+
+    "storeManager.deliveryDetailsUnavailable":
+      "இந்த delivery உங்கள் assigned outlet-க்கு கிடைக்கவில்லை.",
+
+    "storeManager.deliveryDetailsScheduledDate":
+      "Delivery தேதி",
+
+    "storeManager.deliveryDetailsProductLines":
+      "product lines",
+
+    "storeManager.deliveryDetailsProgress":
+      "Delivery முன்னேற்றம்",
+
+    "storeManager.deliveryDetailsProgressDescription":
+      "Delivery workflow-இன் தற்போதைய கட்டம்.",
+
+    "storeManager.deliveryDetailsItems":
+      "Delivery items",
+
+    "storeManager.deliveryDetailsItemsDescription":
+      "இந்த delivery-ல் எதிர்பார்க்கப்படும் order lines.",
+
+    "storeManager.deliveryDetailsNotes":
+      "Store குறிப்புகள்",
+
+    "storeManager.deliveryDetailsNotesDescription":
+      "மூல store order உடன் அனுப்பப்பட்ட குறிப்பு.",
+
+    "storeManager.deliveryDetailsActualArrival":
+      "உண்மையான வருகை",
+
+    "storeManager.deliveryDetailsSchedule":
+      "Delivery அட்டவணை",
+
+    "storeManager.deliveryDetailsScheduleDescription":
+      "Published தேதி, ETA மற்றும் receiving window.",
+
+    "storeManager.deliveryDetailsTransport":
+      "Transport assignment",
+
+    "storeManager.deliveryDetailsTransportDescription":
+      "ஒதுக்கப்பட்டபோது trip, vehicle, driver மற்றும் depot விவரங்கள்.",
+
+    "storeManager.deliveryDetailsDriver":
+      "ஓட்டுநர்",
+
+    "storeManager.deliveryDetailsTemperature":
+      "வெப்பநிலை",
+
+    "storeManager.deliveryDetailsOrderContext":
+      "Order context",
+
+    "storeManager.deliveryDetailsOrderContextDescription":
+      "இணைக்கப்பட்ட order-ன் processing dates மற்றும் cutoff decision.",
+
+    "storeManager.deliveryDetailsRequestedDate":
+      "கோரிய தேதி",
+
+    "storeManager.deliveryDetailsAttentionDescription":
+      "சாதாரண completion-க்கு முன் இந்த delivery-க்கு operational கவனம் தேவை.",
+
+    "storeManager.deliveryDetailsProgressAttention":
+      "இந்த delivery-க்கு கவனம் தேவைப்படுவதால் சாதாரண progress path இடைநிறுத்தப்பட்டுள்ளது.",
+
+    "storeManager.receiptReadyTitle":
+      "விநியோகத்தைப் பெற்றதை உறுதிப்படுத்த தயாராக உள்ளது",
+
+    "storeManager.receiptReadyDescription":
+      "Driver இந்த delivery-ஐ delivered என குறித்துள்ளார். பொருட்கள் outlet-க்கு வந்ததும் உறுதிப்படுத்தவும்.",
+
+    "storeManager.receiptPartialTitle":
+      "பகுதி விநியோகம் பெறப்பட்டது",
+
+    "storeManager.receiptPartialDescription":
+      "Driver பகுதி விநியோகத்தை பதிவு செய்துள்ளார். Receipt உறுதிப்படுத்தும் முன் குறைவைக் சரிபார்க்கவும்.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "இது பகுதி விநியோகம் என்பதை புரிந்துள்ளேன்; உறுதிப்படுத்தும் முன் பெற்ற அளவை சரிபார்த்துள்ளேன்.",
+
+    "storeManager.receiptNotePlaceholder":
+      "விருப்பமான receiving குறிப்பு...",
+
+    "storeManager.receiptConfirmAction":
+      "பெற்றதை உறுதிப்படுத்து",
+
+    "storeManager.receiptConfirming":
+      "உறுதிப்படுத்துகிறது...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt உறுதிப்படுத்தப்பட்டது.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "இந்த delivery ஏற்கனவே பெறப்பட்டது என உறுதிப்படுத்தப்பட்டுள்ளது.",
+
+    "storeManager.receiptConfirmationFailed":
+      "இந்த delivery பெறப்பட்டதை உறுதிப்படுத்த முடியவில்லை.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt உறுதிப்படுத்தப்பட்டது",
+
+    "storeManager.receiptConfirmedDescription":
+      "இந்த delivery Store Manager மூலம் பெறப்பட்டது என அங்கீகரிக்கப்பட்டுள்ளது.",
+
+    "storeManager.receiptConfirmedAt":
+      "உறுதிப்படுத்திய நேரம்",
+
+    "storeManager.receiptConfirmedBy":
+      "உறுதிப்படுத்தியவர்",
+
+    "storeManager.deliveryDetailsNoItems":
+      "Delivery items கிடைக்கவில்லை.",
+
+    "storeManager.deliveryDetailsProduct":
+      "பொருள்",
+
+    "storeManager.deliveryDetailsSku":
+      "Item ID",
+
+    "storeManager.deliveryDetailsHandling":
+      "Handling",
+
+    "storeManager.deliveryDetailsQuantity":
+      "அளவு",
+
+    "storeManager.deliveryDetailsUnitWeight":
+      "அலகு எடை",
+
+    "storeManager.deliveryDetailsLineWeight":
+      "Line எடை",
 
     "storeManager.issuesPageTitle":
 
@@ -6061,6 +7576,78 @@ const STATIC_TRANSLATIONS = {
       "உங்களுக்கு ஒதுக்கப்பட்ட கடைக்காக தெரிவிக்கப்பட்ட delivery மற்றும் receipt பிரச்சினைகளைப் பார்வையிடவும்.",
 
 
+
+    "storeManager.dashboardOrdersInProgress": "செயலில் உள்ள ஆர்டர்கள்",
+    "storeManager.dashboardUpcomingDeliveries": "வரவிருக்கும் விநியோகங்கள்",
+    "storeManager.dashboardLiveDeliveries": "பயணத்தில்",
+    "storeManager.dashboardNeedsAttention": "கவனம் தேவை",
+    "storeManager.dashboardNextDelivery": "அடுத்த செயலில் உள்ள விநியோகம்",
+    "storeManager.dashboardNextDeliveryDescription": "உங்கள் கடைக்கு அருகிலுள்ள திட்டமிட்ட அல்லது பயணத்தில் உள்ள விநியோகம்.",
+    "storeManager.dashboardRecentOrders": "சமீபத்திய ஆர்டர்கள்",
+    "storeManager.dashboardRecentOrdersDescription": "இந்த outlet-இல் சமீபமாக சமர்ப்பிக்கப்பட்ட ஆர்டர்கள்.",
+    "storeManager.dashboardViewDeliveries": "விநியோகங்களை பார்க்க",
+    "storeManager.dashboardViewOrders": "ஆர்டர்களை பார்க்க",
+    "storeManager.dashboardTrackDelivery": "விநியோகத்தை கண்காணிக்க",
+    "storeManager.dashboardNoDeliveries": "வரவிருக்கும் விநியோகங்கள் இல்லை",
+    "storeManager.dashboardNoOrders": "இன்னும் ஆர்டர்கள் இல்லை",
+    "storeManager.dashboardAttentionDescription": "ஒத்திவைப்புகள், பகுதி விநியோகங்கள் மற்றும் exceptions.",
+    "storeManager.dashboardNoAttention": "செயல்பாடுகள் சீராக உள்ளன",
+    "storeManager.dashboardNoAttentionDescription": "இப்போது கவனம் தேவைப்படும் விநியோகம் இல்லை.",
+    "storeManager.dashboardOutletOperations": "Outlet செயல்பாடுகள்",
+    "storeManager.dashboardOutletOperationsDescription": "இந்த outlet-இன் trusted receiving constraints.",
+    "storeManager.createOrderClearAll": "அனைத்தையும் நீக்கு",
+    "storeManager.createOrderRemoveItem": "பொருளை நீக்கு",
+    "storeManager.issuesOpen": "திறந்த பிரச்சினைகள்",
+    "storeManager.issuesSearch": "பிரச்சினைகளை தேடவும்",
+    "storeManager.issuesSearchPlaceholder": "Order, status அல்லது trip தேடவும்",
+    "storeManager.issuesTypeFilter": "பிரச்சினை வகையை வடிகட்டவும்",
+    "storeManager.issuesAllTypes": "அனைத்து பிரச்சினை வகைகள்",
+    "storeManager.issuesShowing": "{total} இல் {shown} காட்டப்படுகிறது",
+    "storeManager.issuesSourceNote": "இங்கு இந்த outlet-க்கு database-ல் சேமிக்கப்பட்ட Open / Resolved issue records காட்டப்படுகின்றன.",
+    "storeManager.issuesNoMatches": "பொருந்தும் பிரச்சினைகள் இல்லை",
+    "storeManager.issuesNoMatchesDescription": "வேறு தேடல் அல்லது பிரச்சினை வகையை முயற்சிக்கவும்.",
+    "storeManager.issuesEmptyTitle": "விநியோக பிரச்சினைகள் இல்லை",
+    "storeManager.issuesEmptyDescription": "இந்த outlet-க்கு இன்னும் issue record எதுவும் பதிவாகவில்லை.",
+    "storeManager.issuesOrder": "ஆர்டர்",
+    "storeManager.issuesIssueType": "பிரச்சினை வகை",
+    "storeManager.issuesReason": "காரணம் / விவரம்",
+    "storeManager.issuesSchedule": "விநியோக தேதி",
+    "storeManager.issuesAction": "செயல்",
+    "storeManager.issuesViewDelivery": "விநியோகத்தை பார்க்க",
+    "storeManager.issuesOperationalAttention": "இந்த விநியோகத்திற்கு செயல்பாட்டு கவனம் தேவை.",
+    "storeManager.issuesResolved": "தீர்க்கப்பட்டது",
+    "storeManager.issuesTotal": "மொத்த பிரச்சினைகள்",
+    "storeManager.issuesReport": "பிரச்சினையை தெரிவிக்க",
+    "storeManager.issuesReportTitle": "ஆர்டர் / விநியோக பிரச்சினையை தெரிவிக்க",
+    "storeManager.issuesReportDescription": "உங்கள் outlet-க்கு சொந்தமான order-க்கு உண்மையான issue record உருவாக்கவும்.",
+    "storeManager.issuesOrderCode": "ஆர்டர் குறியீடு",
+    "storeManager.issuesCategory": "வகை",
+    "storeManager.issuesDescription": "விவரம்",
+    "storeManager.issuesDescriptionPlaceholder": "என்ன நடந்தது என்பதை சுருக்கமாக எழுதவும்...",
+    "storeManager.issuesReporting": "பதிவு செய்கிறது...",
+    "storeManager.issuesSubmitReport": "பதிவை சமர்ப்பிக்க",
+    "storeManager.issuesCreateSuccess": "பிரச்சினை வெற்றிகரமாக பதிவு செய்யப்பட்டது.",
+    "storeManager.issuesCreateFailed": "பிரச்சினையை பதிவு செய்ய முடியவில்லை.",
+    "storeManager.issuesAllStatuses": "அனைத்து நிலைகள்",
+    "storeManager.issuesOpenStatus": "திறந்தது",
+    "storeManager.issuesReportedAt": "பதிவு செய்த நேரம்",
+    "storeManager.issuesReportedBy": "பதிவு செய்தவர்",
+    "storeManager.issuesResolvedAt": "தீர்க்கப்பட்ட நேரம்",
+    "storeManager.issuesResolvedBy": "தீர்த்தவர்",
+    "storeManager.issuesResolutionNote": "தீர்வு குறிப்பு",
+    "storeManager.issuesResolutionPlaceholder": "சிறிய தீர்வு குறிப்பை சேர்க்கவும் (optional)...",
+    "storeManager.issuesResolve": "தீர்க்க",
+    "storeManager.issuesMarkResolved": "தீர்க்கப்பட்டது என குறிக்க",
+    "storeManager.issuesResolveFailed": "பிரச்சினையை தீர்க்கப்பட்டதாக update செய்ய முடியவில்லை.",
+    "storeManager.issuesLoadFailed": "பிரச்சினைகளை load செய்ய முடியவில்லை",
+    "storeManager.issuesLoading": "பிரச்சினைகள் load ஆகின்றன",
+    "storeManager.issuesLoadingDescription": "உங்கள் outlet-ன் issue records load ஆகின்றன.",
+    "storeManager.issuesCategoryDeliveryShortfall": "விநியோக குறைவு",
+    "storeManager.issuesCategoryDamagedGoods": "சேதமடைந்த பொருட்கள்",
+    "storeManager.issuesCategoryLateDelivery": "தாமதமான விநியோகம்",
+    "storeManager.issuesCategoryDeliveryException": "விநியோக exception",
+    "storeManager.issuesCategoryOrderProblem": "ஆர்டர் பிரச்சினை",
+    "storeManager.issuesCategoryOther": "மற்றவை",
 
     "storeManager.moduleFoundationReady":
 
