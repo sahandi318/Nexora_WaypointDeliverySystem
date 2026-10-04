@@ -50,7 +50,7 @@ const NAVIGATION_ITEMS = [
       "storeManager.navDeliveries",
     icon: Truck,
     path: "/store-manager/deliveries",
-    end: true,
+    end: false,
   },
   {
     key: "issues",

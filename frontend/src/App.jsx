@@ -69,6 +69,8 @@ import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModule
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
+import StoreManagerDeliveriesPage from "./pages/storeManager/StoreManagerDeliveriesPage";
+import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDeliveryDetailsPage";
 
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
@@ -521,11 +523,33 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
+                <StoreManagerDeliveriesPage />
 
-                  section="deliveries"
+              </ProtectedRoute>
 
-                />
+            }
+
+          />
+
+
+
+          <Route
+
+            path="/store-manager/deliveries/:orderCode"
+
+            element={
+
+              <ProtectedRoute
+
+                allowedRoles={[
+
+                  "STORE_MANAGER",
+
+                ]}
+
+              >
+
+                <StoreManagerDeliveryDetailsPage />
 
               </ProtectedRoute>
 
