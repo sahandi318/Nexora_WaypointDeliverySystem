@@ -71,8 +71,9 @@ model Depot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  outlets Outlet[]
-  users   User[]
+  outlets   Outlet[]
+  users     User[]
+  liveTrips LiveTrip[]
 
   @@map("depots")
 }
@@ -149,9 +150,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps PasswordResetOtp[]
-
-  createdStoreOrders StoreOrder[] @relation("StoreOrderCreatedBy")
+  passwordResetOtps  PasswordResetOtp[]
+  liveTripsAsDriver  LiveTrip[]         @relation("LiveTripDriver")
+  createdStoreOrders StoreOrder[]       @relation("StoreOrderCreatedBy")
 
   @@index([role])
   @@index([outletId])
@@ -200,14 +201,8 @@ model PasswordResetOtp {
 model TranslationCache {
   id Int @id @default(autoincrement())
 
-  // SHA-256 key generated from:
-  //
-  // source language
-  // target language
-  // source text
-  //
-  // The same translation can therefore be reused without
-  // calling the external translation provider again.
+  // SHA-256 key generated from source language,
+  // target language and source text.
   cacheKey String @unique @db.VarChar(64)
 
   sourceLanguage String @db.VarChar(10)
@@ -216,9 +211,7 @@ model TranslationCache {
   sourceText     String @db.Text
   translatedText String @db.Text
 
-  // Examples:
-  // google
-  // manual
+  // Examples: google, manual
   provider String @db.VarChar(40)
 
   createdAt DateTime @default(now())
@@ -227,6 +220,112 @@ model TranslationCache {
   @@index([sourceLanguage, targetLanguage])
   @@index([targetLanguage])
   @@map("translation_cache")
+}
+
+// ============================================================
+// LIVE DELIVERY MONITORING
+// ============================================================
+
+model LiveTrip {
+  id Int @id @default(autoincrement())
+
+  tripCode     String   @unique @db.VarChar(50)
+  deliveryDate DateTime @db.Date
+
+  depotId Int?
+  depot   Depot? @relation(fields: [depotId], references: [id], onDelete: SetNull)
+
+  vehicleCode String  @db.VarChar(50)
+  vehicleType String? @db.VarChar(120)
+  temperature String? @db.VarChar(120)
+
+  driverUserId Int?
+  driver       User? @relation("LiveTripDriver", fields: [driverUserId], references: [id], onDelete: SetNull)
+
+  driverName String @db.VarChar(150)
+
+  status            String @default("PLANNED") @db.VarChar(40)
+  progressCompleted Int    @default(0)
+  progressTotal     Int    @default(0)
+
+  nextDestination String? @db.VarChar(120)
+  eta             String? @db.VarChar(40)
+
+  isDriverOnline   Boolean   @default(true)
+  currentLat       Float?
+  currentLng       Float?
+  lastSynchronized DateTime?
+
+  latestDriverUpdate   String?   @db.Text
+  latestDriverUpdateAt DateTime?
+  routeUpdatedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stops  LiveTripStop[]
+  events LiveTripEvent[]
+
+  @@index([deliveryDate])
+  @@index([depotId, deliveryDate])
+  @@index([driverUserId])
+  @@index([status])
+  @@map("live_trips")
+}
+
+// ============================================================
+// LIVE DELIVERY STOPS
+// ============================================================
+
+model LiveTripStop {
+  id Int @id @default(autoincrement())
+
+  stopCode String @unique @db.VarChar(50)
+
+  liveTripId Int
+  liveTrip   LiveTrip @relation(fields: [liveTripId], references: [id], onDelete: Cascade)
+
+  sequence Int
+
+  outletCode String  @db.VarChar(50)
+  outletName String? @db.VarChar(150)
+  district   String? @db.VarChar(100)
+
+  latitude  Float?
+  longitude Float?
+
+  plannedEta    String? @db.VarChar(40)
+  actualArrival String? @db.VarChar(40)
+
+  status  String  @default("PENDING") @db.VarChar(40)
+  outcome String? @db.VarChar(60)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([liveTripId, sequence])
+  @@index([outletCode])
+  @@map("live_trip_stops")
+}
+
+// ============================================================
+// LIVE DELIVERY EVENTS
+// ============================================================
+
+model LiveTripEvent {
+  id Int @id @default(autoincrement())
+
+  liveTripId Int
+  liveTrip   LiveTrip @relation(fields: [liveTripId], references: [id], onDelete: Cascade)
+
+  type    String @db.VarChar(60)
+  message String @db.Text
+  payload Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([liveTripId, createdAt])
+  @@map("live_trip_events")
 }
 
 // ============================================================
@@ -243,7 +342,7 @@ model Product {
   productType       String         @default("General") @map("product_type") @db.VarChar(100)
   handlingType      StoreOrderType @default(AMBIENT_DRY) @map("handling_type")
 
-  category  String? @db.VarChar(100)
+  category     String? @db.VarChar(100)
   unitLabel    String  @default("unit") @map("unit_label") @db.VarChar(40)
   unitWeightKg Decimal @default(0.100) @map("unit_weight_kg") @db.Decimal(10, 3)
   unitVolumeM3 Decimal @default(0.000100) @map("unit_volume_m3") @db.Decimal(12, 6)
@@ -302,37 +401,28 @@ model StoreOrder {
 
   orderCode String @unique @map("order_code") @db.VarChar(40)
 
-  outletId Int @map("outlet_id")
+  outletId Int    @map("outlet_id")
   outlet   Outlet @relation(fields: [outletId], references: [id])
 
-  createdByUserId Int @map("created_by_user_id")
+  createdByUserId Int  @map("created_by_user_id")
   createdByUser   User @relation("StoreOrderCreatedBy", fields: [createdByUserId], references: [id])
 
   status         StoreOrderStatus         @default(SUBMITTED)
   orderType      StoreOrderType           @default(AMBIENT_DRY) @map("order_type")
   cutoffDecision StoreOrderCutoffDecision @map("cutoff_decision")
 
-  // Time at which the backend accepted the order submission.
   submittedAt DateTime @default(now()) @map("submitted_at")
 
-  // The Store Manager's normal next-day request.
   requestedDispatchDate DateTime @map("requested_dispatch_date") @db.Date
-
-  // Actual processing date after applying the 4 PM cutoff.
   effectiveDispatchDate DateTime @map("effective_dispatch_date") @db.Date
 
-  // Stored only when the request is moved to the following run.
   deferredReason String? @map("deferred_reason") @db.Text
 
-  // Optional instruction from the Store Manager for downstream
-  // dispatcher planning. This note belongs to the order itself.
   storeManagerNote String? @map("store_manager_note") @db.VarChar(500)
 
-  // Convenience totals calculated only by the backend from
-  // database product metadata at submission time.
-  totalUnits          Int     @map("total_units")
-  estimatedWeightKg   Decimal @default(0.000) @map("estimated_weight_kg") @db.Decimal(12, 3)
-  estimatedVolumeM3   Decimal @default(0.000000) @map("estimated_volume_m3") @db.Decimal(14, 6)
+  totalUnits        Int     @map("total_units")
+  estimatedWeightKg Decimal @default(0.000) @map("estimated_weight_kg") @db.Decimal(12, 3)
+  estimatedVolumeM3 Decimal @default(0.000000) @map("estimated_volume_m3") @db.Decimal(14, 6)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -354,10 +444,10 @@ model StoreOrder {
 model StoreOrderItem {
   id Int @id @default(autoincrement())
 
-  orderId Int @map("order_id")
+  orderId Int        @map("order_id")
   order   StoreOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId Int @map("product_id")
+  productId Int     @map("product_id")
   product   Product @relation(fields: [productId], references: [id])
 
   quantity Int

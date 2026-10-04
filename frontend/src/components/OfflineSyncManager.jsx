@@ -1,11 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { getPendingActions, syncPendingActions } from '../services/offlineService';
+import { ACCESS_TOKEN_KEY } from '../services/api';
+
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') ||
+  'http://localhost:5000';
 
 export default function OfflineSyncManager() {
   const location = useLocation();
   const [notice, setNotice] = useState(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     let timer;
@@ -28,6 +36,88 @@ export default function OfflineSyncManager() {
       if (timer) window.clearTimeout(timer);
     };
   }, [location.pathname]);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) return undefined;
+
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+    });
+
+    socketRef.current = socket;
+
+    const emitPresence = ({ online, message, latitude, longitude } = {}) => {
+      socket.emit('driver:presence', {
+        online,
+        message,
+        latitude,
+        longitude,
+      });
+    };
+
+    const emitCurrentLocation = () => {
+      if (!navigator.geolocation || !navigator.onLine) {
+        emitPresence({ online: navigator.onLine });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          emitPresence({
+            online: true,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            message: 'Driver device is online. Live position updated.',
+          });
+        },
+        () => {
+          emitPresence({
+            online: true,
+            message: 'Driver device is online. Location permission is unavailable.',
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 15000,
+          timeout: 6000,
+        }
+      );
+    };
+
+    const handleOnline = () => {
+      emitCurrentLocation();
+    };
+
+    const handleOffline = () => {
+      emitPresence({
+        online: false,
+        message: 'Driver appears to be offline. Showing last synchronized progress.',
+      });
+    };
+
+    socket.on('connect', emitCurrentLocation);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const heartbeat = window.setInterval(() => {
+      if (navigator.onLine && socket.connected) {
+        emitCurrentLocation();
+      }
+    }, 20000);
+
+    return () => {
+      window.clearInterval(heartbeat);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      socket.off('connect', emitCurrentLocation);
+      socket.close();
+      socketRef.current = null;
+    };
+  }, []);
 
   if (!notice) return null;
 

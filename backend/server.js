@@ -1,8 +1,11 @@
 import "dotenv/config";
 
 import http from "node:http";
+import express from "express";
+import cors from "cors";
 
 import app from "./src/app.js";
+import dispatcherRoutes from "./src/routes/dispatcherRoutes.js";
 
 import {
   connectDatabase,
@@ -10,153 +13,92 @@ import {
 } from "./src/config/database.js";
 
 import {
-  warmLocalTranslationModel,
-} from "./src/services/localTranslationModel.js";
+  initializeLiveMonitoring,
+  startMonitoringSyncLoop,
+  stopMonitoringSyncLoop,
+} from "./src/services/liveMonitoringService.js";
 
-const PORT =
-  Number(
-    process.env.PORT
-  ) ||
-  5000;
+import {
+  initializeLiveMonitoringSocket,
+} from "./src/sockets/liveMonitoringSocket.js";
 
-const server =
-  http.createServer(
-    app
-  );
+const PORT = Number(process.env.PORT) || 5000;
 
-let isShuttingDown =
-  false;
+/*
+ * Dispatcher monitoring is mounted before the existing application.
+ * This avoids changing the shared app.js while still allowing the
+ * existing app-level 404 handler to remain last for all other routes.
+ */
+const rootApp = express();
 
-// ============================================================
-// TRANSLATION MODEL STARTUP
-// ============================================================
+rootApp.use(
+  cors({
+    origin:
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_ORIGIN ||
+      "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-const SHOULD_WARM_TRANSLATION_MODEL =
-  process.env
-    .TRANSLATION_WARM_ON_START !==
-  "false";
+rootApp.use(
+  express.json({
+    limit: "2mb",
+  })
+);
 
-async function warmTranslationModelInBackground() {
-  if (
-    !SHOULD_WARM_TRANSLATION_MODEL
-  ) {
-    console.log(
-      " Translation : startup warmup disabled"
-    );
+rootApp.use(
+  express.urlencoded({
+    extended: true,
+    limit: "2mb",
+  })
+);
 
-    return;
-  }
+rootApp.use(
+  "/api/dispatcher",
+  dispatcherRoutes
+);
 
-  try {
-    console.log(
-      " Translation : warming local NLLB model..."
-    );
+rootApp.use(app);
 
-    const status =
-      await warmLocalTranslationModel();
+const server = http.createServer(rootApp);
+const io = initializeLiveMonitoringSocket(server);
 
-    console.log(
-      ` Translation : ready (${status.modelId}, ${status.dtype})`
-    );
-  } catch (error) {
-    console.warn(
-      "⚠ Translation model warmup failed."
-    );
-
-    console.warn(
-      "  Dynamic translations will retry automatically when requested."
-    );
-
-    console.warn(
-      `  Reason: ${
-        error.message ||
-        "Unknown error"
-      }`
-    );
-  }
-}
+let isShuttingDown = false;
 
 // ============================================================
 // SERVER STARTUP
 // ============================================================
 
-/**
- * Start the API only after a working database connection has
- * been confirmed.
- *
- * Translation warmup happens in the background after the API
- * begins listening. This keeps startup responsive while making
- * the NLLB model ready before most dynamic translation requests.
- */
 async function startServer() {
   try {
     await connectDatabase();
+    await initializeLiveMonitoring();
+    startMonitoringSyncLoop();
 
-    server.listen(
-      PORT,
-      () => {
-        console.log("");
-        console.log(
-          "=========================================="
-        );
-
-        console.log(
-          " Nexora Waypoint Delivery System"
-        );
-
-        console.log(
-          "=========================================="
-        );
-
-        console.log(
-          ` Environment : ${
-            process.env
-              .NODE_ENV ||
-            "development"
-          }`
-        );
-
-        console.log(
-          ` API         : http://localhost:${PORT}/api`
-        );
-
-        console.log(
-          ` Health      : http://localhost:${PORT}/api/health`
-        );
-
-        console.log(
-          ` Database    : http://localhost:${PORT}/api/health/database`
-        );
-
-        console.log(
-          "=========================================="
-        );
-
-        console.log("");
-
-        // Start the expensive model load only after the API is
-        // already available.
-        setImmediate(
-          () => {
-            void warmTranslationModelInBackground();
-          }
-        );
-      }
-    );
+    server.listen(PORT, () => {
+      console.log("");
+      console.log("==========================================");
+      console.log(" Nexora Waypoint Delivery System");
+      console.log("==========================================");
+      console.log(` Environment : ${process.env.NODE_ENV || "development"}`);
+      console.log(` API         : http://localhost:${PORT}/api`);
+      console.log(` Health      : http://localhost:${PORT}/api/health`);
+      console.log(` Database    : http://localhost:${PORT}/api/health/database`);
+      console.log(` Live socket : http://localhost:${PORT}`);
+      console.log("==========================================");
+      console.log("");
+    });
   } catch (error) {
-    console.error(
-      "✗ Failed to start Nexora Waypoint API."
-    );
+    console.error("✗ Failed to start Nexora Waypoint API.");
+    console.error(error);
 
-    console.error(
-      error
-    );
+    stopMonitoringSyncLoop();
 
     try {
       await disconnectDatabase();
     } catch {
-      // No additional action is required if Prisma
-      // never established a connection.
+      // No additional action is required if Prisma never connected.
     }
 
     process.exit(1);
@@ -167,89 +109,36 @@ async function startServer() {
 // GRACEFUL SHUTDOWN
 // ============================================================
 
-/**
- * Close the HTTP server and Prisma connection cleanly.
- */
-async function shutdown(
-  signal
-) {
-  if (
-    isShuttingDown
-  ) {
-    return;
-  }
+async function shutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
 
-  isShuttingDown =
-    true;
+  console.log(`\n${signal} received. Shutting down...`);
 
-  console.log(
-    `\n${signal} received. Shutting down...`
-  );
-
-  const forceShutdownTimer =
-    setTimeout(
-      () => {
-        console.error(
-          "✗ Forced shutdown after timeout."
-        );
-
-        process.exit(
-          1
-        );
-      },
-      10000
-    );
+  const forceShutdownTimer = setTimeout(() => {
+    console.error("✗ Forced shutdown after timeout.");
+    process.exit(1);
+  }, 10000);
 
   forceShutdownTimer.unref();
+  stopMonitoringSyncLoop();
 
-  server.close(
-    async () => {
+  io.close(() => {
+    server.close(async () => {
       try {
         await disconnectDatabase();
-
-        console.log(
-          "✓ Database connection closed."
-        );
-
-        console.log(
-          "✓ API stopped cleanly."
-        );
-
-        process.exit(
-          0
-        );
+        console.log("✓ Database connection closed.");
+        console.log("✓ API stopped cleanly.");
+        process.exit(0);
       } catch (error) {
-        console.error(
-          "Error during shutdown:",
-          error
-        );
-
-        process.exit(
-          1
-        );
+        console.error("Error during shutdown:", error);
+        process.exit(1);
       }
-    }
-  );
+    });
+  });
 }
 
-process.on(
-  "SIGINT",
-  () =>
-    shutdown(
-      "SIGINT"
-    )
-);
-
-process.on(
-  "SIGTERM",
-  () =>
-    shutdown(
-      "SIGTERM"
-    )
-);
-
-// ============================================================
-// START APPLICATION
-// ============================================================
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 startServer();

@@ -1,0 +1,35 @@
+import { io } from "socket.io-client";
+import api, { ACCESS_TOKEN_KEY } from "./api";
+
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+  "http://localhost:5000";
+
+export async function getDispatcherMonitoring({ depotId, status = "ACTIVE" } = {}) {
+  const response = await api.get("/dispatcher/live-monitoring", {
+    params: {
+      ...(depotId ? { depotId } : {}),
+      status,
+    },
+  });
+
+  return response.data;
+}
+
+export async function getDispatcherTrip(tripCode) {
+  const response = await api.get(`/dispatcher/live-monitoring/${tripCode}`);
+  return response.data.trip;
+}
+
+export function createDispatcherMonitoringSocket() {
+  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+
+  return io(SOCKET_URL, {
+    auth: { token },
+    transports: ["websocket", "polling"],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+  });
+}
