@@ -423,3 +423,141 @@ export async function getStoreManagerDeliveryTracking({
 
   return responseData.data.tracking;
 }
+
+
+/**
+ * Confirms that the authenticated Store Manager has received a completed
+ * delivery. Outlet isolation is enforced by the backend from the JWT user
+ * context; the browser never sends an outlet identifier.
+ */
+export async function confirmStoreManagerDeliveryReceived({
+  orderCode,
+  acknowledgePartial = false,
+  note = "",
+} = {}) {
+  const normalizedOrderCode = String(orderCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedOrderCode) {
+    throw new Error("A valid order code is required.");
+  }
+
+  const response = await api.post(
+    `/store-manager/deliveries/${encodeURIComponent(normalizedOrderCode)}/confirm-received`,
+    {
+      acknowledgePartial: acknowledgePartial === true,
+      note: String(note || "").trim(),
+    }
+  );
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !responseData?.data?.confirmation
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager receipt confirmation response."
+    );
+  }
+
+  return responseData.data.confirmation;
+}
+
+// ============================================================
+// STORE MANAGER ISSUES
+// ============================================================
+
+export async function getStoreManagerIssues({
+  status = "ALL",
+  signal,
+} = {}) {
+  const normalizedStatus = String(status || "ALL").trim().toUpperCase();
+  const response = await api.get("/store-manager/issues", {
+    params: {
+      ...(normalizedStatus && normalizedStatus !== "ALL"
+        ? { status: normalizedStatus }
+        : {}),
+    },
+    signal,
+  });
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !Array.isArray(responseData?.data?.issues) ||
+    !responseData?.data?.summary
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager issues response."
+    );
+  }
+
+  return responseData.data;
+}
+
+export async function createStoreManagerIssue({
+  orderCode,
+  category,
+  description,
+} = {}) {
+  const normalizedOrderCode = String(orderCode || "").trim().toUpperCase();
+
+  if (!normalizedOrderCode) {
+    throw new Error("A valid order code is required.");
+  }
+
+  const response = await api.post("/store-manager/issues", {
+    orderCode: normalizedOrderCode,
+    category,
+    description: String(description || "").trim(),
+  });
+
+  const responseData = response.data;
+
+  if (!responseData?.success || !responseData?.data?.issue) {
+    throw new Error(
+      "The server returned an invalid Store Manager issue response."
+    );
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("store-manager-issues-changed"));
+  }
+
+  return responseData.data.issue;
+}
+
+export async function resolveStoreManagerIssue({
+  issueCode,
+  resolutionNote = "",
+} = {}) {
+  const normalizedIssueCode = String(issueCode || "").trim().toUpperCase();
+
+  if (!normalizedIssueCode) {
+    throw new Error("A valid issue code is required.");
+  }
+
+  const response = await api.post(
+    `/store-manager/issues/${encodeURIComponent(normalizedIssueCode)}/resolve`,
+    {
+      resolutionNote: String(resolutionNote || "").trim(),
+    }
+  );
+
+  const responseData = response.data;
+
+  if (!responseData?.success || !responseData?.data?.issue) {
+    throw new Error(
+      "The server returned an invalid Store Manager issue resolution response."
+    );
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("store-manager-issues-changed"));
+  }
+
+  return responseData.data;
+}

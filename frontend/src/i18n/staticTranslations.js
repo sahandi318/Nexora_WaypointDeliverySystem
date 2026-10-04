@@ -1903,6 +1903,51 @@ const STATIC_TRANSLATIONS = {
     "storeManager.deliveryDetailsProgressAttention":
       "The normal progress path is paused while this delivery requires attention.",
 
+    "storeManager.receiptReadyTitle":
+      "Delivery ready for receipt confirmation",
+
+    "storeManager.receiptReadyDescription":
+      "The driver marked this delivery as delivered. Confirm once the goods have been received at your outlet.",
+
+    "storeManager.receiptPartialTitle":
+      "Partial delivery received",
+
+    "storeManager.receiptPartialDescription":
+      "The driver recorded a partial delivery. Review the shortage before confirming receipt.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "I understand this delivery was partial and I have checked the received quantity before confirming.",
+
+    "storeManager.receiptNotePlaceholder":
+      "Optional receiving note...",
+
+    "storeManager.receiptConfirmAction":
+      "Confirm received",
+
+    "storeManager.receiptConfirming":
+      "Confirming...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt confirmed.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "This delivery was already confirmed as received.",
+
+    "storeManager.receiptConfirmationFailed":
+      "Unable to confirm this delivery as received.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt confirmed",
+
+    "storeManager.receiptConfirmedDescription":
+      "This delivery has been acknowledged by the Store Manager.",
+
+    "storeManager.receiptConfirmedAt":
+      "Confirmed at",
+
+    "storeManager.receiptConfirmedBy":
+      "Confirmed by",
+
     "storeManager.deliveryDetailsNoItems":
       "No delivery items are available.",
 
@@ -1956,17 +2001,17 @@ const STATIC_TRANSLATIONS = {
     "storeManager.dashboardOutletOperationsDescription": "Trusted receiving constraints for this outlet.",
     "storeManager.createOrderClearAll": "Clear all",
     "storeManager.createOrderRemoveItem": "Remove item",
-    "storeManager.issuesOpen": "Needs attention",
+    "storeManager.issuesOpen": "Open issues",
     "storeManager.issuesSearch": "Search issues",
     "storeManager.issuesSearchPlaceholder": "Search order, status or trip",
     "storeManager.issuesTypeFilter": "Filter issue type",
     "storeManager.issuesAllTypes": "All issue types",
     "storeManager.issuesShowing": "Showing {shown} of {total}",
-    "storeManager.issuesSourceNote": "This page uses real delivery deferrals, partial deliveries and exceptions; it does not create separate issue records.",
+    "storeManager.issuesSourceNote": "Issues shown here are persisted records for this outlet with an Open / Resolved lifecycle.",
     "storeManager.issuesNoMatches": "No matching issues",
     "storeManager.issuesNoMatchesDescription": "Try another search or issue type.",
     "storeManager.issuesEmptyTitle": "No delivery issues",
-    "storeManager.issuesEmptyDescription": "There are no deferrals, partial deliveries or exceptions for this outlet.",
+    "storeManager.issuesEmptyDescription": "No issue records have been reported for this outlet yet.",
     "storeManager.issuesOrder": "Order",
     "storeManager.issuesIssueType": "Issue type",
     "storeManager.issuesReason": "Reason / context",
@@ -1974,6 +2019,39 @@ const STATIC_TRANSLATIONS = {
     "storeManager.issuesAction": "Action",
     "storeManager.issuesViewDelivery": "View delivery",
     "storeManager.issuesOperationalAttention": "Operational attention is required for this delivery.",
+    "storeManager.issuesResolved": "Resolved",
+    "storeManager.issuesTotal": "Total issues",
+    "storeManager.issuesReport": "Report issue",
+    "storeManager.issuesReportTitle": "Report an order or delivery issue",
+    "storeManager.issuesReportDescription": "Create a real issue record for an order that belongs to your assigned outlet.",
+    "storeManager.issuesOrderCode": "Order code",
+    "storeManager.issuesCategory": "Category",
+    "storeManager.issuesDescription": "Description",
+    "storeManager.issuesDescriptionPlaceholder": "Describe what happened...",
+    "storeManager.issuesReporting": "Reporting...",
+    "storeManager.issuesSubmitReport": "Submit report",
+    "storeManager.issuesCreateSuccess": "Issue reported successfully.",
+    "storeManager.issuesCreateFailed": "Unable to report this issue.",
+    "storeManager.issuesAllStatuses": "All statuses",
+    "storeManager.issuesOpenStatus": "Open",
+    "storeManager.issuesReportedAt": "Reported",
+    "storeManager.issuesReportedBy": "Reported by",
+    "storeManager.issuesResolvedAt": "Resolved",
+    "storeManager.issuesResolvedBy": "Resolved by",
+    "storeManager.issuesResolutionNote": "Resolution note",
+    "storeManager.issuesResolutionPlaceholder": "Add a short resolution note (optional)...",
+    "storeManager.issuesResolve": "Resolve",
+    "storeManager.issuesMarkResolved": "Mark resolved",
+    "storeManager.issuesResolveFailed": "Unable to resolve this issue.",
+    "storeManager.issuesLoadFailed": "Unable to load issues",
+    "storeManager.issuesLoading": "Loading issues",
+    "storeManager.issuesLoadingDescription": "Loading persisted issue records for your outlet.",
+    "storeManager.issuesCategoryDeliveryShortfall": "Delivery shortfall",
+    "storeManager.issuesCategoryDamagedGoods": "Damaged goods",
+    "storeManager.issuesCategoryLateDelivery": "Late delivery",
+    "storeManager.issuesCategoryDeliveryException": "Delivery exception",
+    "storeManager.issuesCategoryOrderProblem": "Order problem",
+    "storeManager.issuesCategoryOther": "Other",
 
     "storeManager.moduleFoundationReady":
 
@@ -4578,6 +4656,51 @@ const STATIC_TRANSLATIONS = {
     "storeManager.deliveryDetailsProgressAttention":
       "මෙම delivery එකට අවධානය අවශ්‍ය බැවින් සාමාන්‍ය progress path එක නවතා ඇත.",
 
+    "storeManager.receiptReadyTitle":
+      "Delivery ලැබීම තහවුරු කිරීමට සූදානම්",
+
+    "storeManager.receiptReadyDescription":
+      "Driver මෙම delivery එක delivered ලෙස සලකුණු කර ඇත. භාණ්ඩ outlet එකට ලැබුණු පසු තහවුරු කරන්න.",
+
+    "storeManager.receiptPartialTitle":
+      "අර්ධ delivery එකක් ලැබී ඇත",
+
+    "storeManager.receiptPartialDescription":
+      "Driver විසින් partial delivery එකක් වාර්තා කර ඇත. Receipt confirm කිරීමට පෙර අඩුව පරීක්ෂා කරන්න.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "මෙය partial delivery එකක් බව මම අවබෝධ කරගෙන ඇති අතර confirm කිරීමට පෙර ලැබුණු ප්‍රමාණය පරීක්ෂා කළෙමි.",
+
+    "storeManager.receiptNotePlaceholder":
+      "අමතර receiving සටහනක්...",
+
+    "storeManager.receiptConfirmAction":
+      "ලැබුණු බව තහවුරු කරන්න",
+
+    "storeManager.receiptConfirming":
+      "තහවුරු කරමින්...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt එක තහවුරු කරන ලදී.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "මෙම delivery එක දැනටමත් ලැබුණු බව තහවුරු කර ඇත.",
+
+    "storeManager.receiptConfirmationFailed":
+      "මෙම delivery එක ලැබුණු බව තහවුරු කළ නොහැක.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt තහවුරු කර ඇත",
+
+    "storeManager.receiptConfirmedDescription":
+      "මෙම delivery එක Store Manager විසින් ලැබුණු බව පිළිගෙන ඇත.",
+
+    "storeManager.receiptConfirmedAt":
+      "තහවුරු කළ වේලාව",
+
+    "storeManager.receiptConfirmedBy":
+      "තහවුරු කළේ",
+
     "storeManager.deliveryDetailsNoItems":
       "Delivery items ලබා ගත නොහැක.",
 
@@ -4631,17 +4754,17 @@ const STATIC_TRANSLATIONS = {
     "storeManager.dashboardOutletOperationsDescription": "මෙම වෙළඳසැලේ trusted receiving constraints.",
     "storeManager.createOrderClearAll": "සියල්ල ඉවත් කරන්න",
     "storeManager.createOrderRemoveItem": "අයිතමය ඉවත් කරන්න",
-    "storeManager.issuesOpen": "අවධානය අවශ්‍ය",
+    "storeManager.issuesOpen": "විවෘත ගැටලු",
     "storeManager.issuesSearch": "ගැටලු සොයන්න",
     "storeManager.issuesSearchPlaceholder": "Order, status හෝ trip සොයන්න",
     "storeManager.issuesTypeFilter": "ගැටලු වර්ගය පෙරහන් කරන්න",
     "storeManager.issuesAllTypes": "සියලු ගැටලු වර්ග",
     "storeManager.issuesShowing": "{total} න් {shown} පෙන්වයි",
-    "storeManager.issuesSourceNote": "මෙම පිටුව සැබෑ delivery deferrals, partial deliveries සහ exceptions පමණක් පෙන්වයි; වෙනම fake issue records සෑදෙන්නේ නැත.",
+    "storeManager.issuesSourceNote": "මෙහි පෙන්වන්නේ මෙම වෙළඳසැලට database එකේ සුරකින ලද Open / Resolved ගැටලු records ය.",
     "storeManager.issuesNoMatches": "ගැලපෙන ගැටලු නොමැත",
     "storeManager.issuesNoMatchesDescription": "වෙනත් සෙවුමක් හෝ ගැටලු වර්ගයක් උත්සාහ කරන්න.",
     "storeManager.issuesEmptyTitle": "බෙදාහැරීම් ගැටලු නොමැත",
-    "storeManager.issuesEmptyDescription": "මෙම වෙළඳසැලට deferral, partial delivery හෝ exception නොමැත.",
+    "storeManager.issuesEmptyDescription": "මෙම වෙළඳසැල සඳහා තවම ගැටලු record කර නොමැත.",
     "storeManager.issuesOrder": "ඇණවුම",
     "storeManager.issuesIssueType": "ගැටලු වර්ගය",
     "storeManager.issuesReason": "හේතුව / විස්තරය",
@@ -4649,6 +4772,39 @@ const STATIC_TRANSLATIONS = {
     "storeManager.issuesAction": "ක්‍රියාව",
     "storeManager.issuesViewDelivery": "බෙදාහැරීම බලන්න",
     "storeManager.issuesOperationalAttention": "මෙම බෙදාහැරීමට මෙහෙයුම් අවධානය අවශ්‍යයි.",
+    "storeManager.issuesResolved": "විසඳූ",
+    "storeManager.issuesTotal": "මුළු ගැටලු",
+    "storeManager.issuesReport": "ගැටලුවක් වාර්තා කරන්න",
+    "storeManager.issuesReportTitle": "ඇණවුම් / බෙදාහැරීම් ගැටලුවක් වාර්තා කරන්න",
+    "storeManager.issuesReportDescription": "ඔබගේ වෙළඳසැලට අදාළ ඇණවුමක් සඳහා සැබෑ issue record එකක් සාදන්න.",
+    "storeManager.issuesOrderCode": "ඇණවුම් කේතය",
+    "storeManager.issuesCategory": "වර්ගය",
+    "storeManager.issuesDescription": "විස්තරය",
+    "storeManager.issuesDescriptionPlaceholder": "සිදු වූ දේ කෙටියෙන් සඳහන් කරන්න...",
+    "storeManager.issuesReporting": "වාර්තා කරමින්...",
+    "storeManager.issuesSubmitReport": "වාර්තාව යවන්න",
+    "storeManager.issuesCreateSuccess": "ගැටලුව සාර්ථකව වාර්තා විය.",
+    "storeManager.issuesCreateFailed": "ගැටලුව වාර්තා කළ නොහැක.",
+    "storeManager.issuesAllStatuses": "සියලු තත්ත්ව",
+    "storeManager.issuesOpenStatus": "විවෘත",
+    "storeManager.issuesReportedAt": "වාර්තා කළේ",
+    "storeManager.issuesReportedBy": "වාර්තා කළ පුද්ගලයා",
+    "storeManager.issuesResolvedAt": "විසඳූ වේලාව",
+    "storeManager.issuesResolvedBy": "විසඳූ පුද්ගලයා",
+    "storeManager.issuesResolutionNote": "විසඳුම් සටහන",
+    "storeManager.issuesResolutionPlaceholder": "විසඳුම ගැන කෙටි සටහනක් (optional)...",
+    "storeManager.issuesResolve": "විසඳන්න",
+    "storeManager.issuesMarkResolved": "විසඳූ ලෙස සලකුණු කරන්න",
+    "storeManager.issuesResolveFailed": "ගැටලුව විසඳූ ලෙස update කළ නොහැක.",
+    "storeManager.issuesLoadFailed": "ගැටලු load කළ නොහැක",
+    "storeManager.issuesLoading": "ගැටලු load කරමින්",
+    "storeManager.issuesLoadingDescription": "ඔබගේ වෙළඳසැලේ issue records load කරමින් පවතී.",
+    "storeManager.issuesCategoryDeliveryShortfall": "බෙදාහැරීම් අඩුව",
+    "storeManager.issuesCategoryDamagedGoods": "හානි වූ භාණ්ඩ",
+    "storeManager.issuesCategoryLateDelivery": "ප්‍රමාද බෙදාහැරීම",
+    "storeManager.issuesCategoryDeliveryException": "බෙදාහැරීම් exception",
+    "storeManager.issuesCategoryOrderProblem": "ඇණවුම් ගැටලුව",
+    "storeManager.issuesCategoryOther": "වෙනත්",
 
     "storeManager.moduleFoundationReady":
 
@@ -7253,6 +7409,51 @@ const STATIC_TRANSLATIONS = {
     "storeManager.deliveryDetailsProgressAttention":
       "இந்த delivery-க்கு கவனம் தேவைப்படுவதால் சாதாரண progress path இடைநிறுத்தப்பட்டுள்ளது.",
 
+    "storeManager.receiptReadyTitle":
+      "விநியோகத்தைப் பெற்றதை உறுதிப்படுத்த தயாராக உள்ளது",
+
+    "storeManager.receiptReadyDescription":
+      "Driver இந்த delivery-ஐ delivered என குறித்துள்ளார். பொருட்கள் outlet-க்கு வந்ததும் உறுதிப்படுத்தவும்.",
+
+    "storeManager.receiptPartialTitle":
+      "பகுதி விநியோகம் பெறப்பட்டது",
+
+    "storeManager.receiptPartialDescription":
+      "Driver பகுதி விநியோகத்தை பதிவு செய்துள்ளார். Receipt உறுதிப்படுத்தும் முன் குறைவைக் சரிபார்க்கவும்.",
+
+    "storeManager.receiptPartialAcknowledgement":
+      "இது பகுதி விநியோகம் என்பதை புரிந்துள்ளேன்; உறுதிப்படுத்தும் முன் பெற்ற அளவை சரிபார்த்துள்ளேன்.",
+
+    "storeManager.receiptNotePlaceholder":
+      "விருப்பமான receiving குறிப்பு...",
+
+    "storeManager.receiptConfirmAction":
+      "பெற்றதை உறுதிப்படுத்து",
+
+    "storeManager.receiptConfirming":
+      "உறுதிப்படுத்துகிறது...",
+
+    "storeManager.receiptConfirmationSuccess":
+      "Delivery receipt உறுதிப்படுத்தப்பட்டது.",
+
+    "storeManager.receiptAlreadyConfirmed":
+      "இந்த delivery ஏற்கனவே பெறப்பட்டது என உறுதிப்படுத்தப்பட்டுள்ளது.",
+
+    "storeManager.receiptConfirmationFailed":
+      "இந்த delivery பெறப்பட்டதை உறுதிப்படுத்த முடியவில்லை.",
+
+    "storeManager.receiptConfirmedTitle":
+      "Receipt உறுதிப்படுத்தப்பட்டது",
+
+    "storeManager.receiptConfirmedDescription":
+      "இந்த delivery Store Manager மூலம் பெறப்பட்டது என அங்கீகரிக்கப்பட்டுள்ளது.",
+
+    "storeManager.receiptConfirmedAt":
+      "உறுதிப்படுத்திய நேரம்",
+
+    "storeManager.receiptConfirmedBy":
+      "உறுதிப்படுத்தியவர்",
+
     "storeManager.deliveryDetailsNoItems":
       "Delivery items கிடைக்கவில்லை.",
 
@@ -7306,17 +7507,17 @@ const STATIC_TRANSLATIONS = {
     "storeManager.dashboardOutletOperationsDescription": "இந்த outlet-இன் trusted receiving constraints.",
     "storeManager.createOrderClearAll": "அனைத்தையும் நீக்கு",
     "storeManager.createOrderRemoveItem": "பொருளை நீக்கு",
-    "storeManager.issuesOpen": "கவனம் தேவை",
+    "storeManager.issuesOpen": "திறந்த பிரச்சினைகள்",
     "storeManager.issuesSearch": "பிரச்சினைகளை தேடவும்",
     "storeManager.issuesSearchPlaceholder": "Order, status அல்லது trip தேடவும்",
     "storeManager.issuesTypeFilter": "பிரச்சினை வகையை வடிகட்டவும்",
     "storeManager.issuesAllTypes": "அனைத்து பிரச்சினை வகைகள்",
     "storeManager.issuesShowing": "{total} இல் {shown} காட்டப்படுகிறது",
-    "storeManager.issuesSourceNote": "இந்த பக்கம் உண்மையான delivery deferrals, partial deliveries மற்றும் exceptions மட்டும் காட்டுகிறது; தனி fake issue records உருவாக்கப்படவில்லை.",
+    "storeManager.issuesSourceNote": "இங்கு இந்த outlet-க்கு database-ல் சேமிக்கப்பட்ட Open / Resolved issue records காட்டப்படுகின்றன.",
     "storeManager.issuesNoMatches": "பொருந்தும் பிரச்சினைகள் இல்லை",
     "storeManager.issuesNoMatchesDescription": "வேறு தேடல் அல்லது பிரச்சினை வகையை முயற்சிக்கவும்.",
     "storeManager.issuesEmptyTitle": "விநியோக பிரச்சினைகள் இல்லை",
-    "storeManager.issuesEmptyDescription": "இந்த outlet-க்கு deferral, partial delivery அல்லது exception இல்லை.",
+    "storeManager.issuesEmptyDescription": "இந்த outlet-க்கு இன்னும் issue record எதுவும் பதிவாகவில்லை.",
     "storeManager.issuesOrder": "ஆர்டர்",
     "storeManager.issuesIssueType": "பிரச்சினை வகை",
     "storeManager.issuesReason": "காரணம் / விவரம்",
@@ -7324,6 +7525,39 @@ const STATIC_TRANSLATIONS = {
     "storeManager.issuesAction": "செயல்",
     "storeManager.issuesViewDelivery": "விநியோகத்தை பார்க்க",
     "storeManager.issuesOperationalAttention": "இந்த விநியோகத்திற்கு செயல்பாட்டு கவனம் தேவை.",
+    "storeManager.issuesResolved": "தீர்க்கப்பட்டது",
+    "storeManager.issuesTotal": "மொத்த பிரச்சினைகள்",
+    "storeManager.issuesReport": "பிரச்சினையை தெரிவிக்க",
+    "storeManager.issuesReportTitle": "ஆர்டர் / விநியோக பிரச்சினையை தெரிவிக்க",
+    "storeManager.issuesReportDescription": "உங்கள் outlet-க்கு சொந்தமான order-க்கு உண்மையான issue record உருவாக்கவும்.",
+    "storeManager.issuesOrderCode": "ஆர்டர் குறியீடு",
+    "storeManager.issuesCategory": "வகை",
+    "storeManager.issuesDescription": "விவரம்",
+    "storeManager.issuesDescriptionPlaceholder": "என்ன நடந்தது என்பதை சுருக்கமாக எழுதவும்...",
+    "storeManager.issuesReporting": "பதிவு செய்கிறது...",
+    "storeManager.issuesSubmitReport": "பதிவை சமர்ப்பிக்க",
+    "storeManager.issuesCreateSuccess": "பிரச்சினை வெற்றிகரமாக பதிவு செய்யப்பட்டது.",
+    "storeManager.issuesCreateFailed": "பிரச்சினையை பதிவு செய்ய முடியவில்லை.",
+    "storeManager.issuesAllStatuses": "அனைத்து நிலைகள்",
+    "storeManager.issuesOpenStatus": "திறந்தது",
+    "storeManager.issuesReportedAt": "பதிவு செய்த நேரம்",
+    "storeManager.issuesReportedBy": "பதிவு செய்தவர்",
+    "storeManager.issuesResolvedAt": "தீர்க்கப்பட்ட நேரம்",
+    "storeManager.issuesResolvedBy": "தீர்த்தவர்",
+    "storeManager.issuesResolutionNote": "தீர்வு குறிப்பு",
+    "storeManager.issuesResolutionPlaceholder": "சிறிய தீர்வு குறிப்பை சேர்க்கவும் (optional)...",
+    "storeManager.issuesResolve": "தீர்க்க",
+    "storeManager.issuesMarkResolved": "தீர்க்கப்பட்டது என குறிக்க",
+    "storeManager.issuesResolveFailed": "பிரச்சினையை தீர்க்கப்பட்டதாக update செய்ய முடியவில்லை.",
+    "storeManager.issuesLoadFailed": "பிரச்சினைகளை load செய்ய முடியவில்லை",
+    "storeManager.issuesLoading": "பிரச்சினைகள் load ஆகின்றன",
+    "storeManager.issuesLoadingDescription": "உங்கள் outlet-ன் issue records load ஆகின்றன.",
+    "storeManager.issuesCategoryDeliveryShortfall": "விநியோக குறைவு",
+    "storeManager.issuesCategoryDamagedGoods": "சேதமடைந்த பொருட்கள்",
+    "storeManager.issuesCategoryLateDelivery": "தாமதமான விநியோகம்",
+    "storeManager.issuesCategoryDeliveryException": "விநியோக exception",
+    "storeManager.issuesCategoryOrderProblem": "ஆர்டர் பிரச்சினை",
+    "storeManager.issuesCategoryOther": "மற்றவை",
 
     "storeManager.moduleFoundationReady":
 

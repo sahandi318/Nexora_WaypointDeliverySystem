@@ -8,8 +8,7 @@ import StoreManagerMobileDrawer from "./StoreManagerMobileDrawer";
 import StoreManagerSidebar from "./StoreManagerSidebar";
 import StoreManagerTopbar from "./StoreManagerTopbar";
 
-import { ATTENTION_STATUSES } from "./deliveries/StoreManagerDeliveryUI";
-import { getStoreManagerDeliveries } from "../../services/storeManagerService";
+import { getStoreManagerIssues } from "../../services/storeManagerService";
 
 const ISSUE_COUNT_POLL_MS = 45000;
 
@@ -28,12 +27,12 @@ function StoreManagerShell({
 
   const refreshIssueCount = useCallback(async ({ signal } = {}) => {
     try {
-      const deliveries = await getStoreManagerDeliveries({ signal });
-      const nextCount = deliveries.filter((delivery) =>
-        ATTENTION_STATUSES.has(delivery.deliveryStatus)
-      ).length;
+      const data = await getStoreManagerIssues({
+        status: "OPEN",
+        signal,
+      });
 
-      setIssueCount(nextCount);
+      setIssueCount(Number(data?.summary?.open ?? 0));
     } catch (error) {
       if (
         error?.name === "CanceledError" ||
@@ -56,9 +55,22 @@ function StoreManagerShell({
       refreshIssueCount();
     }, ISSUE_COUNT_POLL_MS);
 
+    const handleIssueChange = () => {
+      refreshIssueCount();
+    };
+
+    window.addEventListener(
+      "store-manager-issues-changed",
+      handleIssueChange
+    );
+
     return () => {
       controller.abort();
       window.clearInterval(intervalId);
+      window.removeEventListener(
+        "store-manager-issues-changed",
+        handleIssueChange
+      );
     };
   }, [refreshIssueCount]);
 
