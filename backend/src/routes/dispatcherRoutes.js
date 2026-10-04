@@ -7,6 +7,7 @@ import {
 } from "../middleware/authMiddleware.js";
 
 import {
+  getDashboard,
   getDeliveryReports,
   getLiveMonitoring,
   getLiveMonitoringTrip,
@@ -26,6 +27,8 @@ const dispatcherAccess = [
   requirePasswordChangeCompleted,
   authorizeRoles("DISPATCHER", "ADMIN"),
 ];
+
+router.get("/dashboard", ...dispatcherAccess, getDashboard);
 
 router.get(
   "/live-monitoring",

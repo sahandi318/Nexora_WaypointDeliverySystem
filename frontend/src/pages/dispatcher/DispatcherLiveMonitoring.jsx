@@ -1,19 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity,
   CalendarDays,
   CheckCircle2,
-  ClipboardList,
   Clock3,
-  MapPinned,
   MessageSquareText,
-  PackageCheck,
   RadioTower,
   Search,
   Truck,
   WifiOff,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
   CircleMarker,
   MapContainer,
@@ -25,21 +20,12 @@ import {
 import "leaflet/dist/leaflet.css";
 
 import useAuth from "../../hooks/useAuth";
-import waypointLogo from "../../assets/waypoint-logo.png";
+import DispatcherLayout from "../../components/dispatcher/DispatcherLayout";
 import {
   createDispatcherMonitoringSocket,
   getDispatcherMonitoring,
 } from "../../services/dispatcherMonitoringService";
 import "./DispatcherLiveMonitoring.css";
-
-function initials(name = "Dispatcher") {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 function formatSyncAge(value, nowMs = Date.now()) {
   if (!value) return "No sync recorded";
@@ -70,16 +56,6 @@ function formatSriLankaClock(value) {
   });
 }
 
-function formatSriLankaDate(value = Date.now()) {
-  const date = new Date(value);
-  return date.toLocaleDateString("en-LK", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "Asia/Colombo",
-  });
-}
-
 function statusLabel(status) {
   const map = {
     ON_ROUTE: "On Route",
@@ -105,6 +81,12 @@ function stopLabel(status) {
 
 function FitRouteBounds({ trip }) {
   const map = useMap();
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
 
   useEffect(() => {
     const routePoints = (trip?.routePoints || [])
@@ -238,26 +220,33 @@ function RouteMap({ trip }) {
 
 export default function DispatcherLiveMonitoring() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const pendingRequest = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [summary, setSummary] = useState({ activeTrips: 0, onSchedule: 0, delayed: 0, offlineDevices: 0 });
+  const [summary, setSummary] = useState({});
   const [depots, setDepots] = useState([]);
   const [trips, setTrips] = useState([]);
   const [selectedTripCode, setSelectedTripCode] = useState(null);
   const [depotId, setDepotId] = useState(user?.depot?.id ? String(user.depot.id) : "");
+  const [date, setDate] = useState("");
   const [status, setStatus] = useState("ACTIVE");
   const [search, setSearch] = useState("");
   const [nowMs, setNowMs] = useState(Date.now());
 
   async function loadMonitoring({ quiet = false } = {}) {
+    pendingRequest.current?.abort();
+    const controller = new AbortController();
+    pendingRequest.current = controller;
     if (!quiet) setLoading(true);
     try {
       setError("");
       const data = await getDispatcherMonitoring({
         depotId: depotId || undefined,
         status,
+        date,
+        signal: controller.signal,
       });
+      if (controller.signal.aborted) return;
 
       setSummary(data.summary || {});
       setDepots(data.depots || []);
@@ -270,20 +259,22 @@ export default function DispatcherLiveMonitoring() {
         return data.trips?.[0]?.tripCode || null;
       });
     } catch (requestError) {
+      if (controller.signal.aborted) return;
       setError(
         requestError.response?.data?.message ||
         requestError.message ||
         "Unable to load live delivery monitoring."
       );
     } finally {
-      if (!quiet) setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }
 
   useEffect(() => {
     loadMonitoring();
+    return () => pendingRequest.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depotId, status]);
+  }, [depotId, status, date]);
 
   useEffect(() => {
     const socket = createDispatcherMonitoringSocket();
@@ -302,7 +293,7 @@ export default function DispatcherLiveMonitoring() {
       socket.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depotId, status]);
+  }, [depotId, status, date]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 10000);
@@ -331,32 +322,8 @@ export default function DispatcherLiveMonitoring() {
     : 0;
 
   return (
-    <main className="dispatcher-live-page">
-      <div className="dispatcher-live-layout">
-        <aside className="dispatcher-sidebar">
-          <div className="dispatcher-sidebar-brand">
-            <img src={waypointLogo} alt="Waypoint Group" />
-            <strong>Waypoint Group</strong>
-          </div>
-
-          <nav className="dispatcher-nav" aria-label="Dispatcher navigation">
-            <button type="button" className="dispatcher-nav-item"><Activity size={16} /> Operations Dashboard</button>
-            <button type="button" className="dispatcher-nav-item"><ClipboardList size={16} /> Delivery Planning</button>
-            <button type="button" className="dispatcher-nav-item"><PackageCheck size={16} /> Loading Coordination</button>
-            <button type="button" className="dispatcher-nav-item active"><MapPinned size={16} /> Live Delivery Monitoring</button>
-            <button type="button" className="dispatcher-nav-item" onClick={() => navigate("/dispatcher/reports")}><Clock3 size={16} /> Reports & Capacity</button>
-          </nav>
-
-          <div className="dispatcher-sidebar-user">
-            <div className="dispatcher-avatar">{initials(user?.fullName || user?.userId)}</div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800 }}>{user?.fullName || user?.userId || "Dispatcher"}</div>
-              <div style={{ fontSize: 9, opacity: .7 }}>Dispatcher</div>
-            </div>
-          </div>
-        </aside>
-
-        <section className="dispatcher-main">
+    <DispatcherLayout>
+      <section className="dispatcher-monitoring">
           <header className="dispatcher-header">
             <div className="dispatcher-title">
               <h1>Live Delivery Monitoring</h1>
@@ -366,16 +333,17 @@ export default function DispatcherLiveMonitoring() {
             <div className="dispatcher-filters">
               <div className="dispatcher-filter" style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <CalendarDays size={15} />
-                <span>{formatSriLankaDate(nowMs)}</span>
+                <input type="date" aria-label="Delivery date (empty means all dates)" value={date} onChange={(event) => setDate(event.target.value)} />
               </div>
 
               <select
                 className="dispatcher-filter"
+                disabled={user?.role === "DISPATCHER"}
                 value={depotId}
                 onChange={(event) => setDepotId(event.target.value)}
                 aria-label="Depot"
               >
-                <option value="">All depots</option>
+                <option value="">{user?.role === "DISPATCHER" ? user.depot?.name || "Assigned depot" : "All depots"}</option>
                 {depots.map((depot) => (
                   <option key={depot.id} value={depot.id}>{depot.name}</option>
                 ))}
@@ -398,19 +366,19 @@ export default function DispatcherLiveMonitoring() {
           <section className="dispatcher-kpis" aria-label="Live delivery summary">
             <div className="dispatcher-kpi">
               <div className="dispatcher-kpi-icon"><Truck size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Active Trips</div><div className="dispatcher-kpi-value">{summary.activeTrips ?? 0}</div></div>
+              <div><div className="dispatcher-kpi-label">Active Trips</div><div className="dispatcher-kpi-value">{loading ? "?" : summary.activeTrips ?? "?"}</div></div>
             </div>
             <div className="dispatcher-kpi">
               <div className="dispatcher-kpi-icon"><CheckCircle2 size={19} /></div>
-              <div><div className="dispatcher-kpi-label">On Schedule</div><div className="dispatcher-kpi-value">{summary.onSchedule ?? 0}</div></div>
+              <div><div className="dispatcher-kpi-label">On Schedule</div><div className="dispatcher-kpi-value">{loading ? "?" : summary.onSchedule ?? "?"}</div></div>
             </div>
             <div className="dispatcher-kpi warning">
               <div className="dispatcher-kpi-icon"><Clock3 size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Delayed</div><div className="dispatcher-kpi-value">{summary.delayed ?? 0}</div></div>
+              <div><div className="dispatcher-kpi-label">Delayed</div><div className="dispatcher-kpi-value">{loading ? "?" : summary.delayed ?? "?"}</div></div>
             </div>
             <div className="dispatcher-kpi offline">
               <div className="dispatcher-kpi-icon"><WifiOff size={19} /></div>
-              <div><div className="dispatcher-kpi-label">Offline Devices</div><div className="dispatcher-kpi-value">{summary.offlineDevices ?? 0}</div></div>
+              <div><div className="dispatcher-kpi-label">Offline Devices</div><div className="dispatcher-kpi-value">{loading ? "?" : summary.offlineDevices ?? "?"}</div></div>
             </div>
           </section>
 
@@ -543,8 +511,7 @@ export default function DispatcherLiveMonitoring() {
               Live progress {offline ? "paused - last synchronized state is shown" : `active - ${progressPercent}% complete`}.
             </div>
           )}
-        </section>
-      </div>
-    </main>
+      </section>
+    </DispatcherLayout>
   );
 }

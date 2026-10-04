@@ -1295,3 +1295,38 @@
 
   background: #f5f8f6;
 }
+/* Shared shell sizing is owned here, never by individual page stylesheets. */
+.dispatcher-page .dispatcher-main { min-width: 0; }
+.dispatcher-page, .dispatcher-layout { background: var(--color-bg); color: var(--color-text); }
+.dispatcher-page .dashboard-card,
+.dispatcher-page .dashboard-stat-card,
+.dispatcher-page .dashboard-filter,
+.dispatcher-page .quick-link-card { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text); }
+.dispatcher-page .dispatcher-header h1,
+.dispatcher-page .dashboard-card-header h2,
+.dispatcher-page .dashboard-stat-value-row strong,
+.dispatcher-page .readiness-row strong,
+.dispatcher-page .trip-row strong,
+.dispatcher-page .live-status-item strong { color: var(--color-text); }
+.dispatcher-page .dispatcher-header p,
+.dispatcher-page .dashboard-stat-title,
+.dispatcher-page .readiness-label,
+.dispatcher-page .dashboard-table,
+.dispatcher-page .activity-row { color: var(--color-text-secondary); }
+.dispatcher-page .dashboard-table thead,
+.dispatcher-page .live-map-placeholder { background: var(--color-surface-soft); color: var(--color-text-secondary); }
+.dispatcher-page .dashboard-message { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-secondary); }
+.dispatcher-page .dashboard-message button { color: var(--color-primary); font-weight: 700; cursor: pointer; }
+.dashboard-skeleton { display: inline-block; width: 52px; height: 25px; border-radius: 5px; background: var(--color-border); animation: dispatcher-pulse 1.4s ease-in-out infinite alternate; }
+@keyframes dispatcher-pulse { to { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .dashboard-skeleton { animation: none; } }
+@media (max-width: 760px) {
+  .dispatcher-page .dispatcher-layout { display: block; }
+  .dispatcher-page .dispatcher-sidebar { position: relative; top: auto; width: 100%; min-width: 0; height: auto; min-height: 0; gap: 16px; }
+  .dispatcher-page .dispatcher-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dispatcher-page .dispatcher-nav-item { justify-content: flex-start; padding: 10px; font-size: 12px; }
+  .dispatcher-page .dispatcher-nav-item span,
+  .dispatcher-page .dispatcher-user-text { display: flex; }
+  .dispatcher-page .dispatcher-user-section { justify-content: flex-start; }
+  .dispatcher-page .dispatcher-main { width: 100%; margin-left: 0; }
+}

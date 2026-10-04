@@ -543,7 +543,7 @@ export async function deferDispatcherStoreOrder(
 // ACTOR / DEPOT SCOPE
 // ============================================================
 
-async function resolveActorScope(
+export async function resolveActorScope(
   actor,
   requestedDepotCode = null
 ) {

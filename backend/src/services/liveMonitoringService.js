@@ -599,11 +599,13 @@ export async function getLiveMonitoringSnapshot({
   depotId,
   status = "ACTIVE",
   tripCode = null,
+  date = null,
 } = {}) {
   const where = {};
 
   if (depotId) where.depotId = Number(depotId);
   if (tripCode) where.tripCode = tripCode;
+  if (date) where.deliveryDate = new Date(`${date}T00:00:00.000Z`);
   if (status === "ACTIVE") where.status = { not: "COMPLETED" };
   if (status === "OFFLINE") where.status = "OFFLINE";
   if (status === "DELAYED") where.status = "DELAYED";
@@ -629,6 +631,7 @@ export async function getLiveMonitoringSnapshot({
   const summaryTrips = await prisma.liveTrip.findMany({
     where: {
       ...(depotId ? { depotId: Number(depotId) } : {}),
+      ...(date ? { deliveryDate: new Date(`${date}T00:00:00.000Z`) } : {}),
       status: { not: "COMPLETED" },
     },
     select: {
@@ -638,7 +641,7 @@ export async function getLiveMonitoringSnapshot({
   });
 
   const depots = await prisma.depot.findMany({
-    where: { isActive: true },
+    where: { isActive: true, ...(depotId ? { id: Number(depotId) } : {}) },
     select: { id: true, code: true, name: true },
     orderBy: { name: "asc" },
   });

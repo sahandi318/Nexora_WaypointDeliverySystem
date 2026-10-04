@@ -6,9 +6,11 @@ const SOCKET_URL =
   import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
   "http://localhost:5000";
 
-export async function getDispatcherMonitoring({ depotId, status = "ACTIVE" } = {}) {
+export async function getDispatcherMonitoring({ depotId, date, signal, status = "ACTIVE" } = {}) {
   const response = await api.get("/dispatcher/live-monitoring", {
+    signal,
     params: {
+      ...(date ? { date } : {}),
       ...(depotId ? { depotId } : {}),
       status,
     },
