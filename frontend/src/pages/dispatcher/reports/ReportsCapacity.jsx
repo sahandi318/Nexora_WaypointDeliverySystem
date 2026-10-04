@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import DispatcherLayout from "../../../components/dispatcher/DispatcherLayout";
+import useAuth from "../../../hooks/useAuth";
 
 /**
  * Parent layout for all Dispatcher Reports & Capacity pages.
@@ -13,6 +14,7 @@ import DispatcherLayout from "../../../components/dispatcher/DispatcherLayout";
  */
 const ReportsCapacity = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -22,9 +24,15 @@ const ReportsCapacity = () => {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [selectedDepot, setSelectedDepot] = useState("Kandy");
+  const [selectedDepot, setSelectedDepot] = useState(user?.depot?.name || "");
 
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
+
+  useEffect(() => {
+    if (user?.depot?.name) {
+      setSelectedDepot(user.depot.name);
+    }
+  }, [user?.depot?.name]);
 
   useEffect(() => {
   const loadCalendarDates = async () => {
@@ -53,9 +61,9 @@ const ReportsCapacity = () => {
       setMinDate(firstDate);
       setMaxDate(lastDate);
 
-      // Initial report period for frontend testing.
-      setStartDate("2026-06-22");
-      setEndDate("2026-06-27");
+      // Keep reports unfiltered initially so newly synchronized
+      // Driver records appear immediately. The Dispatcher can
+      // apply a date range when required.
     } catch (error) {
       console.error("Failed to load calendar.csv:", error);
     }
@@ -170,6 +178,7 @@ const ReportsCapacity = () => {
       outline-none
     "
   >
+    <option value="">All Depots</option>
     <option value="Kandy">Kandy</option>
     <option value="Peliyagoda">Peliyagoda</option>
   </select>
@@ -341,6 +350,7 @@ const ReportsCapacity = () => {
                       cursor-pointer
                     "
                   >
+                    <option value="">All Depots</option>
                     <option value="Kandy">Kandy</option>
                     <option value="Peliyagoda">Peliyagoda</option>
                   </select>

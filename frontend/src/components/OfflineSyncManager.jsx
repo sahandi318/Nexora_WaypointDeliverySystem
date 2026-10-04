@@ -59,7 +59,7 @@ export default function OfflineSyncManager() {
       });
     };
 
-    const emitCurrentLocation = () => {
+    const emitCurrentLocation = (message = null) => {
       if (!navigator.geolocation || !navigator.onLine) {
         emitPresence({ online: navigator.onLine });
         return;
@@ -71,13 +71,13 @@ export default function OfflineSyncManager() {
             online: true,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            message: 'Driver device is online. Live position updated.',
+            message,
           });
         },
         () => {
           emitPresence({
             online: true,
-            message: 'Driver device is online. Location permission is unavailable.',
+            message: message || 'Driver is online, but location permission is unavailable.',
           });
         },
         {
@@ -89,7 +89,7 @@ export default function OfflineSyncManager() {
     };
 
     const handleOnline = () => {
-      emitCurrentLocation();
+      emitCurrentLocation('Driver connection restored. Live tracking resumed.');
     };
 
     const handleOffline = () => {
@@ -99,21 +99,28 @@ export default function OfflineSyncManager() {
       });
     };
 
-    socket.on('connect', emitCurrentLocation);
+    const handleConnect = () => {
+      emitCurrentLocation('Driver connected. Live tracking is available.');
+    };
+
+    socket.on('connect', handleConnect);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Keep Dispatcher live tracking reasonably fresh without
+    // continuously requesting GPS. Ten seconds is sufficient for
+    // the challenge demo and keeps the last-synchronized time honest.
     const heartbeat = window.setInterval(() => {
       if (navigator.onLine && socket.connected) {
         emitCurrentLocation();
       }
-    }, 20000);
+    }, 10000);
 
     return () => {
       window.clearInterval(heartbeat);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      socket.off('connect', emitCurrentLocation);
+      socket.off('connect', handleConnect);
       socket.close();
       socketRef.current = null;
     };

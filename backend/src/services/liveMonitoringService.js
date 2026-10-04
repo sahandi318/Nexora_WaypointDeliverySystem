@@ -4,18 +4,16 @@ import { state } from "../mockData.js";
 let ioInstance = null;
 let syncTimer = null;
 
+const ROUTE_EVENT_TYPE = "ROUTE_SNAPSHOT";
+const POD_EVENT_TYPE = "POD_SUBMITTED";
+const EXCEPTION_EVENT_TYPE = "EXCEPTION_RECORDED";
+const OUTCOME_EVENT_TYPE = "DELIVERY_OUTCOME";
+const ARRIVAL_EVENT_TYPE = "STOP_ARRIVED";
+const COMPLETION_EVENT_TYPE = "STOP_COMPLETED";
+
 function todayUtcDate() {
   const now = new Date();
   return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-}
-
-function asTimeLabel(value) {
-  if (!value) return null;
-  if (typeof value === "string") return value;
-  return new Date(value).toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 function deriveTripStatus(trip, isOnline) {
@@ -58,7 +56,24 @@ function latestDriverMessage(trip) {
   return "Trip is ready for driver progress updates.";
 }
 
-async function resolveDriverUser() {
+function safeJsonObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function parseRoutePayload(event) {
+  return event?.type === ROUTE_EVENT_TYPE ? safeJsonObject(event.payload) : null;
+}
+
+async function resolveDriverUser(userId = null) {
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+      include: { depot: true },
+    });
+
+    if (user?.role === "DRIVER" && user.isActive) return user;
+  }
+
   return prisma.user.findFirst({
     where: {
       role: "DRIVER",
@@ -96,70 +111,131 @@ async function resolveDepot(driverUser) {
   });
 }
 
-async function currentPresence(tripCode) {
-  const record = await prisma.liveTrip.findUnique({
+async function existingLiveTrip(tripCode) {
+  return prisma.liveTrip.findUnique({
     where: { tripCode },
-    select: {
-      isDriverOnline: true,
-      currentLat: true,
-      currentLng: true,
-      lastSynchronized: true,
+    include: {
+      events: {
+        where: { type: ROUTE_EVENT_TYPE },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
   });
-
-  return record || {
-    isDriverOnline: true,
-    currentLat: null,
-    currentLng: null,
-    lastSynchronized: null,
-  };
 }
 
-async function upsertTripFromDriverState(trip, driverUser, depot) {
-  const presence = await currentPresence(trip.tripId);
-  const isOnline = presence.isDriverOnline ?? true;
+async function ensureStateEvidenceEvents(liveTripId, trip) {
+  const existingEvidence = await prisma.liveTripEvent.findMany({
+    where: {
+      liveTripId,
+      type: { in: [POD_EVENT_TYPE, EXCEPTION_EVENT_TYPE] },
+    },
+    select: { type: true, payload: true },
+  });
+
+  const existingKeys = new Set(
+    existingEvidence.map((event) => {
+      const payload = safeJsonObject(event.payload);
+      return `${event.type}:${payload.stopId || ""}`;
+    })
+  );
+
+  for (const stop of trip.stops) {
+    if (stop.pod && !existingKeys.has(`${POD_EVENT_TYPE}:${stop.stopId}`)) {
+      await prisma.liveTripEvent.create({
+        data: {
+          liveTripId,
+          type: POD_EVENT_TYPE,
+          message: `Proof of delivery available for ${stop.outletId}.`,
+          payload: {
+            tripId: trip.tripId,
+            stopId: stop.stopId,
+            outletCode: stop.outletId,
+            orderId: stop.orderId || null,
+            outcome: stop.outcome || null,
+            expectedUnits: stop.expectedUnits ?? null,
+            deliveredQuantity: stop.deliveredQuantity ?? stop.expectedUnits ?? null,
+            receiverName: stop.pod.receiverName || null,
+            deliveryNote: stop.pod.deliveryNote || "",
+            photoName: stop.pod.photoName || null,
+            recordedAt: stop.pod.recordedAt || null,
+          },
+        },
+      });
+    }
+
+    if (stop.exception && !existingKeys.has(`${EXCEPTION_EVENT_TYPE}:${stop.stopId}`)) {
+      await prisma.liveTripEvent.create({
+        data: {
+          liveTripId,
+          type: EXCEPTION_EVENT_TYPE,
+          message: `Delivery exception available for ${stop.outletId}.`,
+          payload: {
+            tripId: trip.tripId,
+            stopId: stop.stopId,
+            outletCode: stop.outletId,
+            orderId: stop.orderId || null,
+            outcome: stop.outcome || stop.exception.outcome || null,
+            expectedUnits: stop.expectedUnits ?? null,
+            deliveredQuantity: stop.exception.deliveredQuantity ?? stop.deliveredQuantity ?? null,
+            ...stop.exception,
+          },
+        },
+      });
+    }
+  }
+}
+
+async function upsertTripFromDriverState(trip, driverUser, depot, { preferExistingAssignment = true } = {}) {
+  const existing = await existingLiveTrip(trip.tripId);
+  const isOnline = existing?.isDriverOnline ?? true;
   const completedCount = trip.stops.filter((stop) => stop.completed).length;
   const next = trip.stops.find((stop) => !stop.completed) || null;
+  const routePayload = parseRoutePayload(existing?.events?.[0]);
+  const routeMatchesNext = Boolean(routePayload && next && routePayload.stopId === next.stopId);
+  const message = latestDriverMessage(trip);
+  const messageChanged = message !== existing?.latestDriverUpdate;
+
+  const assignedDriverUserId = preferExistingAssignment && existing?.driverUserId
+    ? existing.driverUserId
+    : driverUser?.id || existing?.driverUserId || null;
+  const assignedDriverName = preferExistingAssignment && existing?.driverUserId
+    ? existing.driverName
+    : driverUser?.fullName || existing?.driverName || state.user?.name || "Assigned Driver";
+  const assignedDepotId = preferExistingAssignment && existing?.depotId
+    ? existing.depotId
+    : depot?.id || existing?.depotId || null;
+
+  const commonData = {
+    deliveryDate: todayUtcDate(),
+    depotId: assignedDepotId,
+    vehicleCode: trip.vehicleId || state.vehicle?.vehicleId || "UNASSIGNED",
+    vehicleType: state.vehicle?.type || "Vehicle",
+    temperature: state.vehicle?.temp || "Ambient",
+    driverUserId: assignedDriverUserId,
+    driverName: assignedDriverName,
+    status: deriveTripStatus(trip, isOnline),
+    progressCompleted: completedCount,
+    progressTotal: trip.stops.length,
+    nextDestination: next?.outletId || null,
+    eta: routeMatchesNext && routePayload?.etaLabel
+      ? routePayload.etaLabel
+      : next?.plannedArrival || null,
+    latestDriverUpdate: message,
+    latestDriverUpdateAt: messageChanged
+      ? new Date()
+      : existing?.latestDriverUpdateAt || new Date(),
+  };
 
   const liveTrip = await prisma.liveTrip.upsert({
     where: { tripCode: trip.tripId },
-    update: {
-      deliveryDate: todayUtcDate(),
-      depotId: depot?.id || null,
-      vehicleCode: trip.vehicleId || state.vehicle?.vehicleId || "UNASSIGNED",
-      vehicleType: state.vehicle?.type || "Vehicle",
-      temperature: state.vehicle?.temp || "Ambient",
-      driverUserId: driverUser?.id || null,
-      driverName: driverUser?.fullName || state.user?.name || "Assigned Driver",
-      status: deriveTripStatus(trip, isOnline),
-      progressCompleted: completedCount,
-      progressTotal: trip.stops.length,
-      nextDestination: next?.outletId || null,
-      eta: next?.plannedArrival || null,
-      lastSynchronized: isOnline ? new Date() : presence.lastSynchronized,
-      latestDriverUpdate: latestDriverMessage(trip),
-      latestDriverUpdateAt: new Date(),
-      routeUpdatedAt: new Date(),
-    },
+    update: commonData,
     create: {
       tripCode: trip.tripId,
-      deliveryDate: todayUtcDate(),
-      depotId: depot?.id || null,
-      vehicleCode: trip.vehicleId || state.vehicle?.vehicleId || "UNASSIGNED",
-      vehicleType: state.vehicle?.type || "Vehicle",
-      temperature: state.vehicle?.temp || "Ambient",
-      driverUserId: driverUser?.id || null,
-      driverName: driverUser?.fullName || state.user?.name || "Assigned Driver",
-      status: deriveTripStatus(trip, true),
-      progressCompleted: completedCount,
-      progressTotal: trip.stops.length,
-      nextDestination: next?.outletId || null,
-      eta: next?.plannedArrival || null,
-      lastSynchronized: new Date(),
+      ...commonData,
       isDriverOnline: true,
-      latestDriverUpdate: latestDriverMessage(trip),
-      latestDriverUpdateAt: new Date(),
-      routeUpdatedAt: new Date(),
+      lastSynchronized: null,
+      routeUpdatedAt: null,
     },
   });
 
@@ -199,6 +275,8 @@ async function upsertTripFromDriverState(trip, driverUser, depot) {
     });
   }
 
+  await ensureStateEvidenceEvents(liveTrip.id, trip);
+
   return liveTrip;
 }
 
@@ -213,6 +291,10 @@ async function ensureAdditionalDemoTrips(depot) {
   ];
 
   for (const item of demo) {
+    const existing = await prisma.liveTrip.findUnique({ where: { tripCode: item.code } });
+    const lastSynchronized = existing?.lastSynchronized
+      || (item.status === "OFFLINE" ? new Date(Date.now() - 12 * 60 * 1000) : new Date());
+
     await prisma.liveTrip.upsert({
       where: { tripCode: item.code },
       update: {
@@ -228,11 +310,11 @@ async function ensureAdditionalDemoTrips(depot) {
         nextDestination: item.next,
         eta: item.eta,
         isDriverOnline: item.status !== "OFFLINE",
-        lastSynchronized: item.status === "OFFLINE" ? new Date(Date.now() - 12 * 60 * 1000) : new Date(),
+        lastSynchronized,
         latestDriverUpdate: item.status === "OFFLINE"
           ? "Driver device is offline. Showing the last synchronized progress."
           : `Driver is continuing to ${item.next}.`,
-        latestDriverUpdateAt: new Date(),
+        latestDriverUpdateAt: existing?.latestDriverUpdateAt || new Date(),
       },
       create: {
         tripCode: item.code,
@@ -248,7 +330,7 @@ async function ensureAdditionalDemoTrips(depot) {
         nextDestination: item.next,
         eta: item.eta,
         isDriverOnline: item.status !== "OFFLINE",
-        lastSynchronized: item.status === "OFFLINE" ? new Date(Date.now() - 12 * 60 * 1000) : new Date(),
+        lastSynchronized,
         latestDriverUpdate: item.status === "OFFLINE"
           ? "Driver device is offline. Showing the last synchronized progress."
           : `Driver is continuing to ${item.next}.`,
@@ -291,13 +373,33 @@ export async function synchronizeDriverState() {
   emitMonitoringUpdate({ reason: "driver-state-sync" });
 }
 
+export async function synchronizeTripForDriver({ trip, driverUser, emit = true }) {
+  if (!trip) return null;
+  const resolvedDriver = driverUser?.id
+    ? await resolveDriverUser(driverUser.id)
+    : await resolveDriverUser();
+  const depot = await resolveDepot(resolvedDriver || driverUser);
+  const liveTrip = await upsertTripFromDriverState(
+    trip,
+    resolvedDriver || driverUser,
+    depot,
+    { preferExistingAssignment: false }
+  );
+
+  if (emit) {
+    emitMonitoringUpdate({ reason: "driver-trip-sync", tripCode: trip.tripId });
+  }
+
+  return liveTrip;
+}
+
 export function startMonitoringSyncLoop() {
   if (syncTimer) return;
   syncTimer = setInterval(() => {
     synchronizeDriverState().catch((error) => {
       console.error("Live monitoring synchronization failed:", error);
     });
-  }, 3000);
+  }, 5000);
   syncTimer.unref?.();
 }
 
@@ -328,6 +430,10 @@ export async function updateDriverPresence({
     },
   });
 
+  const validLat = Number.isFinite(Number(latitude)) ? Number(latitude) : null;
+  const validLng = Number.isFinite(Number(longitude)) ? Number(longitude) : null;
+  const now = new Date();
+
   for (const trip of trips) {
     await prisma.liveTrip.update({
       where: { id: trip.id },
@@ -336,18 +442,157 @@ export async function updateDriverPresence({
         status: online
           ? (trip.status === "OFFLINE" ? "ON_ROUTE" : trip.status)
           : "OFFLINE",
-        currentLat: Number.isFinite(Number(latitude)) ? Number(latitude) : trip.currentLat,
-        currentLng: Number.isFinite(Number(longitude)) ? Number(longitude) : trip.currentLng,
-        lastSynchronized: online ? new Date() : trip.lastSynchronized,
-        latestDriverUpdate: message || (online
-          ? "Driver connection restored. Live tracking resumed."
+        currentLat: validLat ?? trip.currentLat,
+        currentLng: validLng ?? trip.currentLng,
+        lastSynchronized: online ? now : trip.lastSynchronized,
+        latestDriverUpdate: message || trip.latestDriverUpdate || (online
+          ? "Driver is online. Live tracking is available."
           : "Driver appears to be offline. Showing last synchronized progress."),
-        latestDriverUpdateAt: new Date(),
+        latestDriverUpdateAt: message
+          ? now
+          : trip.latestDriverUpdateAt || now,
       },
     });
   }
 
   emitMonitoringUpdate({ reason: online ? "driver-online" : "driver-offline" });
+}
+
+export async function recordDriverRouteSnapshot({
+  trip,
+  stop,
+  driverUser,
+  routePoints = [],
+  currentLat = null,
+  currentLng = null,
+  distanceKm = null,
+  durationMinutes = null,
+  etaLabel = null,
+  recordedAt = null,
+}) {
+  const liveTrip = await synchronizeTripForDriver({ trip, driverUser, emit: false });
+  if (!liveTrip) return null;
+
+  const normalizedPoints = Array.isArray(routePoints)
+    ? routePoints
+        .slice(0, 1800)
+        .map((point) => [Number(point?.[0]), Number(point?.[1])])
+        .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
+    : [];
+
+  const lat = currentLat == null ? Number.NaN : Number(currentLat);
+  const lng = currentLng == null ? Number.NaN : Number(currentLng);
+  const now = recordedAt ? new Date(recordedAt) : new Date();
+  const safeNow = Number.isNaN(now.getTime()) ? new Date() : now;
+
+  await prisma.liveTripEvent.deleteMany({
+    where: {
+      liveTripId: liveTrip.id,
+      type: ROUTE_EVENT_TYPE,
+    },
+  });
+
+  await prisma.liveTripEvent.create({
+    data: {
+      liveTripId: liveTrip.id,
+      type: ROUTE_EVENT_TYPE,
+      message: `Live road route to ${stop.outletId} updated.`,
+      payload: {
+        tripId: trip.tripId,
+        stopId: stop.stopId,
+        outletCode: stop.outletId,
+        routePoints: normalizedPoints,
+        currentLat: Number.isFinite(lat) ? lat : null,
+        currentLng: Number.isFinite(lng) ? lng : null,
+        destinationLat: stop.destination?.latitude ?? null,
+        destinationLng: stop.destination?.longitude ?? null,
+        distanceKm: Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : null,
+        durationMinutes: Number.isFinite(Number(durationMinutes)) ? Number(durationMinutes) : null,
+        etaLabel: etaLabel || stop.plannedArrival || null,
+        recordedAt: safeNow.toISOString(),
+      },
+    },
+  });
+
+  await prisma.liveTrip.update({
+    where: { id: liveTrip.id },
+    data: {
+      driverUserId: driverUser?.id || liveTrip.driverUserId,
+      driverName: driverUser?.fullName || liveTrip.driverName,
+      isDriverOnline: true,
+      status: trip.driverExecutionStatus === "COMPLETED" ? "COMPLETED" : "ON_ROUTE",
+      currentLat: Number.isFinite(lat) ? lat : liveTrip.currentLat,
+      currentLng: Number.isFinite(lng) ? lng : liveTrip.currentLng,
+      nextDestination: stop.outletId,
+      eta: etaLabel || stop.plannedArrival || liveTrip.eta,
+      lastSynchronized: safeNow,
+      latestDriverUpdate: `Driver is en route to ${stop.outletId}. Live road route updated.`,
+      latestDriverUpdateAt: safeNow,
+      routeUpdatedAt: safeNow,
+    },
+  });
+
+  emitMonitoringUpdate({
+    reason: "driver-route-update",
+    tripCode: trip.tripId,
+    stopCode: stop.stopId,
+  });
+
+  return { ok: true, updatedAt: safeNow.toISOString() };
+}
+
+export async function recordDriverWorkflowEvent({
+  trip,
+  stop,
+  driverUser,
+  type,
+  message,
+  payload = {},
+}) {
+  const liveTrip = await synchronizeTripForDriver({ trip, driverUser, emit: false });
+  if (!liveTrip) return null;
+
+  const now = new Date();
+
+  await prisma.liveTripEvent.create({
+    data: {
+      liveTripId: liveTrip.id,
+      type,
+      message,
+      payload: {
+        tripId: trip.tripId,
+        stopId: stop?.stopId || null,
+        outletCode: stop?.outletId || null,
+        orderId: stop?.orderId || null,
+        outcome: stop?.outcome || null,
+        expectedUnits: stop?.expectedUnits ?? null,
+        deliveredQuantity: stop?.deliveredQuantity ?? null,
+        ...payload,
+      },
+    },
+  });
+
+  await prisma.liveTrip.update({
+    where: { id: liveTrip.id },
+    data: {
+      isDriverOnline: true,
+      lastSynchronized: now,
+      latestDriverUpdate: message,
+      latestDriverUpdateAt: now,
+      status: deriveTripStatus(trip, true),
+      progressCompleted: trip.stops.filter((item) => item.completed).length,
+      progressTotal: trip.stops.length,
+      nextDestination: trip.stops.find((item) => !item.completed)?.outletId || null,
+    },
+  });
+
+  emitMonitoringUpdate({
+    reason: type.toLowerCase(),
+    tripCode: trip.tripId,
+    stopCode: stop?.stopId || null,
+  });
+
+  return { ok: true, recordedAt: now.toISOString() };
 }
 
 export async function getLiveMonitoringSnapshot({
@@ -372,7 +617,7 @@ export async function getLiveMonitoringSnapshot({
       },
       events: {
         orderBy: { createdAt: "desc" },
-        take: 8,
+        take: 60,
       },
     },
     orderBy: [
@@ -408,7 +653,112 @@ export async function getLiveMonitoringSnapshot({
   return { summary, depots, trips };
 }
 
+function getLatestEvent(events, type) {
+  return (events || []).find((event) => event.type === type) || null;
+}
+
+function reportStatus(trip, stops, podCount) {
+  const partial = stops.filter((stop) => stop.outcome === "PARTIAL_DELIVERY").length;
+  const unable = stops.filter((stop) => stop.outcome === "UNABLE_TO_DELIVER").length;
+
+  if (unable > 0) return "Issue to Review";
+  if (partial > 0) return "Partially Delivered";
+  if (trip.status === "COMPLETED") return "All Delivered";
+  if (podCount > 0) return "Receipt Pending";
+  return trip.status === "OFFLINE" ? "Receipt Pending" : "In Progress";
+}
+
+export async function getDispatcherDeliveryReports({ depotName = null } = {}) {
+  const allTrips = await prisma.liveTrip.findMany({
+    include: {
+      depot: true,
+      stops: { orderBy: { sequence: "asc" } },
+      events: { orderBy: { createdAt: "desc" } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  const assignedTrips = allTrips.filter((trip) => trip.driverUserId != null);
+  const trips = depotName
+    ? assignedTrips.filter((trip) => trip.depot?.name === depotName)
+    : assignedTrips;
+
+  const records = trips
+    .map((trip) => {
+      const podEvents = trip.events.filter((event) => event.type === POD_EVENT_TYPE);
+      const completionEvent = getLatestEvent(trip.events, COMPLETION_EVENT_TYPE);
+      const latestPodEvent = podEvents[0] || null;
+
+      const stops = trip.stops.map((stop) => {
+        const podEvent = podEvents.find((event) => safeJsonObject(event.payload).stopId === stop.stopCode) || null;
+        const exceptionEvent = trip.events.find(
+          (event) => event.type === EXCEPTION_EVENT_TYPE && safeJsonObject(event.payload).stopId === stop.stopCode
+        ) || null;
+        const pod = podEvent ? { ...safeJsonObject(podEvent.payload), createdAt: podEvent.createdAt } : null;
+        const exception = exceptionEvent ? { ...safeJsonObject(exceptionEvent.payload), createdAt: exceptionEvent.createdAt } : null;
+
+        return {
+          stopCode: stop.stopCode,
+          sequence: stop.sequence,
+          outletCode: stop.outletCode,
+          outletName: stop.outletName,
+          plannedEta: stop.plannedEta,
+          actualArrival: stop.actualArrival,
+          status: stop.status,
+          outcome: stop.outcome,
+          pod,
+          exception,
+        };
+      });
+
+      const proofRecords = stops.filter((stop) => stop.pod).length;
+      const deliveredOrders = stops.filter((stop) => ["DELIVERED_FULL", "PARTIAL_DELIVERY"].includes(stop.outcome)).length;
+      const partialFailed = stops.filter((stop) => ["PARTIAL_DELIVERY", "UNABLE_TO_DELIVER"].includes(stop.outcome)).length;
+      const status = reportStatus(trip, stops, proofRecords);
+
+      return {
+        id: trip.id,
+        tripCode: trip.tripCode,
+        deliveryDate: trip.deliveryDate,
+        vehicleCode: trip.vehicleCode,
+        vehicleType: trip.vehicleType,
+        driverName: trip.driverName,
+        depot: trip.depot?.name || null,
+        tripStatus: trip.status,
+        status,
+        totalStops: trip.progressTotal || stops.length,
+        completedStops: trip.progressCompleted,
+        deliveredOrders,
+        partialFailed,
+        proofRecords,
+        confirmation: `${proofRecords}/${trip.progressTotal || stops.length} POD`,
+        completionTime: trip.status === "COMPLETED"
+          ? completionEvent?.createdAt || trip.updatedAt
+          : null,
+        lastActivityAt: trip.latestDriverUpdateAt || trip.updatedAt,
+        lastSynchronized: trip.lastSynchronized,
+        stops,
+        latestPod: latestPodEvent
+          ? { ...safeJsonObject(latestPodEvent.payload), createdAt: latestPodEvent.createdAt }
+          : null,
+      };
+    })
+    .filter((trip) => trip.proofRecords > 0 || trip.completedStops > 0 || trip.tripStatus === "COMPLETED");
+
+  const summary = {
+    completedTrips: records.filter((trip) => trip.tripStatus === "COMPLETED").length,
+    deliveredOrders: records.reduce((sum, trip) => sum + trip.deliveredOrders, 0),
+    partialFailedDeliveries: records.reduce((sum, trip) => sum + trip.partialFailed, 0),
+    proofRecords: records.reduce((sum, trip) => sum + trip.proofRecords, 0),
+  };
+
+  return { summary, trips: records };
+}
+
 export function serializeTripForDispatcher(trip) {
+  const routeEvent = (trip.events || []).find((event) => event.type === ROUTE_EVENT_TYPE) || null;
+  const routePayload = parseRoutePayload(routeEvent) || {};
+
   return {
     id: trip.id,
     tripCode: trip.tripCode,
@@ -429,6 +779,11 @@ export function serializeTripForDispatcher(trip) {
     currentLng: trip.currentLng,
     latestDriverUpdate: trip.latestDriverUpdate,
     latestDriverUpdateAt: trip.latestDriverUpdateAt,
+    routeUpdatedAt: trip.routeUpdatedAt,
+    routePoints: Array.isArray(routePayload.routePoints) ? routePayload.routePoints : [],
+    routeStopId: routePayload.stopId || null,
+    routeDistanceKm: routePayload.distanceKm ?? null,
+    routeDurationMinutes: routePayload.durationMinutes ?? null,
     stops: (trip.stops || []).map((stop) => ({
       id: stop.id,
       stopCode: stop.stopCode,
@@ -443,11 +798,23 @@ export function serializeTripForDispatcher(trip) {
       status: stop.status,
       outcome: stop.outcome,
     })),
-    events: (trip.events || []).map((event) => ({
-      id: event.id,
-      type: event.type,
-      message: event.message,
-      createdAt: event.createdAt,
-    })),
+    events: (trip.events || [])
+      .filter((event) => event.type !== ROUTE_EVENT_TYPE)
+      .slice(0, 12)
+      .map((event) => ({
+        id: event.id,
+        type: event.type,
+        message: event.message,
+        createdAt: event.createdAt,
+      })),
   };
 }
+
+export const LIVE_MONITORING_EVENT_TYPES = {
+  ROUTE_EVENT_TYPE,
+  POD_EVENT_TYPE,
+  EXCEPTION_EVENT_TYPE,
+  OUTCOME_EVENT_TYPE,
+  ARRIVAL_EVENT_TYPE,
+  COMPLETION_EVENT_TYPE,
+};
