@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -27,6 +28,10 @@ import {
 
 import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
+
+import {
+  getDispatcherPlanning,
+} from "../../../services/dispatcherPlanningService";
 
 
 function DeliveryPlanner() {
@@ -50,29 +55,81 @@ function DeliveryPlanner() {
   ] = useState("ALL");
 
 
-  /*
-   * No hardcoded operational data.
-   * These will later come from the backend.
-   */
+  const [planningData, setPlanningData] = useState({
+    orders: [],
+    fleet: [],
+    suggestedTrips: [],
+    summary: {},
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        setPlanningData(
+          data || {
+            orders: [],
+            fleet: [],
+            suggestedTrips: [],
+            summary: {},
+          }
+        );
+      })
+      .catch((error) => {
+        if (error?.name !== "CanceledError" && error?.name !== "AbortError") {
+          console.error("Unable to load delivery planner:", error);
+        }
+      });
+
+    return () => controller.abort();
+  }, [selectedDate, selectedDepot]);
 
   const summary = {
-    unassignedOrders: null,
-    plannedTrips: null,
-    validationWarnings: null,
+    unassignedOrders: planningData.summary?.unallocatedOrders ?? 0,
+    plannedTrips: planningData.summary?.plannedTrips ?? 0,
+    validationWarnings: planningData.summary?.warnings ?? 0,
   };
 
+  const unassignedOrders = (planningData.orders || []).filter(
+    (order) => order.status === "Confirmed"
+  );
 
-  const unassignedOrders = [];
+  const selectedVehicle = planningData.fleet?.[0] || null;
 
-  const selectedVehicle = null;
+  const selectedTrip = planningData.suggestedTrips?.[0] || null;
 
-  const selectedTrip = null;
+  const validationChecks = selectedTrip
+    ? [
+        {
+          title: "Vehicle capacity",
+          description: selectedTrip.capacityUsage || "Capacity checked",
+          status: selectedTrip.validation || "Ready",
+        },
+        {
+          title: "Driver assignment",
+          description: selectedTrip.driverName || "No Driver assigned",
+          status: selectedTrip.driverUserId ? "Ready" : "Warning",
+        },
+      ]
+    : [];
 
-  const validationChecks = [];
+  const routeSummary = selectedTrip
+    ? {
+        distance: "Calculated when Driver starts navigation",
+        duration: "Live ETA updates from Driver",
+        stops: selectedTrip.stops,
+      }
+    : null;
 
-  const routeSummary = null;
-
-  const capacityWarning = null;
+  const capacityWarning =
+    selectedTrip && selectedTrip.validation !== "Ready"
+      ? "Review vehicle compatibility before publishing."
+      : null;
 
 
   const showValue = (

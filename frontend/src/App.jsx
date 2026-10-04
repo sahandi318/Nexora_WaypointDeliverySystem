@@ -71,6 +71,7 @@ import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrder
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
 
 import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
+import DispatcherLiveMonitoring from "./pages/dispatcher/DispatcherLiveMonitoring";
 import ConfirmedOrders from "./pages/dispatcher/planning/ConfirmedOrders";
 import FleetAvailability from "./pages/dispatcher/planning/FleetAvailability";
 import DeliveryPlanner from "./pages/dispatcher/planning/DeliveryPlanner";
@@ -935,6 +936,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dispatcher/live"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <DispatcherLiveMonitoring />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
 
             path="/dispatcher/reports"

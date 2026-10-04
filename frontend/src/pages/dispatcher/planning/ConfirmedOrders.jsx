@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -23,6 +24,10 @@ import {
 
 import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
+
+import {
+  getDispatcherPlanning,
+} from "../../../services/dispatcherPlanningService";
 
 
 function ConfirmedOrders() {
@@ -82,23 +87,43 @@ function ConfirmedOrders() {
   ] = useState(false);
 
 
-  /*
-   * No mock order data.
-   * These arrays/values will be replaced
-   * with API data later.
-   */
+  const [planningData, setPlanningData] = useState({
+    orders: [],
+    summary: {},
+  });
 
-  const orders = [];
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-  const summary = {
-    confirmedOrders: null,
-    allocatedOrders: null,
-    unallocatedOrders: null,
-    deferredOrders: null,
-  };
+  useEffect(() => {
+    const controller = new AbortController();
 
+    getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        setPlanningData(data || { orders: [], summary: {} });
+        setSelectedOrderId((current) =>
+          current && data?.orders?.some((order) => order.id === current)
+            ? current
+            : data?.orders?.[0]?.id || null
+        );
+      })
+      .catch((error) => {
+        if (error?.name !== "CanceledError" && error?.name !== "AbortError") {
+          console.error("Unable to load confirmed orders:", error);
+        }
+      });
 
+    return () => controller.abort();
+  }, [selectedDate, selectedDepot]);
+
+  const orders = planningData.orders || [];
+  const summary = planningData.summary || {};
   const selectedOrder =
+    orders.find((order) => order.id === selectedOrderId) ||
+    orders[0] ||
     null;
 
 
@@ -760,6 +785,8 @@ function ConfirmedOrders() {
                             <button
                               type="button"
                               className="row-more-button"
+                              onClick={() => setSelectedOrderId(order.id)}
+                              aria-label={`View ${order.orderId}`}
                             >
                               •••
                             </button>
@@ -784,7 +811,7 @@ function ConfirmedOrders() {
             <div className="orders-table-footer">
 
               <span>
-                Showing 0 of{" "}
+                Showing {filteredOrders.length} of{" "}
                 {showValue(
                   summary.confirmedOrders
                 )}{" "}

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -25,6 +26,11 @@ import {
 
 import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
+
+import {
+  getDispatcherPlanning,
+  publishDispatcherTrip,
+} from "../../../services/dispatcherPlanningService";
 
 
 function ReviewPublish() {
@@ -48,32 +54,99 @@ function ReviewPublish() {
   ] = useState("ALL");
 
 
-  /*
-   * No hardcoded operational data.
-   * These will later come from backend APIs.
-   */
+  const [planningData, setPlanningData] = useState({
+    summary: {},
+    suggestedTrips: [],
+    publicationPreview: [],
+  });
 
-  const summary = {
-    confirmedOrders: null,
-    allocatedOrders: null,
-    deferredOrders: null,
-    plannedTrips: null,
-    blockingErrors: null,
-    unassigned: null,
-    warnings: null,
-    status: null,
-  };
+  const [selectedTripId, setSelectedTripId] = useState(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMessage, setPublishMessage] = useState("");
 
+  async function loadPlanning() {
+    const data = await getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+    });
 
-  const trips = [];
+    setPlanningData(
+      data || {
+        summary: {},
+        suggestedTrips: [],
+        publicationPreview: [],
+      }
+    );
 
-  const selectedTrip = null;
+    setSelectedTripId((current) =>
+      current && data?.suggestedTrips?.some((trip) => trip.tripId === current)
+        ? current
+        : data?.suggestedTrips?.[0]?.tripId || null
+    );
+  }
 
-  const validationItems = [];
+  useEffect(() => {
+    loadPlanning().catch((error) => {
+      console.error("Unable to load plan review:", error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedDepot]);
 
-  const nonBlockingWarnings = [];
+  const summary = planningData.summary || {};
+  const trips = planningData.suggestedTrips || [];
+  const selectedTrip =
+    trips.find((trip) => trip.tripId === selectedTripId) ||
+    trips[0] ||
+    null;
 
-  const publicationPreview = [];
+  const validationItems = selectedTrip
+    ? [
+        {
+          id: "capacity",
+          title: "Vehicle capacity",
+          description: selectedTrip.capacityUsage || "Capacity checked.",
+          status: selectedTrip.validation || "Ready",
+        },
+        {
+          id: "driver",
+          title: "Driver assignment",
+          description: selectedTrip.driverName || "No active Driver assigned.",
+          status: selectedTrip.driverUserId ? "Ready" : "Blocking",
+        },
+      ]
+    : [];
+
+  const nonBlockingWarnings =
+    selectedTrip?.validation === "Warning"
+      ? ["Review vehicle compatibility before publication."]
+      : [];
+
+  const publicationPreview = planningData.publicationPreview || [];
+
+  async function handlePublishPlan() {
+    if (!selectedTrip || publishing) return;
+
+    try {
+      setPublishing(true);
+      setPublishMessage("");
+
+      const result = await publishDispatcherTrip(selectedTrip);
+
+      setPublishMessage(
+        `${result.tripCode} published. The assigned Driver can now see the trip.`
+      );
+
+      await loadPlanning();
+    } catch (error) {
+      setPublishMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to publish the plan."
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
 
 
   const showValue = (
@@ -518,6 +591,7 @@ function ReviewPublish() {
                             <button
                               type="button"
                               className="view-details-button"
+                              onClick={() => setSelectedTripId(trip.tripId)}
                             >
                               View Details
                             </button>
@@ -1021,8 +1095,10 @@ function ReviewPublish() {
             <button
               type="button"
               className="publish-plan-button"
+              onClick={handlePublishPlan}
+              disabled={!selectedTrip || publishing}
             >
-              Confirm & Publish Plan
+              {publishing ? "Publishing..." : "Confirm & Publish Plan"}
 
               <ChevronRight
                 size={15}
@@ -1030,6 +1106,21 @@ function ReviewPublish() {
             </button>
 
           </div>
+
+          {publishMessage && (
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                color: publishMessage.includes("published")
+                  ? "#218158"
+                  : "#b42318",
+              }}
+            >
+              {publishMessage}
+            </div>
+          )}
 
         </div>
 
