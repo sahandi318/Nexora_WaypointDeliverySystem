@@ -6,7 +6,7 @@ export const ROLE_HOME_PATHS = {
     "/store-manager/dashboard",
 
   DISPATCHER:
-    "/dispatcher",
+    "/dispatcher/dashboard",
 
   LOADER:
     "/loader",
