@@ -13,6 +13,8 @@ import {
   getLoginPathForRole,
 } from "../utils/authPortal";
 
+import DispatcherLiveMonitoring from "./dispatcher/DispatcherLiveMonitoring";
+
 
 function RoleWorkspacePage() {
   const {
@@ -22,6 +24,11 @@ function RoleWorkspacePage() {
 
   const navigate =
     useNavigate();
+
+
+  if (user?.role === "DISPATCHER") {
+    return <DispatcherLiveMonitoring />;
+  }
 
 
   function handleLogout() {

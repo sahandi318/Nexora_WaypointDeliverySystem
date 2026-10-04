@@ -6,6 +6,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
+import loaderRoutes from "./routes/loaderRoutes.js";
 import translationRoutes from "./routes/translationRoutes.js";
 
 import {
@@ -18,6 +19,13 @@ import {
   resetState,
   state,
 } from "./mockData.js";
+
+import {
+  LIVE_MONITORING_EVENT_TYPES,
+  recordDriverRouteSnapshot,
+  recordDriverWorkflowEvent,
+  synchronizeTripForDriver,
+} from "./services/liveMonitoringService.js";
 
 const app = express();
 
@@ -196,6 +204,23 @@ app.use(
 );
 
 // ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
+// LOADER ROUTES
+// ============================================================
+
+app.use(
+  "/api/loader",
+  loaderRoutes
+);
+// ============================================================
 // DRIVER HELPERS
 // ============================================================
 
@@ -242,6 +267,23 @@ function stopView(
     totalStops:
       trip.stops.length,
   };
+}
+
+function sriLankaTimeLabel(value = new Date()) {
+  return new Date(value).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Colombo",
+  });
+}
+
+async function updateDispatcherMonitoring(task, context) {
+  try {
+    return await task();
+  } catch (error) {
+    console.error(`Dispatcher monitoring update failed (${context}):`, error);
+    return null;
+  }
 }
 
 /**
@@ -415,7 +457,15 @@ function updateNextStop(
 app.get(
   "/api/driver/trips",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
+    await Promise.all(
+      state.trips.map((trip) =>
+        updateDispatcherMonitoring(
+          () => synchronizeTripForDriver({ trip, driverUser: req.user, emit: false }),
+          `trip-list:${trip.tripId}`
+        )
+      )
+    );
     const activeTrip =
       state.trips.find(
         (trip) =>
@@ -529,7 +579,7 @@ app.get(
 app.get(
   "/api/driver/trips/:tripId",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const trip =
       findTrip(
         req.params.tripId
@@ -543,6 +593,11 @@ app.get(
             "Trip not found.",
         });
     }
+
+    await updateDispatcherMonitoring(
+      () => synchronizeTripForDriver({ trip, driverUser: req.user, emit: false }),
+      `trip-detail:${trip.tripId}`
+    );
 
     res.json({
       trip:
@@ -592,7 +647,7 @@ app.get(
 app.post(
   "/api/driver/stops/:stopId/arrive",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -613,20 +668,22 @@ app.post(
 
     found.stop.arrivalTime =
       found.stop.arrivalTime ||
-      new Date()
-        .toLocaleTimeString(
-          "en-US",
-          {
-            hour:
-              "numeric",
-
-            minute:
-              "2-digit",
-          }
-        );
+      sriLankaTimeLabel();
 
     found.stop.status =
       "arrived";
+
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.ARRIVAL_EVENT_TYPE,
+        message: `Driver arrived at ${found.stop.outletId}.`,
+        payload: { arrivalTime: found.stop.arrivalTime },
+      }),
+      `arrival:${found.stop.stopId}`
+    );
 
     res.json({
       stop:
@@ -641,7 +698,7 @@ app.post(
 app.post(
   "/api/driver/stops/:stopId/outcome",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -737,6 +794,18 @@ app.post(
       .deliveredQuantity =
       qty;
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.OUTCOME_EVENT_TYPE,
+        message: `${found.stop.outletId} outcome recorded: ${outcome.replaceAll("_", " ").toLowerCase()}.`,
+        payload: { outcome, deliveredQuantity: qty },
+      }),
+      `outcome:${found.stop.stopId}`
+    );
+
     res.json({
       stop:
         stopView(
@@ -750,7 +819,7 @@ app.post(
 app.post(
   "/api/driver/stops/:stopId/exception",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -807,6 +876,18 @@ app.post(
           .toISOString(),
     };
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.EXCEPTION_EVENT_TYPE,
+        message: `Delivery exception recorded at ${found.stop.outletId}: ${reason}.`,
+        payload: found.stop.exception,
+      }),
+      `exception:${found.stop.stopId}`
+    );
+
     res.json({
       exception:
         found.stop.exception,
@@ -817,7 +898,7 @@ app.post(
 app.post(
   "/api/driver/stops/:stopId/pod",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -879,6 +960,21 @@ app.post(
           .toISOString(),
     };
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.POD_EVENT_TYPE,
+        message: `Proof of delivery submitted for ${found.stop.outletId}.`,
+        payload: {
+          ...found.stop.pod,
+          deliveredQuantity: found.stop.deliveredQuantity ?? found.stop.expectedUnits,
+        },
+      }),
+      `pod:${found.stop.stopId}`
+    );
+
     res.json({
       pod:
         found.stop.pod,
@@ -889,7 +985,7 @@ app.post(
 app.post(
   "/api/driver/stops/:stopId/complete",
   driverAccess,
-  (req, res) => {
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -956,6 +1052,23 @@ app.post(
         found.trip
       );
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.COMPLETION_EVENT_TYPE,
+        message: next
+          ? `${found.stop.outletId} completed. Driver is continuing to ${next.outletId}.`
+          : `Trip ${found.trip.tripId} completed.`,
+        payload: {
+          completedAt: new Date().toISOString(),
+          nextStopId: next?.stopId || null,
+        },
+      }),
+      `complete:${found.stop.stopId}`
+    );
+
     res.json({
       completedStopId:
         found.stop.stopId,
@@ -966,6 +1079,58 @@ app.post(
 
       tripComplete:
         !next,
+    });
+  }
+);
+
+// ============================================================
+// DRIVER LIVE ROUTE SHARING
+// ============================================================
+
+app.post(
+  "/api/driver/trips/:tripId/stops/:stopId/route-progress",
+  driverAccess,
+  async (req, res) => {
+    const trip = findTrip(req.params.tripId);
+    const stop = trip?.stops.find((item) => item.stopId === req.params.stopId);
+
+    if (!trip || !stop) {
+      return res.status(404).json({
+        success: false,
+        message: "Trip or stop not found.",
+      });
+    }
+
+    const {
+      routePoints,
+      currentLat,
+      currentLng,
+      distanceKm,
+      durationMinutes,
+      etaLabel,
+      recordedAt,
+    } = req.body || {};
+
+    const result = await updateDispatcherMonitoring(
+      () => recordDriverRouteSnapshot({
+        trip,
+        stop,
+        driverUser: req.user,
+        routePoints,
+        currentLat,
+        currentLng,
+        distanceKm,
+        durationMinutes,
+        etaLabel,
+        recordedAt,
+      }),
+      `route:${trip.tripId}:${stop.stopId}`
+    );
+
+    return res.json({
+      success: true,
+      monitoringUpdated: Boolean(result),
+      updatedAt: result?.updatedAt || null,
     });
   }
 );

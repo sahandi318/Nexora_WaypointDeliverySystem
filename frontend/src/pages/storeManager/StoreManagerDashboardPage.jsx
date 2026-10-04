@@ -1,7 +1,6 @@
 import {
   Building2,
   Clock3,
-  LogOut,
   MapPin,
   ParkingCircle,
   RefreshCw,
@@ -14,47 +13,37 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import StoreManagerPageHeader from "../../components/storeManager/StoreManagerPageHeader";
+import StoreManagerShell from "../../components/storeManager/StoreManagerShell";
+
 import useAuth from "../../hooks/useAuth";
 import useStoreManagerContext from "../../hooks/useStoreManagerContext";
-
-import waypointLogo from "../../assets/waypoint-logo.png";
-
-
-// ============================================================
-// STORE MANAGER DASHBOARD
-// ============================================================
+import useTranslations from "../../hooks/useTranslations";
 
 function StoreManagerDashboardPage() {
   const navigate =
     useNavigate();
 
-
   const {
     logout,
   } = useAuth();
 
+  const {
+    t,
+  } = useTranslations();
 
   const {
     user,
     outlet,
     depot,
-
     isLoading,
     isRefreshing,
-
     errorMessage,
-
     refreshContext,
   } = useStoreManagerContext();
 
-
-  // ==========================================================
-  // LOGOUT
-  // ==========================================================
-
   function handleLogout() {
     logout();
-
 
     navigate(
       "/login",
@@ -64,21 +53,18 @@ function StoreManagerDashboardPage() {
     );
   }
 
-
-  // ==========================================================
-  // LOADING
-  // ==========================================================
-
   if (isLoading) {
     return (
-      <WorkspaceLoadingState />
+      <WorkspaceLoadingState
+        title={t(
+          "storeManager.loadingWorkspace"
+        )}
+        description={t(
+          "storeManager.loadingWorkspaceDescription"
+        )}
+      />
     );
   }
-
-
-  // ==========================================================
-  // ERROR
-  // ==========================================================
 
   if (
     errorMessage ||
@@ -89,7 +75,9 @@ function StoreManagerDashboardPage() {
       <WorkspaceErrorState
         message={
           errorMessage ||
-          "Your Store Manager workspace could not be loaded."
+          t(
+            "storeManager.workspaceUnavailable"
+          )
         }
         onRetry={
           refreshContext
@@ -100,847 +88,808 @@ function StoreManagerDashboardPage() {
         isRefreshing={
           isRefreshing
         }
+        t={t}
       />
     );
   }
-
-
-  // ==========================================================
-  // DELIVERY WINDOW
-  // ==========================================================
 
   const deliveryWindow =
     outlet.windowOpenTime &&
     outlet.windowCloseTime
       ? `${outlet.windowOpenTime} – ${outlet.windowCloseTime}`
-      : "Not specified";
-
+      : t(
+          "storeManager.notSpecified"
+        );
 
   const mallWindow =
     outlet.mallWindow ||
-    "Not applicable";
-
+    t(
+      "storeManager.notApplicable"
+    );
 
   const parkingConstraint =
     formatOperationalValue(
       outlet.parkingConstraint
+    ) ||
+    t(
+      "storeManager.noneSpecified"
     );
-
 
   const dockType =
     formatOperationalValue(
       outlet.dockType
+    ) ||
+    t(
+      "storeManager.notSpecified"
     );
 
-
-  // ==========================================================
-  // PAGE
-  // ==========================================================
-
   return (
-    <div
-      className="
-        min-h-screen
-        bg-[var(--color-bg)]
-        text-[var(--color-text)]
-      "
+    <StoreManagerShell
+      user={user}
+      outlet={outlet}
+      depot={depot}
     >
-      {/* ======================================================
-          HEADER
-          ====================================================== */}
-
-      <header
-        className="
-          sticky
-          top-0
-          z-30
-          border-b
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
-          shadow-[var(--shadow-xs)]
-        "
-      >
-        <div
-          className="
-            mx-auto
-            flex
-            max-w-7xl
-            items-center
-            justify-between
-            gap-4
-            px-5
-            py-3.5
-            sm:px-8
-          "
-        >
-          {/* BRAND */}
-
-          <div
+      <StoreManagerPageHeader
+        eyebrow={t(
+          "storeManager.workspaceEyebrow"
+        )}
+        title={t(
+          "storeManager.dashboardTitle"
+        )}
+        description={t(
+          "storeManager.dashboardDescription"
+        )}
+        actions={
+          <button
+            type="button"
+            onClick={
+              refreshContext
+            }
+            disabled={
+              isRefreshing
+            }
             className="
-              flex
+              nexora-focus
+              inline-flex
+              min-h-9
               items-center
-              gap-3
-            "
-          >
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                overflow-hidden
-              "
-            >
-              <img
-                src={
-                  waypointLogo
-                }
-                alt="Waypoint"
-                className="
-                  h-full
-                  w-full
-                  object-contain
-                "
-              />
-            </div>
-
-
-            <div>
-              <p
-                className="
-                  text-[0.95rem]
-                  font-extrabold
-                  tracking-[0.035em]
-                "
-              >
-                WAYPOINT
-              </p>
-
-
-              <p
-                className="
-                  mt-0.5
-                  text-xs
-                  font-medium
-                  text-[var(--color-text-muted)]
-                "
-              >
-                Store Manager
-              </p>
-            </div>
-          </div>
-
-
-          {/* HEADER ACTIONS */}
-
-          <div
-            className="
-              flex
-              items-center
+              justify-center
               gap-2
-              pr-12
-              sm:pr-12
+              rounded-xl
+              border
+              border-[var(--color-border)]
+              bg-[var(--color-surface)]
+              px-3
+              text-[11.5px]
+              font-semibold
+              text-[var(--color-text-secondary)]
+              shadow-sm
+              transition
+              duration-150
+              hover:-translate-y-[1px]
+              hover:border-[var(--color-border-strong)]
+              hover:bg-[var(--color-surface-soft)]
+              hover:text-[var(--color-text)]
+              disabled:cursor-not-allowed
+              disabled:opacity-60
             "
           >
-            <button
-              type="button"
-              onClick={
-                refreshContext
-              }
-              disabled={
+            <RefreshCw
+              size={14}
+              className={
                 isRefreshing
+                  ? "animate-spin"
+                  : ""
               }
+            />
+
+            <span
               className="
-                nexora-focus
                 hidden
-                h-10
-                items-center
-                gap-2
-                rounded-xl
-                border
-                border-[var(--color-border)]
-                bg-[var(--color-surface)]
-                px-3.5
-                text-sm
-                font-semibold
-                text-[var(--color-text-secondary)]
-                transition
-                duration-200
-                hover:border-[var(--color-border-strong)]
-                hover:bg-[var(--color-surface-soft)]
-                hover:text-[var(--color-text)]
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-                sm:inline-flex
+                sm:inline
               "
             >
-              <RefreshCw
-                size={16}
-                className={
-                  isRefreshing
-                    ? "animate-spin"
-                    : ""
-                }
-              />
+              {t(
+                "common.refresh"
+              )}
+            </span>
+          </button>
+        }
+      />
 
-              Refresh
-            </button>
-
-
-            <button
-              type="button"
-              onClick={
-                handleLogout
-              }
-              className="
-                nexora-focus
-                inline-flex
-                h-10
-                items-center
-                gap-2
-                rounded-xl
-                border
-                border-[var(--color-border)]
-                bg-[var(--color-surface)]
-                px-3.5
-                text-sm
-                font-semibold
-                transition
-                duration-200
-                hover:border-[var(--color-border-strong)]
-                hover:bg-[var(--color-surface-soft)]
-              "
-            >
-              <LogOut
-                size={16}
-              />
-
-
-              <span
-                className="
-                  hidden
-                  sm:inline
-                "
-              >
-                Sign out
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-
-      {/* ======================================================
-          PAGE CONTENT
-          ====================================================== */}
-
-      <main
+      <div
         className="
-          mx-auto
-          max-w-7xl
-          px-5
-          py-8
-          sm:px-8
-          sm:py-10
+          mt-5
+          grid
+          gap-5
+          xl:grid-cols-[minmax(0,1.48fr)_minmax(300px,0.52fr)]
         "
       >
-        {/* ====================================================
-            WELCOME / TRUSTED CONTEXT
-            ==================================================== */}
-
         <section
           className="
+            relative
             overflow-hidden
-            rounded-[28px]
+            rounded-[20px]
             border
             border-[var(--color-border)]
             bg-[var(--color-surface)]
-            shadow-[var(--shadow-md)]
+            shadow-[0_12px_30px_rgba(15,23,42,0.04)]
           "
         >
           <div
+            aria-hidden="true"
             className="
+              pointer-events-none
+              absolute
+              -right-20
+              top-10
+              h-60
+              w-60
+              rounded-full
+              bg-[#8DE0B6]/8
+              blur-3xl
+            "
+          />
+
+          <div
+            className="
+              absolute
+              left-0
+              top-0
+              h-full
+              w-[3px]
+              bg-[linear-gradient(180deg,#16A572_0%,#5DE0B2_60%,transparent_100%)]
+            "
+          />
+
+          <div
+            className="
+              relative
+              flex
+              flex-col
+              gap-4
               border-b
               border-[var(--color-border)]
-              px-6
-              py-7
-              md:px-8
-              md:py-8
+              px-5
+              py-5
+              sm:flex-row
+              sm:items-start
+              sm:justify-between
+              sm:px-6
             "
           >
-            <div
-              className="
-                flex
-                flex-col
-                justify-between
-                gap-6
-                md:flex-row
-                md:items-start
-              "
-            >
-              <div>
-                {/* TRUST BADGE */}
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-full
-                    border
-                    border-[var(--color-border)]
-                    bg-[var(--color-success-soft)]
-                    px-3
-                    py-1.5
-                    text-xs
-                    font-bold
-                    text-[var(--color-success)]
-                  "
-                >
-                  <ShieldCheck
-                    size={14}
-                  />
-
-                  Trusted server context
-                </div>
-
-
-                <h1
-                  className="
-                    mt-5
-                    text-3xl
-                    font-bold
-                    tracking-[-0.04em]
-                    md:text-4xl
-                  "
-                >
-                  Welcome,{" "}
-                  {user.fullName}
-                </h1>
-
-
-                <p
-                  className="
-                    mt-3
-                    max-w-2xl
-                    text-sm
-                    leading-6
-                    text-[var(--color-text-secondary)]
-                  "
-                >
-                  Your workspace is connected
-                  to your authenticated Waypoint
-                  account and assigned outlet.
-                  Outlet and depot information is
-                  verified by the server before it
-                  is displayed here.
-                </p>
-              </div>
-
-
-              {/* IDENTITY */}
-
-              <div
-                className="
-                  shrink-0
-                  rounded-2xl
-                  border
-                  border-[var(--color-border)]
-                  bg-[var(--color-surface-soft)]
-                  px-4
-                  py-3
-                "
-              >
-                <p
-                  className="
-                    text-[10px]
-                    font-bold
-                    uppercase
-                    tracking-[0.14em]
-                    text-[var(--color-text-muted)]
-                  "
-                >
-                  Signed in as
-                </p>
-
-
-                <p
-                  className="
-                    mt-1
-                    text-sm
-                    font-bold
-                    text-[var(--color-primary-strong)]
-                  "
-                >
-                  {user.userId}
-                  {" · "}
-                  {formatRole(
-                    user.role
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
-
-          {/* ==================================================
-              OUTLET SUMMARY
-              ================================================== */}
-
-          <div
-            className="
-              px-6
-              py-7
-              md:px-8
-              md:py-8
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                justify-between
-                gap-2
-                sm:flex-row
-                sm:items-end
-              "
-            >
-              <div>
-                <p
-                  className="
-                    text-xs
-                    font-bold
-                    uppercase
-                    tracking-[0.14em]
-                    text-[var(--color-primary)]
-                  "
-                >
-                  Assigned operation
-                </p>
-
-
-                <h2
-                  className="
-                    mt-2
-                    text-xl
-                    font-bold
-                    tracking-[-0.025em]
-                  "
-                >
-                  Outlet overview
-                </h2>
-              </div>
-
-
-              <p
-                className="
-                  text-xs
-                  font-medium
-                  text-[var(--color-text-muted)]
-                "
-              >
-                Verified from current database
-                assignment
-              </p>
-            </div>
-
-
-            <div
-              className="
-                mt-6
-                grid
-                gap-4
-                sm:grid-cols-2
-                lg:grid-cols-4
-              "
-            >
-              <InfoCard
-                icon={
-                  Store
-                }
-                label="Outlet"
-                value={
-                  outlet.outletCode
-                }
-              />
-
-
-              <InfoCard
-                icon={
-                  Building2
-                }
-                label="Brand"
-                value={
-                  outlet.brand ||
-                  "Not available"
-                }
-              />
-
-
-              <InfoCard
-                icon={
-                  MapPin
-                }
-                label="District"
-                value={
-                  outlet.district ||
-                  "Not available"
-                }
-              />
-
-
-              <InfoCard
-                icon={
-                  Clock3
-                }
-                label="Delivery Window"
-                value={
-                  deliveryWindow
-                }
-              />
-            </div>
-
-
-            {/* ================================================
-                OPERATIONAL DETAILS
-                ================================================ */}
-
-            <div
-              className="
-                mt-7
-                border-t
-                border-[var(--color-border)]
-                pt-7
-              "
-            >
-              <div
-                className="
-                  mb-4
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <Warehouse
-                  size={18}
-                  className="
-                    text-[var(--color-primary)]
-                  "
-                />
-
-                <h3
-                  className="
-                    text-base
-                    font-bold
-                  "
-                >
-                  Operational details
-                </h3>
-              </div>
-
-
-              <div
-                className="
-                  grid
-                  gap-4
-                  md:grid-cols-2
-                "
-              >
-                <DetailRow
-                  icon={
-                    Building2
-                  }
-                  label="Assigned depot"
-                  value={
-                    depot?.name ||
-                    "Not assigned"
-                  }
-                  secondaryValue={
-                    depot?.code ||
-                    null
-                  }
-                />
-
-
-                <DetailRow
-                  icon={
-                    ParkingCircle
-                  }
-                  label="Parking constraint"
-                  value={
-                    parkingConstraint ||
-                    "None specified"
-                  }
-                />
-
-
-                <DetailRow
-                  icon={
-                    Warehouse
-                  }
-                  label="Dock type"
-                  value={
-                    dockType ||
-                    "Not specified"
-                  }
-                />
-
-
-                <DetailRow
-                  icon={
-                    Clock3
-                  }
-                  label="Mall window"
-                  value={
-                    mallWindow
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ====================================================
-            DEVELOPMENT NOTE
-            ==================================================== */}
-
-        <section
-          className="
-            mt-5
-            rounded-2xl
-            border
-            border-[var(--color-border)]
-            bg-[var(--color-surface)]
-            px-5
-            py-4
-            shadow-[var(--shadow-xs)]
-          "
-        >
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
-          >
-            <div
-              className="
-                mt-0.5
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-[var(--color-primary-soft)]
-                text-[var(--color-primary)]
-              "
-            >
-              <ShieldCheck
-                size={17}
-              />
-            </div>
-
-
             <div>
               <p
                 className="
-                  text-sm
+                  text-[9px]
                   font-bold
+                  uppercase
+                  tracking-[0.15em]
+                  text-[var(--color-primary)]
                 "
               >
-                Store Manager access verified
+                {t(
+                  "storeManager.assignedOperation"
+                )}
               </p>
 
+              <h2
+                className="
+                  mt-1.5
+                  text-[17px]
+                  font-bold
+                  tracking-[-0.02em]
+                  text-[var(--color-text)]
+                "
+              >
+                {outlet.brand ||
+                  t(
+                    "storeManager.outlet"
+                  )}
+              </h2>
 
               <p
                 className="
                   mt-1
-                  text-xs
-                  leading-5
-                  text-[var(--color-text-muted)]
+                  text-[12px]
+                  text-[var(--color-text-secondary)]
                 "
               >
-                Future orders, deliveries,
-                issues and notifications will
-                use this same authenticated
-                Store Manager context.
+                {outlet.outletCode}
+
+                {outlet.district
+                  ? ` · ${outlet.district}`
+                  : ""}
               </p>
+            </div>
+
+            <div
+              className="
+                inline-flex
+                w-fit
+                items-center
+                gap-2
+                rounded-xl
+                border
+                border-[#C9F0DA]
+                bg-[#F5FCF8]
+                px-3
+                py-2
+                text-[10.5px]
+                font-semibold
+                text-[#356d59]
+              "
+            >
+              <ShieldCheck
+                size={14}
+                className="
+                  text-[#0FA968]
+                "
+              />
+
+              {t(
+                "storeManager.verifiedAssignment"
+              )}
+            </div>
+          </div>
+
+          <div
+            className="
+              relative
+              grid
+              gap-3
+              p-4
+              sm:grid-cols-2
+              sm:p-5
+            "
+          >
+            <ContextCard
+              icon={Store}
+              label={t(
+                "storeManager.outletCode"
+              )}
+              value={
+                outlet.outletCode
+              }
+            />
+
+            <ContextCard
+              icon={Building2}
+              label={t(
+                "storeManager.brand"
+              )}
+              value={
+                outlet.brand ||
+                t(
+                  "storeManager.notAvailable"
+                )
+              }
+            />
+
+            <ContextCard
+              icon={MapPin}
+              label={t(
+                "storeManager.district"
+              )}
+              value={
+                outlet.district ||
+                t(
+                  "storeManager.notAvailable"
+                )
+              }
+            />
+
+            <ContextCard
+              icon={Clock3}
+              label={t(
+                "common.deliveryWindow"
+              )}
+              value={
+                deliveryWindow
+              }
+            />
+          </div>
+        </section>
+
+        <section
+          className="
+            relative
+            overflow-hidden
+            rounded-[20px]
+            border
+            border-[#0E3D31]/20
+            bg-[var(--color-surface)]
+            p-5
+            shadow-[0_12px_30px_rgba(15,23,42,0.04)]
+            sm:p-6
+          "
+        >
+          <div
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              -right-12
+              -top-12
+              h-40
+              w-40
+              rounded-full
+              bg-[#C9F0DA]/35
+              blur-3xl
+            "
+          />
+
+          <div
+            className="
+              relative
+              flex
+              h-full
+              flex-col
+            "
+          >
+            <div
+              className="
+                flex
+                items-start
+                gap-3
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-[#C9F0DA]
+                  bg-[#EFFAF4]
+                  text-[#0F6B4F]
+                "
+              >
+                <Warehouse
+                  size={19}
+                />
+              </div>
+
+              <div
+                className="
+                  min-w-0
+                "
+              >
+                <p
+                  className="
+                    text-[8.5px]
+                    font-bold
+                    uppercase
+                    tracking-[0.16em]
+                    text-[var(--color-text-muted)]
+                  "
+                >
+                  {t(
+                    "common.assignedDepot"
+                  )}
+                </p>
+
+                <h2
+                  className="
+                    mt-1.5
+                    truncate
+                    text-[17px]
+                    font-bold
+                    tracking-[-0.02em]
+                    text-[var(--color-text)]
+                  "
+                >
+                  {depot?.name ||
+                    t(
+                      "storeManager.notAssigned"
+                    )}
+                </h2>
+
+                {depot?.code && (
+                  <p
+                    className="
+                      mt-0.5
+                      text-[9.5px]
+                      font-semibold
+                      uppercase
+                      tracking-[0.09em]
+                      text-[var(--color-primary)]
+                    "
+                  >
+                    {depot.code}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div
+              className="
+                mt-5
+                h-px
+                w-full
+                bg-[linear-gradient(90deg,#C9F0DA,var(--color-border),transparent)]
+              "
+            />
+
+            <p
+              className="
+                mt-4
+                text-[11.5px]
+                leading-5
+                text-[var(--color-text-secondary)]
+              "
+            >
+              {t(
+                "storeManager.depotDescription"
+              )}
+            </p>
+
+            <div
+              className="
+                mt-auto
+                pt-6
+              "
+            >
+              <div
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  border
+                  border-[var(--color-border)]
+                  bg-[var(--color-surface-soft)]
+                  px-2.5
+                  py-2
+                  text-[9.5px]
+                  font-semibold
+                  text-[var(--color-text-secondary)]
+                "
+              >
+                <span
+                  className="
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    bg-[#16A572]
+                    shadow-[0_0_0_4px_rgba(22,165,114,0.08)]
+                  "
+                />
+
+                {t(
+                  "storeManager.verifiedAssignment"
+                )}
+              </div>
             </div>
           </div>
         </section>
-      </main>
-    </div>
-  );
-}
-
-
-// ============================================================
-// INFORMATION CARD
-// ============================================================
-
-function InfoCard({
-  icon: Icon,
-  label,
-  value,
-}) {
-  return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-[var(--color-border)]
-        bg-[var(--color-surface-soft)]
-        p-5
-        transition
-        duration-200
-        hover:border-[var(--color-border-strong)]
-      "
-    >
-      <div
-        className="
-          flex
-          h-10
-          w-10
-          items-center
-          justify-center
-          rounded-xl
-          bg-[var(--color-primary-soft)]
-          text-[var(--color-primary)]
-        "
-      >
-        <Icon
-          size={19}
-        />
       </div>
 
-
-      <p
+      <section
         className="
+          relative
           mt-5
-          text-[10px]
-          font-bold
-          uppercase
-          tracking-[0.13em]
-          text-[var(--color-text-muted)]
+          overflow-hidden
+          rounded-[20px]
+          border
+          border-[var(--color-border)]
+          bg-[var(--color-surface)]
+          shadow-[0_10px_26px_rgba(15,23,42,0.035)]
         "
       >
-        {label}
-      </p>
-
-
-      <p
-        className="
-          mt-2
-          text-[0.95rem]
-          font-semibold
-          text-[var(--color-text)]
-        "
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-
-// ============================================================
-// DETAIL ROW
-// ============================================================
-
-function DetailRow({
-  icon: Icon,
-  label,
-  value,
-  secondaryValue,
-}) {
-  return (
-    <div
-      className="
-        flex
-        items-center
-        gap-4
-        rounded-2xl
-        border
-        border-[var(--color-border)]
-        bg-[var(--color-surface)]
-        p-4
-      "
-    >
-      <div
-        className="
-          flex
-          h-10
-          w-10
-          shrink-0
-          items-center
-          justify-center
-          rounded-xl
-          bg-[var(--color-primary-soft)]
-          text-[var(--color-primary)]
-        "
-      >
-        <Icon
-          size={18}
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            -right-14
+            -top-14
+            h-44
+            w-44
+            rounded-full
+            bg-[#8DE0B6]/8
+            blur-3xl
+          "
         />
-      </div>
 
-
-      <div
-        className="
-          min-w-0
-        "
-      >
-        <p
+        <div
           className="
-            text-xs
-            font-semibold
-            text-[var(--color-text-muted)]
+            relative
+            flex
+            flex-col
+            gap-2
+            border-b
+            border-[var(--color-border)]
+            px-5
+            py-4
+            sm:flex-row
+            sm:items-end
+            sm:justify-between
+            sm:px-6
           "
         >
-          {label}
-        </p>
+          <div>
+            <h2
+              className="
+                text-[14.5px]
+                font-bold
+                tracking-[-0.015em]
+                text-[var(--color-text)]
+              "
+            >
+              {t(
+                "storeManager.operationalDetails"
+              )}
+            </h2>
 
+            <p
+              className="
+                mt-1
+                text-[11.5px]
+                text-[var(--color-text-secondary)]
+              "
+            >
+              {t(
+                "storeManager.operationalDetailsDescription"
+              )}
+            </p>
+          </div>
 
-        <p
-          className="
-            mt-1
-            truncate
-            text-sm
-            font-semibold
-          "
-        >
-          {value}
-        </p>
-
-
-        {secondaryValue && (
-          <p
+          <span
             className="
-              mt-0.5
-              text-xs
-              font-medium
+              text-[8.5px]
+              font-bold
+              uppercase
+              tracking-[0.16em]
               text-[var(--color-text-muted)]
             "
           >
-            {secondaryValue}
+            OUTLET CONTEXT
+          </span>
+        </div>
+
+        <div
+          className="
+            relative
+            grid
+            gap-3
+            p-4
+            md:grid-cols-2
+            xl:grid-cols-4
+          "
+        >
+          <OperationalCard
+            icon={ParkingCircle}
+            label={t(
+              "storeManager.parkingConstraint"
+            )}
+            value={
+              parkingConstraint
+            }
+          />
+
+          <OperationalCard
+            icon={Warehouse}
+            label={t(
+              "storeManager.dockType"
+            )}
+            value={
+              dockType
+            }
+          />
+
+          <OperationalCard
+            icon={Clock3}
+            label={t(
+              "storeManager.mallWindow"
+            )}
+            value={
+              mallWindow
+            }
+          />
+
+          <OperationalCard
+            icon={ShieldCheck}
+            label={t(
+              "storeManager.accessStatus"
+            )}
+            value={t(
+              "storeManager.verified"
+            )}
+          />
+        </div>
+      </section>
+    </StoreManagerShell>
+  );
+}
+
+function ContextCard({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div
+      className="
+        group
+        rounded-xl
+        border
+        border-[var(--color-border)]
+        bg-[var(--color-surface-soft)]
+        p-4
+        transition
+        duration-150
+        hover:-translate-y-[1px]
+        hover:border-[#C9F0DA]
+        hover:shadow-[0_8px_18px_rgba(15,23,42,0.035)]
+      "
+    >
+      <div
+        className="
+          flex
+          items-start
+          gap-3
+        "
+      >
+        <div
+          className="
+            flex
+            h-9
+            w-9
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            border
+            border-[#C9F0DA]
+            bg-[#F2FBF6]
+            text-[#0F6B4F]
+          "
+        >
+          <Icon
+            size={16}
+          />
+        </div>
+
+        <div
+          className="
+            min-w-0
+          "
+        >
+          <p
+            className="
+              text-[10px]
+              font-semibold
+              text-[var(--color-text-muted)]
+            "
+          >
+            {label}
           </p>
-        )}
+
+          <p
+            className="
+              mt-1.5
+              break-words
+              text-[12.5px]
+              font-bold
+              leading-5
+              text-[var(--color-text)]
+            "
+          >
+            {value}
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
+function OperationalCard({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div
+      className="
+        group
+        relative
+        overflow-hidden
+        rounded-xl
+        border
+        border-[var(--color-border)]
+        bg-[var(--color-surface-soft)]
+        p-4
+        transition
+        duration-150
+        hover:-translate-y-[1px]
+        hover:border-[#C9F0DA]
+        hover:shadow-[0_8px_18px_rgba(15,23,42,0.03)]
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+        "
+      >
+        <div
+          className="
+            flex
+            h-8
+            w-8
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            bg-[#E9F8F0]
+            text-[#0F6B4F]
+          "
+        >
+          <Icon
+            size={15}
+          />
+        </div>
 
-// ============================================================
-// LOADING STATE
-// ============================================================
+        <div
+          className="
+            min-w-0
+          "
+        >
+          <p
+            className="
+              text-[10px]
+              font-semibold
+              text-[var(--color-text-muted)]
+            "
+          >
+            {label}
+          </p>
 
-function WorkspaceLoadingState() {
+          <p
+            className="
+              mt-1
+              break-words
+              text-[12px]
+              font-bold
+              leading-5
+              text-[var(--color-text)]
+            "
+          >
+            {value}
+          </p>
+        </div>
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="
+          absolute
+          bottom-0
+          left-4
+          right-4
+          h-px
+          origin-left
+          scale-x-0
+          bg-[linear-gradient(90deg,#0FA968,#8DE0B6)]
+          transition-transform
+          duration-200
+          group-hover:scale-x-100
+        "
+      />
+    </div>
+  );
+}
+
+function WorkspaceLoadingState({
+  title,
+  description,
+}) {
   return (
     <div
       className="
@@ -954,76 +903,55 @@ function WorkspaceLoadingState() {
     >
       <div
         className="
-          flex
-          flex-col
-          items-center
+          max-w-sm
           text-center
         "
       >
         <div
           className="
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
-            rounded-2xl
-            border
-            border-[var(--color-border)]
-            bg-[var(--color-surface)]
-            shadow-[var(--shadow-sm)]
+            mx-auto
+            h-9
+            w-9
+            animate-spin
+            rounded-full
+            border-[3px]
+            border-[var(--color-primary-soft)]
+            border-t-[var(--color-primary)]
           "
-        >
-          <RefreshCw
-            size={23}
-            className="
-              animate-spin
-              text-[var(--color-primary)]
-            "
-          />
-        </div>
-
+        />
 
         <h1
           className="
             mt-5
             text-lg
             font-bold
-            tracking-[-0.02em]
             text-[var(--color-text)]
           "
         >
-          Loading your Store Manager workspace
+          {title}
         </h1>
-
 
         <p
           className="
             mt-2
-            max-w-sm
             text-sm
             leading-6
-            text-[var(--color-text-muted)]
+            text-[var(--color-text-secondary)]
           "
         >
-          Verifying your account and current
-          outlet assignment.
+          {description}
         </p>
       </div>
     </div>
   );
 }
 
-
-// ============================================================
-// ERROR STATE
-// ============================================================
-
 function WorkspaceErrorState({
   message,
   onRetry,
   onLogout,
   isRefreshing,
+  t,
 }) {
   return (
     <div
@@ -1040,11 +968,11 @@ function WorkspaceErrorState({
         className="
           w-full
           max-w-md
-          rounded-[26px]
+          rounded-2xl
           border
           border-[var(--color-border)]
           bg-[var(--color-surface)]
-          p-7
+          p-6
           text-center
           shadow-[var(--shadow-lg)]
           sm:p-8
@@ -1054,32 +982,33 @@ function WorkspaceErrorState({
           className="
             mx-auto
             flex
-            h-12
-            w-12
+            h-11
+            w-11
             items-center
             justify-center
-            rounded-2xl
+            rounded-xl
             bg-[var(--color-danger-soft)]
             text-[var(--color-danger)]
           "
         >
           <ShieldCheck
-            size={22}
+            size={21}
           />
         </div>
-
 
         <h1
           className="
             mt-5
             text-xl
             font-bold
-            tracking-[-0.025em]
+            tracking-[-0.02em]
+            text-[var(--color-text)]
           "
         >
-          Unable to load workspace
+          {t(
+            "storeManager.unableToLoadWorkspace"
+          )}
         </h1>
-
 
         <p
           className="
@@ -1091,7 +1020,6 @@ function WorkspaceErrorState({
         >
           {message}
         </p>
-
 
         <div
           className="
@@ -1113,7 +1041,7 @@ function WorkspaceErrorState({
             className="
               nexora-focus
               inline-flex
-              h-11
+              min-h-11
               flex-1
               items-center
               justify-center
@@ -1126,7 +1054,6 @@ function WorkspaceErrorState({
               text-white
               transition
               hover:bg-[var(--color-primary-hover)]
-              disabled:cursor-not-allowed
               disabled:opacity-60
             "
           >
@@ -1139,9 +1066,10 @@ function WorkspaceErrorState({
               }
             />
 
-            Try again
+            {t(
+              "storeManager.tryAgain"
+            )}
           </button>
-
 
           <button
             type="button"
@@ -1151,11 +1079,10 @@ function WorkspaceErrorState({
             className="
               nexora-focus
               inline-flex
-              h-11
+              min-h-11
               flex-1
               items-center
               justify-center
-              gap-2
               rounded-xl
               border
               border-[var(--color-border)]
@@ -1163,15 +1090,14 @@ function WorkspaceErrorState({
               px-4
               text-sm
               font-bold
+              text-[var(--color-text)]
               transition
               hover:bg-[var(--color-surface-soft)]
             "
           >
-            <LogOut
-              size={16}
-            />
-
-            Sign out
+            {t(
+              "common.signOut"
+            )}
           </button>
         </div>
       </div>
@@ -1179,18 +1105,12 @@ function WorkspaceErrorState({
   );
 }
 
-
-// ============================================================
-// VALUE FORMATTERS
-// ============================================================
-
 function formatOperationalValue(
   value
 ) {
   if (!value) {
     return "";
   }
-
 
   return value
     .replaceAll(
@@ -1210,15 +1130,5 @@ function formatOperationalValue(
     )
     .join(" ");
 }
-
-
-function formatRole(
-  role
-) {
-  return formatOperationalValue(
-    role
-  );
-}
-
 
 export default StoreManagerDashboardPage;

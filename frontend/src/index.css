@@ -1060,3 +1060,627 @@ html[data-theme="dark"] .admin-mobile-nav {
       color-mix(in srgb, var(--color-bg) 92%, transparent)
     );
 }
+/* =========================================================
+   DISPATCHER DELIVERY PLANNING — DARK MODE
+   ========================================================= */
+
+html[data-theme="dark"] .confirmed-orders-page,
+html[data-theme="dark"] .fleet-page,
+html[data-theme="dark"] .delivery-planner-page,
+html[data-theme="dark"] .deferred-orders-page,
+html[data-theme="dark"] .review-publish-page {
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   PAGE HEADINGS
+   ========================================================= */
+
+html[data-theme="dark"] .planning-page-header h1,
+html[data-theme="dark"] .fleet-page-header h1,
+html[data-theme="dark"] .planner-page-header h1,
+html[data-theme="dark"] .deferred-page-header h1,
+html[data-theme="dark"] .review-page-header h1 {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .planning-page-header p,
+html[data-theme="dark"] .fleet-page-header p,
+html[data-theme="dark"] .planner-page-header p,
+html[data-theme="dark"] .deferred-page-header p,
+html[data-theme="dark"] .review-page-header p {
+  color: var(--color-text-secondary);
+}
+
+
+/* =========================================================
+   DATE / DEPOT CONTROLS
+   ========================================================= */
+
+html[data-theme="dark"] .planning-control,
+html[data-theme="dark"] .fleet-control,
+html[data-theme="dark"] .planner-control {
+  background: var(--color-input);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .planning-control input,
+html[data-theme="dark"] .planning-control select,
+html[data-theme="dark"] .fleet-control input,
+html[data-theme="dark"] .fleet-control select,
+html[data-theme="dark"] .planner-control input,
+html[data-theme="dark"] .planner-control select {
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   SUMMARY / HEADER CARDS
+   ========================================================= */
+
+html[data-theme="dark"] .planning-summary-card,
+html[data-theme="dark"] .fleet-summary-card,
+html[data-theme="dark"] .planner-summary-card,
+html[data-theme="dark"] .review-summary-card,
+html[data-theme="dark"] .header-info {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .planning-summary-card span,
+html[data-theme="dark"] .fleet-summary-card span,
+html[data-theme="dark"] .planner-summary-card span,
+html[data-theme="dark"] .review-summary-card span,
+html[data-theme="dark"] .header-info-text span {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .planning-summary-card strong,
+html[data-theme="dark"] .fleet-summary-card strong,
+html[data-theme="dark"] .planner-summary-card strong,
+html[data-theme="dark"] .review-summary-card strong,
+html[data-theme="dark"] .header-info-text strong {
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   PLANNING TABS
+   ========================================================= */
+
+html[data-theme="dark"] .planning-tabs {
+  background: var(--color-surface-soft);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .planning-tab {
+  color: var(--color-text-secondary);
+  border-right-color: var(--color-border);
+}
+
+html[data-theme="dark"] .planning-tab:hover {
+  background: var(--color-surface-strong);
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .planning-tab.active {
+  background: var(--color-primary-strong);
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   MAIN PANELS
+   ========================================================= */
+
+html[data-theme="dark"] .confirmed-orders-panel,
+html[data-theme="dark"] .order-details-panel,
+html[data-theme="dark"] .fleet-panel,
+html[data-theme="dark"] .vehicle-details-panel,
+html[data-theme="dark"] .planner-panel,
+html[data-theme="dark"] .deferred-panel,
+html[data-theme="dark"] .impact-panel,
+html[data-theme="dark"] .review-panel {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+
+/* =========================================================
+   PANEL TITLES
+   ========================================================= */
+
+html[data-theme="dark"] .confirmed-orders-heading h2,
+html[data-theme="dark"] .order-details-header h2,
+html[data-theme="dark"] .fleet-panel-heading h2,
+html[data-theme="dark"] .vehicle-details-header h2,
+html[data-theme="dark"] .planner-panel-header h2,
+html[data-theme="dark"] .deferred-panel-title h2,
+html[data-theme="dark"] .selected-order-heading h2,
+html[data-theme="dark"] .impact-panel > h2,
+html[data-theme="dark"] .panel-title-icon h2,
+html[data-theme="dark"] .selected-trip-heading h2,
+html[data-theme="dark"] .stop-sequence h3,
+html[data-theme="dark"] .trip-load-summary h3,
+html[data-theme="dark"] .validation-section h3,
+html[data-theme="dark"] .route-summary-section h3 {
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   SEARCH BOXES
+   ========================================================= */
+
+html[data-theme="dark"] .confirmed-search,
+html[data-theme="dark"] .fleet-search,
+html[data-theme="dark"] .deferred-search,
+html[data-theme="dark"] .planner-search input {
+  background: var(--color-input);
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .confirmed-search input,
+html[data-theme="dark"] .fleet-search input,
+html[data-theme="dark"] .deferred-search input,
+html[data-theme="dark"] .planner-search input {
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   FILTERS / SELECTS / FORM FIELDS
+   ========================================================= */
+
+html[data-theme="dark"] .filter-block label,
+html[data-theme="dark"] .form-field label {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .filter-block select,
+html[data-theme="dark"] .planner-filter-row select,
+html[data-theme="dark"] .builder-top-row select,
+html[data-theme="dark"] .form-field select,
+html[data-theme="dark"] .form-field input,
+html[data-theme="dark"] .form-field textarea,
+html[data-theme="dark"] .trip-search {
+  background: var(--color-input);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+html[data-theme="dark"] .orders-table th,
+html[data-theme="dark"] .fleet-table th,
+html[data-theme="dark"] .review-table th {
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .orders-table td,
+html[data-theme="dark"] .fleet-table td,
+html[data-theme="dark"] .review-table td {
+  color: var(--color-text-secondary);
+  border-top-color: var(--color-border);
+}
+
+html[data-theme="dark"] .orders-table td strong,
+html[data-theme="dark"] .fleet-table td strong,
+html[data-theme="dark"] .review-table td strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .orders-table-wrapper,
+html[data-theme="dark"] .fleet-table-wrapper {
+  border-color: var(--color-border);
+}
+
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+html[data-theme="dark"] .orders-empty-state,
+html[data-theme="dark"] .fleet-empty-state,
+html[data-theme="dark"] .review-empty-cell,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .order-details-empty,
+html[data-theme="dark"] .vehicle-details-empty,
+html[data-theme="dark"] .route-empty {
+  color: var(--color-text-muted) !important;
+}
+
+html[data-theme="dark"] .order-details-empty strong,
+html[data-theme="dark"] .vehicle-details-empty strong {
+  color: var(--color-text-secondary);
+}
+
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+html[data-theme="dark"] .pagination button,
+html[data-theme="dark"] .fleet-pagination button,
+html[data-theme="dark"] .review-pagination button {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+
+/* =========================================================
+   DELIVERY PLANNER
+   ========================================================= */
+
+html[data-theme="dark"] .trip-builder-area,
+html[data-theme="dark"] .selected-order-details,
+html[data-theme="dark"] .selected-trip-summary {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .builder-actions button {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .builder-actions button.primary-action {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+html[data-theme="dark"] .trip-tabs button {
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .trip-tabs button.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+html[data-theme="dark"] .trip-load-summary {
+  border-top-color: var(--color-border);
+}
+
+html[data-theme="dark"] .load-summary-item strong,
+html[data-theme="dark"] .detail-row strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .load-summary-item span,
+html[data-theme="dark"] .detail-row {
+  color: var(--color-text-secondary);
+}
+
+
+/* =========================================================
+   DEFERRED ORDERS
+   ========================================================= */
+
+html[data-theme="dark"] .decision-order-card,
+html[data-theme="dark"] .impact-card,
+html[data-theme="dark"] .impact-notice {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .decision-order-top strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .decision-order-top span,
+html[data-theme="dark"] .decision-order-meta,
+html[data-theme="dark"] .decision-order-bottom {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .record-deferral-section h3 {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .deferral-form-actions button {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .deferral-form-actions .record-deferral-button {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+
+/* =========================================================
+   REVIEW & PUBLISH
+   ========================================================= */
+
+html[data-theme="dark"] .orders-accounted-card {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+}
+
+html[data-theme="dark"] .edit-planner-button {
+  background: var(--color-surface);
+}
+
+html[data-theme="dark"] .detail-block {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .detail-block span {
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .detail-block strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .publication-item {
+  background: var(--color-surface-soft);
+}
+
+html[data-theme="dark"] .publication-item strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .publication-item span {
+  color: var(--color-text-secondary);
+}
+
+
+/* =========================================================
+   FOOTER ACTION BARS
+   ========================================================= */
+
+html[data-theme="dark"] .planner-footer-bar,
+html[data-theme="dark"] .deferred-footer,
+html[data-theme="dark"] .review-footer {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .planner-footer-actions button,
+html[data-theme="dark"] .deferred-footer-actions button,
+html[data-theme="dark"] .review-footer-actions button {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+
+/* Keep primary actions green */
+html[data-theme="dark"] .review-plan-button,
+html[data-theme="dark"] .publish-button,
+html[data-theme="dark"] .publish-plan-button,
+html[data-theme="dark"] .select-vehicle-button,
+html[data-theme="dark"] .eligible-vehicle-button {
+  background: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+
+/* =========================================================
+   DISPATCHER LOADING COORDINATION — DARK MODE
+   ========================================================= */
+
+/* Page text */
+html[data-theme="dark"] .loading-page,
+html[data-theme="dark"] .loading-exceptions-page {
+  color: var(--color-text);
+}
+
+/* Headers */
+html[data-theme="dark"] .loading-header h1,
+html[data-theme="dark"] .loading-exceptions-header h1 {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .loading-header p,
+html[data-theme="dark"] .loading-exceptions-header p {
+  color: var(--color-text-secondary);
+}
+
+/* Header filters */
+html[data-theme="dark"] .loading-filter,
+html[data-theme="dark"] .exception-header-filter {
+  background: var(--color-input);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-filter span,
+html[data-theme="dark"] .exception-header-filter span {
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .loading-filter input,
+html[data-theme="dark"] .loading-filter select,
+html[data-theme="dark"] .exception-header-filter input,
+html[data-theme="dark"] .exception-header-filter select {
+  color: var(--color-text);
+}
+
+/* Tabs */
+html[data-theme="dark"] .loading-tabs,
+html[data-theme="dark"] .loading-exception-tabs {
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-tab,
+html[data-theme="dark"] .loading-exception-tabs button {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .loading-tab.active,
+html[data-theme="dark"] .loading-exception-tabs button.active {
+  color: var(--color-primary);
+}
+
+/* Summary cards */
+html[data-theme="dark"] .loading-summary-card,
+html[data-theme="dark"] .exception-summary-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-summary-card span,
+html[data-theme="dark"] .exception-summary-card span,
+html[data-theme="dark"] .exception-summary-card small {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .loading-summary-card strong,
+html[data-theme="dark"] .exception-summary-card strong {
+  color: var(--color-text);
+}
+
+/* Main panels */
+html[data-theme="dark"] .loading-panel,
+html[data-theme="dark"] .loading-details,
+html[data-theme="dark"] .exception-table-panel,
+html[data-theme="dark"] .exception-details-panel,
+html[data-theme="dark"] .resolution-panel {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+/* Panel headings */
+html[data-theme="dark"] .panel-header {
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme="dark"] .panel-header h2,
+html[data-theme="dark"] .exception-table-panel h2,
+html[data-theme="dark"] .exception-detail-title h2,
+html[data-theme="dark"] .resolution-heading h2,
+html[data-theme="dark"] .exception-card h3,
+html[data-theme="dark"] .detail-section h3 {
+  color: var(--color-text);
+}
+
+/* Search / select controls */
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .exception-search {
+  border-color: var(--color-border);
+  background: var(--color-input);
+}
+
+html[data-theme="dark"] .search-box input,
+html[data-theme="dark"] .exception-search input,
+html[data-theme="dark"] .table-controls select,
+html[data-theme="dark"] .exception-table-tools select {
+  background: var(--color-input);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+/* Tables */
+html[data-theme="dark"] .loading-table th,
+html[data-theme="dark"] .exception-table th {
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .loading-table td,
+html[data-theme="dark"] .exception-table td {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .loading-table tbody tr:hover,
+html[data-theme="dark"] .selected-row,
+html[data-theme="dark"] .exception-table tbody tr:hover,
+html[data-theme="dark"] .exception-table tbody tr.selected {
+  background: var(--color-surface-soft);
+}
+
+/* Empty states */
+html[data-theme="dark"] .empty-table,
+html[data-theme="dark"] .exception-empty,
+html[data-theme="dark"] .no-selected-trip,
+html[data-theme="dark"] .exception-no-selection,
+html[data-theme="dark"] .empty-detail,
+html[data-theme="dark"] .resolution-empty {
+  color: var(--color-text-muted) !important;
+}
+
+/* Trip/detail information */
+html[data-theme="dark"] .trip-detail-heading h2,
+html[data-theme="dark"] .detail-item strong,
+html[data-theme="dark"] .stop-item strong,
+html[data-theme="dark"] .loader-update strong,
+html[data-theme="dark"] .exception-info-item strong,
+html[data-theme="dark"] .info-value strong {
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .detail-item span,
+html[data-theme="dark"] .stop-item span,
+html[data-theme="dark"] .loader-update span,
+html[data-theme="dark"] .loader-update p,
+html[data-theme="dark"] .exception-info-item span,
+html[data-theme="dark"] .info-value span,
+html[data-theme="dark"] .loader-note,
+html[data-theme="dark"] .resolution-heading p,
+html[data-theme="dark"] .history-item span,
+html[data-theme="dark"] .history-item p {
+  color: var(--color-text-secondary);
+}
+
+/* Detail cards */
+html[data-theme="dark"] .trip-info-grid,
+html[data-theme="dark"] .detail-section,
+html[data-theme="dark"] .exception-card {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+/* Loader update */
+html[data-theme="dark"] .loader-update {
+  background: var(--color-surface-soft);
+}
+
+/* Assigned / affected order tables */
+html[data-theme="dark"] .assigned-orders-table th,
+html[data-theme="dark"] .affected-table th {
+  color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .assigned-orders-table td,
+html[data-theme="dark"] .affected-table td {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+/* Special warning / discrepancy panels */
+html[data-theme="dark"] .discrepancy-card {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+html[data-theme="dark"] .departure-warning,
+html[data-theme="dark"] .loading-error,
+html[data-theme="dark"] .loading-exception-error {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+html[data-theme="dark"] .loading-exception-success {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+}
+
+/* Resolution buttons */
+html[data-theme="dark"] .replacement-button {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

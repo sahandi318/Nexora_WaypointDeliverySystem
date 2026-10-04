@@ -237,13 +237,9 @@ function LoginPage() {
   return (
     <main
       className="
-        min-h-dvh
+        min-h-[100svh]
         bg-[var(--color-bg)]
         text-[var(--color-text)]
-
-        lg:h-dvh
-        lg:min-h-0
-        lg:overflow-hidden
       "
       style={{
         fontFamily:
@@ -253,10 +249,8 @@ function LoginPage() {
       <div
         className="
           grid
-          min-h-dvh
+          min-h-[100svh]
 
-          lg:h-full
-          lg:min-h-0
           lg:grid-cols-[minmax(0,1.08fr)_minmax(450px,0.92fr)]
         "
       >
@@ -268,11 +262,9 @@ function LoginPage() {
           className="
             relative
             hidden
-            min-h-0
             overflow-hidden
 
             lg:block
-            lg:h-full
           "
         >
           <img
@@ -485,13 +477,9 @@ function LoginPage() {
         <section
           className="
             relative
-            min-h-dvh
+            min-h-[100svh]
             overflow-x-hidden
             bg-[var(--color-bg)]
-
-            lg:h-full
-            lg:min-h-0
-            lg:overflow-y-auto
           "
         >
           <div
@@ -530,18 +518,18 @@ function LoginPage() {
               z-10
               mx-auto
               flex
-              min-h-dvh
+              min-h-[100svh]
               w-full
               max-w-[610px]
               flex-col
               px-5
-              py-[clamp(1rem,2.8vh,1.75rem)]
+              py-4
 
               sm:px-8
+              sm:py-6
 
-              lg:h-full
-              lg:min-h-0
               lg:px-[clamp(2rem,3.2vw,3rem)]
+              lg:py-7
             "
           >
             <div
@@ -572,8 +560,13 @@ function LoginPage() {
                 flex-1
                 items-start
                 justify-center
-                pb-[clamp(1.5rem,4vh,3rem)]
-                pt-[clamp(2rem,7vh,5rem)]
+                pb-8
+                pt-8
+                sm:pb-10
+                sm:pt-10
+                lg:pb-12
+                lg:pt-12
+                xl:pt-16
               "
             >
               <div
@@ -717,7 +710,6 @@ function LoginPage() {
                           name="identifier"
                           type="text"
                           autoComplete="username"
-                          autoFocus
                           value={
                             identifier
                           }
