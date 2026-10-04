@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -27,6 +28,11 @@ import {
 
 import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
+
+import {
+  deferDispatcherOrder,
+  getDispatcherPlanning,
+} from "../../../services/dispatcherPlanningService";
 
 
 function DeferredOrders() {
@@ -98,21 +104,45 @@ function DeferredOrders() {
   ] = useState(false);
 
 
-  /*
-   * No hardcoded operational data.
-   * These will later come from the backend.
-   */
+  const [planningData, setPlanningData] = useState({
+    deferredOrders: [],
+    summary: {},
+  });
 
-  const orders = [];
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
+  async function loadPlanning() {
+    const data = await getDispatcherPlanning({
+      date: selectedDate,
+      depot: selectedDepot,
+    });
+
+    setPlanningData(data || { deferredOrders: [], summary: {} });
+    setSelectedOrderId((current) =>
+      current && data?.deferredOrders?.some((order) => order.id === current)
+        ? current
+        : data?.deferredOrders?.[0]?.id || null
+    );
+  }
+
+  useEffect(() => {
+    loadPlanning().catch((error) => {
+      console.error("Unable to load deferred orders:", error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedDepot]);
+
+  const orders = planningData.deferredOrders || [];
   const selectedOrder =
+    orders.find((order) => order.id === selectedOrderId) ||
+    orders[0] ||
     null;
 
   const summary = {
-    unassigned: null,
-    deferred: null,
-    warnings: null,
-    status: null,
+    unassigned: planningData.summary?.unallocatedOrders ?? 0,
+    deferred: planningData.summary?.deferredOrders ?? 0,
+    warnings: planningData.summary?.warnings ?? 0,
+    status: planningData.summary?.status || "Planning",
   };
 
 
