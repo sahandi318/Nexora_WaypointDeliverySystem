@@ -479,6 +479,7 @@ function stopFromOrder(order, index, tripCode) {
 
   return {
     stopId: `${tripCode}-STOP${String(index + 1).padStart(2, "0")}`,
+    storeOrderId: order.id,
     position: index + 1,
     outletId: outlet?.outletCode || `OUT-${order.outletId}`,
     orderId: order.orderCode,

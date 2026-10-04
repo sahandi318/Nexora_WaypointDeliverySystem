@@ -1,12 +1,21 @@
-import {
-  loaderState,
-} from "../loaderMockData.js";
+import prisma from "../config/database.js";
 
 // ============================================================
 // HELPERS
 // ============================================================
+function depotKeyToName(
+  depotKey
+) {
+  if (
+    depotKey === "kandy"
+  ) {
+    return "Kandy Hub";
+  }
 
-function getAllTrips() {
+  return "Peliyagoda DC";
+}
+
+/*function getAllTrips() {
   return Object.values(
     loaderState.depots
   ).flatMap(
@@ -62,13 +71,227 @@ function findItem(
   }
 
   return null;
+}*/
+
+function mapTripSummary(
+  trip
+) {
+  const items =
+    trip.loaderState
+      ?.loadingItems ||
+    [];
+
+  const loadedCount =
+    items.filter(
+      (item) =>
+        item.status ===
+        "LOADED"
+    ).length;
+
+  const progress =
+    items.length
+      ? Math.round(
+          (
+            loadedCount /
+            items.length
+          ) *
+            100
+        )
+      : 0;
+
+  const loaderStatus =
+    trip.loaderState
+      ?.status ||
+    "NOT_STARTED";
+
+  let status =
+    "WAITING";
+
+  if (
+    loaderStatus ===
+    "LOADING"
+  ) {
+    status =
+      "LOADING";
+  }
+
+  if (
+    loaderStatus ===
+    "ISSUE"
+  ) {
+    status =
+      "ISSUE";
+  }
+
+  if (
+    loaderStatus ===
+    "VEHICLE_READY"
+  ) {
+    status =
+      "READY";
+  }
+
+  return {
+    id:
+      trip.tripCode,
+
+    vehicle:
+      trip.vehicleCode,
+
+    type:
+      trip.vehicleType ||
+      "Vehicle",
+
+    trip:
+      trip.id,
+
+    route:
+      trip.nextDestination ||
+      "Published route",
+
+    stops:
+      trip.progressTotal ||
+      trip.stops.length,
+
+    status,
+
+    priority:
+      false,
+
+    depart:
+      trip.eta ||
+      "—",
+
+    progress,
+
+    loaded:
+      `${loadedCount} items`,
+
+    capacity:
+      `${items.length} items`,
+
+    loaderStatus,
+
+    dispatcherPlanStatus:
+      "PUBLISHED",
+  };
 }
 
+async function ensureLoaderTripState(
+  liveTrip,
+  loaderUserId
+) {
+  return prisma.loaderTripState.upsert({
+    where: {
+      liveTripId:
+        liveTrip.id,
+    },
+
+    update: {
+      loaderUserId:
+        loaderUserId ||
+        undefined,
+    },
+
+    create: {
+      liveTripId:
+        liveTrip.id,
+
+      loaderUserId:
+        loaderUserId ||
+        null,
+
+      status:
+        "NOT_STARTED",
+    },
+
+    include: {
+      loadingItems:
+        true,
+
+      verification:
+        true,
+
+      handover:
+        true,
+    },
+  });
+}
+
+async function ensureLoadingItems(
+  loaderTrip,
+  liveTrip
+) {
+  for (
+    const stop
+    of liveTrip.stops
+  ) {
+    if (
+      !stop.storeOrder
+    ) {
+      continue;
+    }
+
+    for (
+      const orderItem
+      of stop.storeOrder
+        .items
+    ) {
+      const product =
+        orderItem.product;
+
+      const itemCode =
+        `${stop.stopCode}-${orderItem.id}`;
+
+      await prisma.loadingItem.upsert({
+        where: {
+          loaderTripId_itemCode: {
+            loaderTripId:
+              loaderTrip.id,
+
+            itemCode,
+          },
+        },
+
+        update: {},
+
+        create: {
+          loaderTripId:
+            loaderTrip.id,
+
+          storeOrderItemId:
+            orderItem.id,
+
+          stopCode:
+            stop.stopCode,
+
+          itemCode,
+
+          itemName:
+            product.name,
+
+          expectedQty:
+            orderItem.quantity,
+
+          loadedQty:
+            0,
+
+          unit:
+            product.unitLabel ||
+            "units",
+
+          status:
+            "PENDING",
+        },
+      });
+    }
+  }
+}
 // ============================================================
 // PROGRESS
 // ============================================================
 
-function calculateProgress(
+/*function calculateProgress(
   trip
 ) {
   const items =
@@ -99,40 +322,81 @@ function calculateProgress(
     ) *
       100
   );
-}
+}*/
 
 // ============================================================
 // DASHBOARD
 // ============================================================
 
-export function getDashboardData(
+export async function getDashboardData(
   depotKey
 ) {
-  const depot =
-    loaderState.depots[
+  const depotName =
+    depotKeyToName(
       depotKey
-    ];
+    );
+
+  const depot =
+    await prisma.depot.findFirst({
+      where: {
+        name:
+          depotName,
+
+        isActive:
+          true,
+      },
+    });
 
   if (!depot) {
     return null;
   }
 
   const trips =
-    depot.trips;
+    await prisma.liveTrip.findMany({
+      where: {
+        depotId:
+          depot.id,
+
+        status: {
+          not:
+            "COMPLETED",
+        },
+      },
+
+      include: {
+        loaderState: {
+          include: {
+            loadingItems:
+              true,
+          },
+        },
+
+        stops:
+          true,
+
+        driver:
+          true,
+      },
+
+      orderBy: {
+        createdAt:
+          "asc",
+      },
+    });
 
   return {
     depot: {
       key:
-        depot.key,
+        depotKey,
 
       label:
-        depot.label,
+        depot.name,
 
       dock:
-        depot.dock,
+        "Dock 05",
 
       notice:
-        depot.notice,
+        "Follow the published loading sequence.",
     },
 
     summary: {
@@ -142,22 +406,25 @@ export function getDashboardData(
       inProgress:
         trips.filter(
           (trip) =>
-            trip.status ===
+            trip.loaderState
+              ?.status ===
             "LOADING"
         ).length,
 
       needsAction:
         trips.filter(
           (trip) =>
-            trip.status ===
+            trip.loaderState
+              ?.status ===
             "ISSUE"
         ).length,
 
       ready:
         trips.filter(
           (trip) =>
-            trip.status ===
-            "READY"
+            trip.loaderState
+              ?.status ===
+            "VEHICLE_READY"
         ).length,
     },
 
@@ -168,7 +435,7 @@ export function getDashboardData(
   };
 }
 
-function mapTripSummary(
+/*function mapTripSummary(
   trip
 ) {
   return {
@@ -217,68 +484,327 @@ function mapTripSummary(
       trip.dispatcherPlanStatus,
   };
 }
-
+*/
 // ============================================================
 // TRIPS
 // ============================================================
 
-export function getTrips(
+export async function getTrips(
   depotKey
 ) {
   if (depotKey) {
-    const depot =
-      loaderState.depots[
+    const dashboard =
+      await getDashboardData(
         depotKey
-      ];
+      );
 
-    if (!depot) {
-      return null;
-    }
-
-    return depot.trips.map(
-      mapTripSummary
-    );
+    return dashboard
+      ? dashboard.trips
+      : null;
   }
 
-  return getAllTrips().map(
+  const trips =
+    await prisma.liveTrip.findMany({
+      where: {
+        status: {
+          not: "COMPLETED",
+        },
+      },
+
+      include: {
+        loaderState: {
+          include: {
+            loadingItems: true,
+          },
+        },
+
+        stops: true,
+        driver: true,
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+  return trips.map(
     mapTripSummary
   );
 }
 
-export function getTrip(
-  tripId
+export async function getTrip(
+  tripCode,
+  loaderUserId
 ) {
-  const trip =
-    findTripById(
-      tripId
-    );
+  const liveTrip =
+    await prisma.liveTrip.findUnique({
+      where: {
+        tripCode,
+      },
 
-  if (!trip) {
+      include: {
+        depot:
+          true,
+
+        driver:
+          true,
+
+        stops: {
+          include: {
+            storeOrder: {
+              include: {
+                outlet: true,
+                items: {
+                  include: {
+                    product:
+                      true,
+                  },
+                },
+              },
+            },
+          },
+
+          orderBy: {
+            sequence:
+              "asc",
+          },
+        },
+
+        loaderState: {
+          include: {
+            loadingItems:
+              true,
+
+            verification:
+              true,
+
+            handover:
+              true,
+          },
+        },
+      },
+    });
+
+  if (!liveTrip) {
     return null;
   }
 
-  const depot =
-    findDepotForTrip(
-      tripId
+  let loaderState =
+    liveTrip.loaderState;
+
+  if (!loaderState) {
+    loaderState =
+      await ensureLoaderTripState(
+        liveTrip,
+        loaderUserId
+      );
+  }
+
+  await ensureLoadingItems(
+    loaderState,
+    liveTrip
+  );
+
+  loaderState =
+    await prisma.loaderTripState.findUnique({
+      where: {
+        liveTripId:
+          liveTrip.id,
+      },
+
+      include: {
+        loadingItems:
+          true,
+
+        verification:
+          true,
+
+        handover:
+          true,
+      },
+    });
+
+  const loadingByCode =
+    new Map(
+      loaderState.loadingItems.map(
+        (item) => [
+          item.itemCode,
+          item,
+        ]
+      )
+    );
+
+  const stops =
+    liveTrip.stops.map(
+      (stop) => ({
+        id:
+          stop.stopCode,
+
+        number:
+          stop.sequence,
+
+        name:
+          stop.outletName ||
+          stop.outletCode,
+
+        window:
+          stop.storeOrder
+            ?.outlet
+            ?.windowOpenTime &&
+          stop.storeOrder
+            ?.outlet
+            ?.windowCloseTime
+            ? `${stop.storeOrder.outlet.windowOpenTime}–${stop.storeOrder.outlet.windowCloseTime}`
+            : "No delivery window",
+
+        zone:
+          stop.storeOrder
+            ?.outlet
+            ?.dockType ||
+          "Standard unloading",
+
+        items:
+          (
+            stop.storeOrder
+              ?.items ||
+            []
+          ).map(
+            (orderItem) => {
+              const itemCode =
+                `${stop.stopCode}-${orderItem.id}`;
+
+              const loading =
+                loadingByCode.get(
+                  itemCode
+                );
+
+              return {
+                id:
+                  itemCode,
+
+                name:
+                  orderItem
+                    .product
+                    .name,
+
+                meta:
+                  `${
+                    orderItem
+                      .product
+                      .handlingType
+                  } · ${
+                    orderItem
+                      .product
+                      .sku
+                  }`,
+
+                quantity:
+                  orderItem
+                    .quantity,
+
+                unit:
+                  orderItem
+                    .product
+                    .unitLabel,
+
+                loaded:
+                  loading
+                    ?.status ===
+                  "LOADED",
+              };
+            }
+          ),
+      })
     );
 
   return {
-    ...trip,
+    id:
+      liveTrip.tripCode,
 
-    progress:
-      calculateProgress(
-        trip
+    vehicle:
+      liveTrip.vehicleCode,
+
+    vehicleType:
+      liveTrip.vehicleType ||
+      "Vehicle",
+
+    tripNumber:
+      liveTrip.id,
+
+    route:
+      liveTrip.nextDestination ||
+      "Published route",
+
+    depart:
+      liveTrip.eta ||
+      "—",
+
+    loadedWeight:
+      0,
+
+    capacityWeight:
+      0,
+
+    driver:
+      liveTrip.driver
+        ? {
+            id:
+              liveTrip.driver
+                .userId,
+
+            name:
+              liveTrip.driver
+                .fullName,
+          }
+        : null,
+
+    verification: {
+      count:
+        loaderState
+          .verification
+          ?.countVerified ||
+        false,
+
+      secure:
+        loaderState
+          .verification
+          ?.secureVerified ||
+        false,
+
+      temperature:
+        loaderState
+          .verification
+          ?.temperatureVerified ||
+        false,
+
+      docs:
+        loaderState
+          .verification
+          ?.docsVerified ||
+        false,
+    },
+
+    handoverCompleted:
+      Boolean(
+        loaderState.handover
       ),
+
+    stops,
 
     depot: {
       key:
-        depot.key,
+        liveTrip.depot
+          ?.code?.toLowerCase() ||
+        "",
 
       label:
-        depot.label,
+        liveTrip.depot
+          ?.name ||
+        "",
 
       dock:
-        depot.dock,
+        loaderState.dock ||
+        "",
     },
   };
 }
@@ -287,70 +813,129 @@ export function getTrip(
 // LOADING ITEMS
 // ============================================================
 
-export function updateLoadingItem(
-  tripId,
-  itemId,
-  loaded
+export async function updateLoadingItem(
+  tripCode,
+  itemCode,
+  loaded,
+  loaderUserId
 ) {
-  const trip =
-    findTripById(
-      tripId
-    );
+  const liveTrip =
+    await prisma.liveTrip.findUnique({
+      where: {
+        tripCode,
+      },
 
-  if (!trip) {
+      include: {
+        loaderState:
+          true,
+      },
+    });
+
+  if (!liveTrip) {
     return {
       error:
         "TRIP_NOT_FOUND",
     };
   }
 
-  const found =
-    findItem(
-      trip,
-      itemId
+  const loaderTrip =
+    liveTrip.loaderState ||
+    await ensureLoaderTripState(
+      liveTrip,
+      loaderUserId
     );
 
-  if (!found) {
+  const item =
+    await prisma.loadingItem.findFirst({
+      where: {
+        loaderTripId:
+          loaderTrip.id,
+
+        itemCode,
+      },
+    });
+
+  if (!item) {
     return {
       error:
         "ITEM_NOT_FOUND",
     };
   }
 
-  found.item.loaded =
-    Boolean(
-      loaded
-    );
+  const updated =
+    await prisma.loadingItem.update({
+      where: {
+        id:
+          item.id,
+      },
 
-  const progress =
-    calculateProgress(
-      trip
-    );
+      data: {
+        loadedQty:
+          loaded
+            ? item.expectedQty
+            : 0,
 
-  if (
-    progress === 100 &&
-    trip.status !==
-      "ISSUE"
-  ) {
-    trip.status =
-      "READY";
-  } else if (
-    progress > 0 &&
-    trip.status !==
-      "ISSUE"
-  ) {
-    trip.status =
-      "LOADING";
-  }
+        status:
+          loaded
+            ? "LOADED"
+            : "PENDING",
+
+        loadedAt:
+          loaded
+            ? new Date()
+            : null,
+      },
+    });
+
+  const allItems =
+    await prisma.loadingItem.findMany({
+      where: {
+        loaderTripId:
+          loaderTrip.id,
+      },
+    });
+
+  const loadedCount =
+    allItems.filter(
+      (item) =>
+        item.status ===
+        "LOADED"
+    ).length;
+
+  await prisma.loaderTripState.update({
+    where: {
+      id:
+        loaderTrip.id,
+    },
+
+    data: {
+      loaderUserId,
+
+      status:
+        loadedCount ===
+          allItems.length &&
+        allItems.length > 0
+          ? "LOADED"
+          : "LOADING",
+
+      startedAt:
+        loaderTrip.startedAt ||
+        new Date(),
+    },
+  });
 
   return {
     item:
-      found.item,
+      updated,
 
-    progress,
-
-    tripStatus:
-      trip.status,
+    progress:
+      allItems.length
+        ? Math.round(
+            loadedCount /
+              allItems.length *
+              100
+          )
+        : 0,
   };
 }
 
@@ -358,7 +943,7 @@ export function updateLoadingItem(
 // ISSUES
 // ============================================================
 
-export function createIssue({
+export async function createIssue({
   tripId,
   itemId,
   issueType,
@@ -368,174 +953,311 @@ export function createIssue({
   note,
   loaderUserId,
 }) {
-  const trip =
-    findTripById(
-      tripId
-    );
+  const liveTrip =
+    await prisma.liveTrip.findUnique({
+      where: {
+        tripCode:
+          tripId,
+      },
 
-  if (!trip) {
+      include: {
+        loaderState:
+          true,
+      },
+    });
+
+  if (!liveTrip) {
     return {
       error:
         "TRIP_NOT_FOUND",
     };
   }
 
-  const found =
-    findItem(
-      trip,
-      itemId
+  const loaderTrip =
+    liveTrip.loaderState ||
+    await ensureLoaderTripState(
+      liveTrip,
+      loaderUserId
     );
 
-  if (!found) {
+  const loadingItem =
+    await prisma.loadingItem.findFirst({
+      where: {
+        loaderTripId:
+          loaderTrip.id,
+
+        itemCode:
+          itemId,
+      },
+    });
+
+  if (!loadingItem) {
     return {
       error:
         "ITEM_NOT_FOUND",
     };
   }
 
-  const issue = {
+  const issue =
+    await prisma.loadingIssue.create({
+      data: {
+        loadingItemId:
+          loadingItem.id,
+
+        loaderUserId,
+
+        issueType,
+
+        expectedQty,
+
+        usableQty,
+
+        reason,
+
+        note:
+          note || null,
+
+        status:
+          "PENDING",
+      },
+    });
+
+  await prisma.loadingItem.update({
+    where: {
+      id:
+        loadingItem.id,
+    },
+
+    data: {
+      status:
+        "ISSUE",
+
+      loadedQty:
+        usableQty,
+    },
+  });
+
+  await prisma.loaderTripState.update({
+    where: {
+      id:
+        loaderTrip.id,
+    },
+
+    data: {
+      status:
+        "ISSUE",
+    },
+  });
+
+  return {
     id:
-      `LISS-${String(
-        loaderState.nextIssueId++
-      ).padStart(
-        4,
-        "0"
-      )}`,
+      issue.id,
 
     tripId,
 
     itemId,
 
-    stopId:
-      found.stop.id,
+    itemName:
+      loadingItem.itemName,
 
     stopName:
-      found.stop.name,
-
-    itemName:
-      found.item.name,
-
-    unit:
-      found.item.unit,
-
-    issueType,
+      loadingItem.stopCode,
 
     expectedQty,
 
     usableQty,
 
-    reason,
-
     note:
-      note || null,
-
-    loaderUserId,
+      issue.note,
 
     status:
-      "PENDING",
-
-    resolution:
-      null,
+      issue.status,
 
     createdAt:
-      new Date()
-        .toISOString(),
-
-    resolvedAt:
-      null,
+      issue.createdAt,
   };
-
-  loaderState.issues.push(
-    issue
-  );
-
-  found.item.loaded =
-    false;
-
-  trip.status =
-    "ISSUE";
-
-  trip.loaderStatus =
-    "BLOCKED";
-
-  return issue;
 }
 
-export function getIssues({
+export async function getIssues({
   tripId,
   status,
 } = {}) {
-  let issues =
-    loaderState.issues;
+  const rows =
+    await prisma.loadingIssue.findMany({
+      where: {
+        ...(status
+          ? {
+              status,
+            }
+          : {}),
 
-  if (tripId) {
-    issues =
-      issues.filter(
-        (issue) =>
-          issue.tripId ===
-          tripId
-      );
-  }
+        ...(tripId
+          ? {
+              loadingItem: {
+                loaderTrip: {
+                  liveTrip: {
+                    tripCode:
+                      tripId,
+                  },
+                },
+              },
+            }
+          : {}),
+      },
 
-  if (status) {
-    issues =
-      issues.filter(
-        (issue) =>
-          issue.status ===
-          status
-      );
-  }
+      include: {
+        loadingItem: {
+          include: {
+            loaderTrip: {
+              include: {
+                liveTrip:
+                  true,
+              },
+            },
+          },
+        },
+      },
 
-  return issues;
+      orderBy: {
+        createdAt:
+          "desc",
+      },
+    });
+
+  return rows.map(
+    (issue) => ({
+      id:
+        issue.id,
+
+      tripId:
+        issue.loadingItem
+          .loaderTrip
+          .liveTrip
+          .tripCode,
+
+      itemId:
+        issue.loadingItem
+          .itemCode,
+
+      itemName:
+        issue.loadingItem
+          .itemName,
+
+      stopName:
+        issue.loadingItem
+          .stopCode,
+
+      expectedQty:
+        issue.expectedQty,
+
+      usableQty:
+        issue.usableQty,
+
+      note:
+        issue.note,
+
+      reason:
+        issue.reason,
+
+      status:
+        issue.status,
+
+      resolution:
+        issue.resolution,
+
+      createdAt:
+        issue.createdAt,
+
+      resolvedAt:
+        issue.resolvedAt,
+    })
+  );
 }
 
-export function resolveIssue(
+export async function resolveIssue(
   issueId,
-  resolution
+  resolution,
+  resolverUserId = null
 ) {
-  const issue =
-    loaderState.issues.find(
-      (item) =>
-        item.id ===
-        issueId
-    );
+  const id =
+    Number(issueId);
 
-  if (!issue) {
+  if (
+    !Number.isInteger(id)
+  ) {
     return null;
   }
 
-  issue.status =
-    "RESOLVED";
+  const existing =
+    await prisma.loadingIssue.findUnique({
+      where: {
+        id,
+      },
 
-  issue.resolution =
-    resolution;
+      include: {
+        loadingItem: {
+          include: {
+            loaderTrip: true,
+          },
+        },
+      },
+    });
 
-  issue.resolvedAt =
-    new Date()
-      .toISOString();
+  if (!existing) {
+    return null;
+  }
 
-  const trip =
-    findTripById(
-      issue.tripId
-    );
+  const issue =
+    await prisma.loadingIssue.update({
+      where: {
+        id,
+      },
 
-  if (trip) {
-    const stillOpen =
-      loaderState.issues.some(
-        (item) =>
-          item.tripId ===
-            trip.id &&
-          item.status ===
-            "PENDING"
-      );
+      data: {
+        status:
+          "RESOLVED",
 
-    if (!stillOpen) {
-      trip.loaderStatus =
-        "LOADING";
+        resolution,
 
-      trip.status =
-        "LOADING";
-    }
+        resolvedByUserId:
+          resolverUserId ||
+          null,
+
+        resolvedAt:
+          new Date(),
+      },
+    });
+
+  const loaderTripId =
+    existing.loadingItem
+      .loaderTripId;
+
+  const remainingIssues =
+    await prisma.loadingIssue.count({
+      where: {
+        status:
+          "PENDING",
+
+        loadingItem: {
+          loaderTripId,
+        },
+      },
+    });
+
+  if (
+    remainingIssues === 0
+  ) {
+    await prisma.loaderTripState.update({
+      where: {
+        id:
+          loaderTripId,
+      },
+
+      data: {
+        status:
+          "LOADING",
+      },
+    });
   }
 
   return issue;
@@ -545,32 +1267,103 @@ export function resolveIssue(
 // VERIFICATION
 // ============================================================
 
-export function updateVerification(
-  tripId,
-  verification
+export async function updateVerification(
+  tripCode,
+  verification,
+  loaderUserId
 ) {
-  const trip =
-    findTripById(
-      tripId
-    );
+  const liveTrip =
+    await prisma.liveTrip.findUnique({
+      where: {
+        tripCode,
+      },
 
-  if (!trip) {
+      include: {
+        loaderState:
+          true,
+      },
+    });
+
+  if (!liveTrip) {
     return null;
   }
 
-  trip.verification = {
-    ...trip.verification,
-    ...verification,
-  };
+  const loaderTrip =
+    liveTrip.loaderState ||
+    await ensureLoaderTripState(
+      liveTrip,
+      loaderUserId
+    );
 
   const complete =
-    Object.values(
-      trip.verification
-    ).every(Boolean);
+    verification.count &&
+    verification.secure &&
+    verification.temperature &&
+    verification.docs;
+
+  const result =
+    await prisma.loadingVerification.upsert({
+      where: {
+        loaderTripId:
+          loaderTrip.id,
+      },
+
+      update: {
+        countVerified:
+          verification.count,
+
+        secureVerified:
+          verification.secure,
+
+        temperatureVerified:
+          verification.temperature,
+
+        docsVerified:
+          verification.docs,
+
+        completedAt:
+          complete
+            ? new Date()
+            : null,
+      },
+
+      create: {
+        loaderTripId:
+          loaderTrip.id,
+
+        countVerified:
+          verification.count,
+
+        secureVerified:
+          verification.secure,
+
+        temperatureVerified:
+          verification.temperature,
+
+        docsVerified:
+          verification.docs,
+
+        completedAt:
+          complete
+            ? new Date()
+            : null,
+      },
+    });
 
   return {
-    verification:
-      trip.verification,
+    verification: {
+      count:
+        result.countVerified,
+
+      secure:
+        result.secureVerified,
+
+      temperature:
+        result.temperatureVerified,
+
+      docs:
+        result.docsVerified,
+    },
 
     complete,
   };
@@ -580,34 +1373,68 @@ export function updateVerification(
 // HANDOVER
 // ============================================================
 
-export function completeHandover(
-  tripId,
+export async function completeHandover(
+  tripCode,
   {
     loaderUserId,
     sealNumber,
     handoverCode,
   }
 ) {
-  const trip =
-    findTripById(
-      tripId
-    );
+  const liveTrip =
+    await prisma.liveTrip.findUnique({
+      where: {
+        tripCode,
+      },
 
-  if (!trip) {
+      include: {
+        loaderState: {
+          include: {
+            verification:
+              true,
+
+            loadingItems: {
+              include: {
+                issues:
+                  true,
+              },
+            },
+          },
+        },
+
+        driver:
+          true,
+      },
+    });
+
+  if (!liveTrip) {
     return {
       error:
         "TRIP_NOT_FOUND",
     };
   }
 
-  const verificationComplete =
-    Object.values(
-      trip.verification
-    ).every(Boolean);
+  const loaderTrip =
+    liveTrip.loaderState;
 
-  if (
-    !verificationComplete
-  ) {
+  if (!loaderTrip) {
+    return {
+      error:
+        "VERIFICATION_INCOMPLETE",
+    };
+  }
+
+  const verification =
+    loaderTrip.verification;
+
+  const complete =
+    verification &&
+    verification.countVerified &&
+    verification.secureVerified &&
+    verification.temperatureVerified &&
+    verification.docsVerified;
+
+  if (!complete) {
     return {
       error:
         "VERIFICATION_INCOMPLETE",
@@ -615,12 +1442,13 @@ export function completeHandover(
   }
 
   const openIssue =
-    loaderState.issues.some(
-      (issue) =>
-        issue.tripId ===
-          tripId &&
-        issue.status ===
-          "PENDING"
+    loaderTrip.loadingItems.some(
+      (item) =>
+        item.issues.some(
+          (issue) =>
+            issue.status ===
+            "PENDING"
+        )
     );
 
   if (openIssue) {
@@ -630,33 +1458,102 @@ export function completeHandover(
     };
   }
 
-  trip.handoverCompleted =
-    true;
+  const result =
+    await prisma.$transaction(
+      async (tx) => {
+        const handover =
+          await tx.driverHandover.upsert({
+            where: {
+              loaderTripId:
+                loaderTrip.id,
+            },
 
-  trip.loaderStatus =
-    "VEHICLE_READY";
+            update: {
+              loaderUserId,
 
-  trip.status =
-    "READY";
+              driverUserId:
+                liveTrip.driverUserId,
 
-  trip.handover = {
+              sealNumber,
+
+              handoverCode,
+
+              handedOverAt:
+                new Date(),
+            },
+
+            create: {
+              loaderTripId:
+                loaderTrip.id,
+
+              loaderUserId,
+
+              driverUserId:
+                liveTrip.driverUserId,
+
+              sealNumber,
+
+              handoverCode,
+            },
+          });
+
+        await tx.loaderTripState.update({
+          where: {
+            id:
+              loaderTrip.id,
+          },
+
+          data: {
+            status:
+              "VEHICLE_READY",
+
+            completedAt:
+              new Date(),
+          },
+        });
+
+        await tx.liveTrip.update({
+          where: {
+            id:
+              liveTrip.id,
+          },
+
+          data: {
+            status:
+              "VEHICLE_READY",
+          },
+        });
+
+        return handover;
+      }
+    );
+
+  return {
+    id:
+      result.id,
+
     loaderUserId,
 
     driver:
-      trip.driver,
+      liveTrip.driver
+        ? {
+            id:
+              liveTrip.driver
+                .userId,
+
+            name:
+              liveTrip.driver
+                .fullName,
+          }
+        : null,
 
     sealNumber:
-      sealNumber ||
-      null,
+      result.sealNumber,
 
     handoverCode:
-      handoverCode ||
-      null,
+      result.handoverCode,
 
     handedOverAt:
-      new Date()
-        .toISOString(),
+      result.handedOverAt,
   };
-
-  return trip.handover;
 }

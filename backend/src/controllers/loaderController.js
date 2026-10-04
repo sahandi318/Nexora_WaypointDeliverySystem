@@ -14,7 +14,7 @@ import {
 // DASHBOARD
 // ============================================================
 
-export function getLoaderDashboard(
+export async function getLoaderDashboard(
   req,
   res
 ) {
@@ -23,7 +23,7 @@ export function getLoaderDashboard(
     "peliyagoda";
 
   const data =
-    getDashboardData(
+    await getDashboardData(
       depotKey
     );
 
@@ -48,39 +48,55 @@ export function getLoaderDashboard(
 // TRIPS
 // ============================================================
 
-export function getLoaderTrips(
+export async function getLoaderTrips(
   req,
   res
 ) {
-  const trips =
-    getTrips(
-      req.query.depot
+  try {
+    const trips =
+      await getTrips(
+        req.query.depot
+      );
+
+    if (!trips) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message:
+            "Depot not found.",
+        });
+    }
+
+    return res.json({
+      success: true,
+      data: trips,
+    });
+  } catch (error) {
+    console.error(
+      "Loader trips error:",
+      error
     );
 
-  if (!trips) {
     return res
-      .status(404)
+      .status(500)
       .json({
         success: false,
-
         message:
-          "Depot not found.",
+          "Failed to load trips.",
       });
   }
-
-  return res.json({
-    success: true,
-    data: trips,
-  });
 }
 
-export function getLoaderTrip(
+export async function getLoaderTrip(
   req,
   res
 ) {
+  try {
   const trip =
-    getTrip(
-      req.params.tripId
+    await getTrip(
+      req.params.tripId,
+      req.user.id
     );
 
   if (!trip) {
@@ -98,13 +114,28 @@ export function getLoaderTrip(
     success: true,
     data: trip,
   });
+} catch (error) {
+    console.error(
+      "Loader trip error:",
+      error
+    );
+
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message:
+          "Failed to load trip.",
+      });
+  }
 }
+
 
 // ============================================================
 // LOADING ITEMS
 // ============================================================
 
-export function patchLoadingItem(
+export async function patchLoadingItem(
   req,
   res
 ) {
@@ -127,10 +158,11 @@ export function patchLoadingItem(
   }
 
   const result =
-    updateLoadingItem(
+    await updateLoadingItem(
       req.params.tripId,
       req.params.itemId,
-      loaded
+      loaded,
+      req.user.id
     );
 
   if (
@@ -171,7 +203,7 @@ export function patchLoadingItem(
 // ISSUES
 // ============================================================
 
-export function postLoadingIssue(
+export async function postLoadingIssue(
   req,
   res
 ) {
@@ -235,27 +267,27 @@ export function postLoadingIssue(
   }
 
   const result =
-    createIssue({
-      tripId:
-        req.params.tripId,
+  await createIssue({
+    tripId:
+      req.params.tripId,
 
-      itemId,
+    itemId,
 
-      issueType,
+    issueType,
 
-      expectedQty:
-        expected,
+    expectedQty:
+      expected,
 
-      usableQty:
-        usable,
+    usableQty:
+      usable,
 
-      reason,
+    reason,
 
-      note,
+    note,
 
-      loaderUserId:
-        req.user.id,
-    });
+    loaderUserId:
+      req.user.id,
+  });
 
   if (result.error) {
     return res
@@ -279,12 +311,12 @@ export function postLoadingIssue(
     });
 }
 
-export function getLoaderIssues(
+export async function getLoaderIssues(
   req,
   res
 ) {
   const data =
-    getIssues({
+    await getIssues({
       tripId:
         req.query.tripId,
 
@@ -292,13 +324,13 @@ export function getLoaderIssues(
         req.query.status,
     });
 
-  return res.json({
+  res.json({
     success: true,
     data,
   });
 }
 
-export function patchIssueResolution(
+export async function patchIssueResolution(
   req,
   res
 ) {
@@ -318,10 +350,11 @@ export function patchIssueResolution(
   }
 
   const issue =
-    resolveIssue(
-      req.params.issueId,
-      resolution
-    );
+  await resolveIssue(
+    req.params.issueId,
+    resolution,
+    req.user?.id
+  );
 
   if (!issue) {
     return res
@@ -344,7 +377,7 @@ export function patchIssueResolution(
 // VERIFICATION
 // ============================================================
 
-export function patchVerification(
+export async function patchVerification(
   req,
   res
 ) {
@@ -373,10 +406,11 @@ export function patchVerification(
   }
 
   const result =
-    updateVerification(
-      req.params.tripId,
-      updates
-    );
+  await updateVerification(
+    req.params.tripId,
+    updates,
+    req.user.id
+  );
 
   if (!result) {
     return res
@@ -399,12 +433,12 @@ export function patchVerification(
 // HANDOVER
 // ============================================================
 
-export function postHandover(
+export async function postHandover(
   req,
   res
 ) {
   const result =
-    completeHandover(
+    await completeHandover(
       req.params.tripId,
       {
         loaderUserId:
