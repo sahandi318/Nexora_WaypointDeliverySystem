@@ -146,6 +146,11 @@ const publicNavbarPaths = new Set([
   "/reset-password",
 ]);
 
+const authOnlyPaths = new Set([
+  "/login",
+  "/admin/login",
+]);
+
 
 
 function App() {
@@ -198,10 +203,15 @@ function App() {
     location.hash,
   ]);
 
+  const isAuthOnlyRoute =
+    authOnlyPaths.has(
+      location.pathname
+    );
+
   const showPublicNavbar =
     publicNavbarPaths.has(
       location.pathname
-    );
+    ) && !isAuthOnlyRoute;
 
   const isDispatcherRoute =
   location.pathname.startsWith("/dispatcher");
@@ -244,7 +254,7 @@ function App() {
 
     >
 
-     {!isDispatcherRoute && <ThemeToggle />}
+     {!isDispatcherRoute && !isAuthOnlyRoute && <ThemeToggle />}
 
 
 
@@ -1362,13 +1372,15 @@ function App() {
 
       </div>
 
-      <div
-        className={
-          footerContainerClassName
-        }
-      >
-        <Footer />
-      </div>
+      {!isAuthOnlyRoute ? (
+        <div
+          className={
+            footerContainerClassName
+          }
+        >
+          <Footer />
+        </div>
+      ) : null}
     </div>
 
   );

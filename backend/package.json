@@ -27,7 +27,10 @@
     "test:store-manager-deliveries": "tsx src/scripts/testStoreManagerDeliveries.js",
     "test:store-manager-live-socket": "tsx src/scripts/testStoreManagerLiveSocketSecurity.js",
     "test:store-manager-live-event-bridge": "tsx src/scripts/testStoreManagerLiveEventBridge.js",
-    "test:dispatcher-planning": "tsx src/scripts/testDispatcherPlanningIntegration.js"
+    "test:dispatcher-planning": "tsx src/scripts/testDispatcherPlanningIntegration.js",
+    "test:dispatcher-publish-bridge": "tsx src/scripts/testDispatcherPublishDeliveryBridge.js",
+    "test:store-manager-receive": "tsx src/scripts/testStoreManagerReceiveDelivery.js",
+    "test:store-manager-issues": "tsx src/scripts/testStoreManagerIssues.js"
   },
   "keywords": [
     "nexora",

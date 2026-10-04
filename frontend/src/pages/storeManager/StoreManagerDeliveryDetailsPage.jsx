@@ -19,6 +19,10 @@ import {
 } from "lucide-react";
 
 import {
+  useState,
+} from "react";
+
+import {
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -43,6 +47,9 @@ import useStoreManagerContext from "../../hooks/useStoreManagerContext";
 import useStoreManagerDelivery from "../../hooks/useStoreManagerDelivery";
 import useStoreManagerDeliveryTracking from "../../hooks/useStoreManagerDeliveryTracking";
 import useTranslations from "../../hooks/useTranslations";
+import {
+  confirmStoreManagerDeliveryReceived,
+} from "../../services/storeManagerService";
 
 function StoreManagerDeliveryDetailsPage() {
   const navigate = useNavigate();
@@ -52,6 +59,10 @@ function StoreManagerDeliveryDetailsPage() {
     t,
     language,
   } = useTranslations();
+
+  const [isConfirmingReceipt, setIsConfirmingReceipt] = useState(false);
+  const [receiptActionError, setReceiptActionError] = useState("");
+  const [receiptActionMessage, setReceiptActionMessage] = useState("");
 
   const {
     user,
@@ -85,6 +96,44 @@ function StoreManagerDeliveryDetailsPage() {
       onInvalidate: refreshDelivery,
     }
   );
+
+  async function handleConfirmReceived({
+    acknowledgePartial = false,
+    note = "",
+  } = {}) {
+    if (!delivery?.orderCode || isConfirmingReceipt) return;
+
+    setIsConfirmingReceipt(true);
+    setReceiptActionError("");
+    setReceiptActionMessage("");
+
+    try {
+      const confirmation = await confirmStoreManagerDeliveryReceived({
+        orderCode: delivery.orderCode,
+        acknowledgePartial,
+        note,
+      });
+
+      setReceiptActionMessage(
+        confirmation?.alreadyConfirmed
+          ? t("storeManager.receiptAlreadyConfirmed")
+          : t("storeManager.receiptConfirmationSuccess")
+      );
+
+      await Promise.all([
+        refreshDelivery(),
+        refreshTracking(),
+      ]);
+    } catch (error) {
+      setReceiptActionError(
+        error?.response?.data?.message ||
+          error?.message ||
+          t("storeManager.receiptConfirmationFailed")
+      );
+    } finally {
+      setIsConfirmingReceipt(false);
+    }
+  }
 
   if (isContextLoading) {
     return <FullPageLoading message={t("storeManager.loadingWorkspace")} />;
@@ -154,6 +203,19 @@ function StoreManagerDeliveryDetailsPage() {
                 </button>
               ) : null}
 
+              {delivery ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/store-manager/issues?orderCode=${encodeURIComponent(delivery.orderCode)}`)
+                  }
+                  className="nexora-focus inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-warning-soft)] px-3 text-[10.5px] font-bold text-[var(--color-warning)] transition hover:brightness-95"
+                >
+                  <TriangleAlert size={13.5} />
+                  {t("storeManager.issuesReport")}
+                </button>
+              ) : null}
+
               <button
                 type="button"
                 onClick={() => {
@@ -212,6 +274,10 @@ function StoreManagerDeliveryDetailsPage() {
             trackingLastRefreshedAt={trackingLastRefreshedAt}
             liveStatus={liveStatus}
             refreshTracking={refreshTracking}
+            isConfirmingReceipt={isConfirmingReceipt}
+            receiptActionError={receiptActionError}
+            receiptActionMessage={receiptActionMessage}
+            onConfirmReceived={handleConfirmReceived}
             language={language}
             t={t}
           />
@@ -231,6 +297,10 @@ function DeliveryWorkspace({
   trackingLastRefreshedAt,
   liveStatus,
   refreshTracking,
+  isConfirmingReceipt,
+  receiptActionError,
+  receiptActionMessage,
+  onConfirmReceived,
   language,
   t,
 }) {
@@ -300,6 +370,16 @@ function DeliveryWorkspace({
         />
       </div>
 
+      <ReceiptConfirmationPanel
+        delivery={delivery}
+        isSubmitting={isConfirmingReceipt}
+        errorMessage={receiptActionError}
+        successMessage={receiptActionMessage}
+        onConfirm={onConfirmReceived}
+        language={language}
+        t={t}
+      />
+
       {isAttentionStatus(delivery.deliveryStatus) ? (
         <AttentionPanel delivery={delivery} latestDecision={latestDecision} language={language} t={t} />
       ) : null}
@@ -310,7 +390,10 @@ function DeliveryWorkspace({
             title={t("storeManager.deliveryDetailsProgress")}
             description={t("storeManager.deliveryDetailsProgressDescription")}
           >
-            <DeliveryProgress status={delivery.deliveryStatus} t={t} />
+            <DeliveryProgress
+              status={delivery.receipt?.confirmed ? "RECEIVED" : delivery.deliveryStatus}
+              t={t}
+            />
           </Panel>
 
           <Panel
@@ -438,6 +521,154 @@ function DeliveryWorkspace({
   );
 }
 
+function ReceiptConfirmationPanel({
+  delivery,
+  isSubmitting,
+  errorMessage,
+  successMessage,
+  onConfirm,
+  language,
+  t,
+}) {
+  const receipt = delivery?.receipt || null;
+  const deliveryStatus = delivery?.deliveryStatus;
+  const isPartial = deliveryStatus === "PARTIAL";
+  const canConfirm = Boolean(receipt?.canConfirm);
+  const isConfirmed = Boolean(receipt?.confirmed);
+  const [acknowledgePartial, setAcknowledgePartial] = useState(false);
+  const [note, setNote] = useState("");
+
+  if (!isConfirmed && !canConfirm) {
+    return null;
+  }
+
+  if (isConfirmed) {
+    return (
+      <section className="mt-5 rounded-[18px] border border-[var(--color-border)] bg-[var(--color-success-soft)] px-4 py-4 sm:px-5">
+        <div className="flex gap-3">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm">
+            <CheckCircle2 size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-bold text-[var(--color-text)]">
+              {t("storeManager.receiptConfirmedTitle")}
+            </p>
+            <p className="mt-1 text-[10.5px] leading-5 text-[var(--color-text-secondary)]">
+              {t("storeManager.receiptConfirmedDescription")}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[10px] font-semibold text-[var(--color-text-secondary)]">
+              <span>
+                {t("storeManager.receiptConfirmedAt")}: {formatDeliveryDateTime(receipt.confirmedAt, language)}
+              </span>
+              {receipt.confirmedBy?.fullName ? (
+                <span>
+                  {t("storeManager.receiptConfirmedBy")}: {receipt.confirmedBy.fullName}
+                </span>
+              ) : null}
+            </div>
+            {receipt.note ? (
+              <p className="mt-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3 py-2 text-[10px] leading-5 text-[var(--color-text-secondary)]">
+                {receipt.note}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className={`mt-5 rounded-[18px] border px-4 py-4 sm:px-5 ${
+        isPartial
+          ? "border-[var(--color-border)] bg-[var(--color-warning-soft)]"
+          : "border-[var(--color-border)] bg-[var(--color-success-soft)]"
+      }`}
+    >
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-3">
+            {isPartial ? (
+              <TriangleAlert size={18} className="mt-0.5 shrink-0 text-[var(--color-warning)]" />
+            ) : (
+              <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[var(--color-primary)]" />
+            )}
+            <div>
+              <p className="text-[12px] font-bold text-[var(--color-text)]">
+                {isPartial
+                  ? t("storeManager.receiptPartialTitle")
+                  : t("storeManager.receiptReadyTitle")}
+              </p>
+              <p className="mt-1 text-[10.5px] leading-5 text-[var(--color-text-secondary)]">
+                {isPartial
+                  ? t("storeManager.receiptPartialDescription")
+                  : t("storeManager.receiptReadyDescription")}
+              </p>
+            </div>
+          </div>
+
+          {isPartial ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={acknowledgePartial}
+                onChange={(event) => setAcknowledgePartial(event.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-primary)]"
+              />
+              <span className="text-[10px] leading-5 text-[var(--color-text-secondary)]">
+                {t("storeManager.receiptPartialAcknowledgement")}
+              </span>
+            </label>
+          ) : null}
+
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value.slice(0, 500))}
+            rows={2}
+            placeholder={t("storeManager.receiptNotePlaceholder")}
+            className="nexora-focus mt-3 w-full resize-none rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-[10.5px] text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
+          />
+          <div className="mt-1 text-right text-[9px] text-[var(--color-text-muted)]">
+            {note.length}/500
+          </div>
+
+          {errorMessage ? (
+            <p className="mt-2 text-[10px] font-semibold text-[var(--color-danger)]">
+              {errorMessage}
+            </p>
+          ) : null}
+          {successMessage ? (
+            <p className="mt-2 text-[10px] font-semibold text-[var(--color-primary)]">
+              {successMessage}
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          disabled={isSubmitting || (isPartial && !acknowledgePartial)}
+          onClick={() =>
+            onConfirm({
+              acknowledgePartial: isPartial ? acknowledgePartial : false,
+              note,
+            })
+          }
+          className="nexora-focus inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 text-[10.5px] font-bold text-white shadow-[0_8px_18px_rgba(15,169,104,0.14)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-55"
+        >
+          {isSubmitting ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <CheckCircle2 size={14} />
+          )}
+          {isSubmitting
+            ? t("storeManager.receiptConfirming")
+            : t("storeManager.receiptConfirmAction")}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function AttentionPanel({ delivery, latestDecision, language, t }) {
   const isDanger = delivery.deliveryStatus === "EXCEPTION" || delivery.deliveryStatus === "CANCELLED";
 
@@ -496,10 +727,19 @@ function DeliveryProgress({ status, t }) {
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-7">
+    <div className="grid gap-2 sm:grid-cols-8">
       {DELIVERY_PROGRESS_STEPS.map((step, index) => {
-        const complete = index < currentIndex || status === "DELIVERED" || status === "COMPLETED";
-        const active = index === currentIndex && status !== "DELIVERED" && status !== "COMPLETED";
+        const isTerminalSuccess = [
+          "DELIVERED",
+          "COMPLETED",
+          "RECEIVED",
+        ].includes(status);
+        const complete =
+          index < currentIndex ||
+          (index === currentIndex && isTerminalSuccess);
+        const active =
+          index === currentIndex &&
+          !isTerminalSuccess;
 
         return (
           <div key={step} className="relative">

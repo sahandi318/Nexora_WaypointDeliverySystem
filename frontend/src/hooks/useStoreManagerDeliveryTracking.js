@@ -162,6 +162,13 @@ function useStoreManagerDeliveryTracking(
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
+      // Once the Store Manager has acknowledged receipt, movement tracking is
+      // terminal. Keep manual refresh/socket recovery available, but stop
+      // background polling so the final state remains stable and quiet.
+      if (trackingRef.current?.receipt?.confirmed) {
+        return;
+      }
+
       loadTracking({ isRefresh: true });
     }, TRACKING_POLL_MS);
 

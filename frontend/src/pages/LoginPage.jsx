@@ -237,8 +237,10 @@ function LoginPage() {
   return (
     <main
       className="
-        min-h-[100svh]
+        min-h-[100dvh]
         bg-[var(--color-bg)]
+        lg:h-[100dvh]
+        lg:overflow-hidden
         text-[var(--color-text)]
       "
       style={{
@@ -249,8 +251,10 @@ function LoginPage() {
       <div
         className="
           grid
-          min-h-[100svh]
+          min-h-[100dvh]
 
+          lg:h-[100dvh]
+          lg:min-h-0
           lg:grid-cols-[minmax(0,1.08fr)_minmax(450px,0.92fr)]
         "
       >
@@ -477,8 +481,11 @@ function LoginPage() {
         <section
           className="
             relative
-            min-h-[100svh]
+            min-h-[100dvh]
             overflow-x-hidden
+            lg:h-[100dvh]
+            lg:min-h-0
+            lg:overflow-hidden
             bg-[var(--color-bg)]
           "
         >
@@ -518,8 +525,10 @@ function LoginPage() {
               z-10
               mx-auto
               flex
-              min-h-[100svh]
+              min-h-[100dvh]
               w-full
+              lg:h-full
+              lg:min-h-0
               max-w-[610px]
               flex-col
               px-5
@@ -529,7 +538,7 @@ function LoginPage() {
               sm:py-6
 
               lg:px-[clamp(2rem,3.2vw,3rem)]
-              lg:py-7
+              lg:py-5
             "
           >
             <div
@@ -537,7 +546,7 @@ function LoginPage() {
                 shrink-0
               "
             >
-              <LoginUtilityBar />
+              <LoginUtilityBar showBackHome showTheme />
             </div>
 
             {/* MOBILE BRAND */}
@@ -564,9 +573,9 @@ function LoginPage() {
                 pt-8
                 sm:pb-10
                 sm:pt-10
-                lg:pb-12
-                lg:pt-12
-                xl:pt-16
+                lg:pb-5
+                lg:pt-5
+                xl:pt-7
               "
             >
               <div

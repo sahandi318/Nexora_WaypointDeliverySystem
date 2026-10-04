@@ -3,6 +3,10 @@ import path from "node:path";
 
 import prisma from "../config/database.js";
 import { resolveActorScope } from "./dispatcherOrderService.js";
+import {
+  allocateConfirmedStoreOrderToStop,
+  publishDeliveryAllocation,
+} from "./deliveryIntegrationService.js";
 import { state } from "../mockData.js";
 import {
   emitMonitoringUpdate,
@@ -517,6 +521,54 @@ function stopFromOrder(order, index, tripCode) {
   };
 }
 
+async function publishStoreManagerAllocationsForTrip({
+  orders,
+  driverTrip,
+  liveTrip,
+}) {
+  const persistedStops = await prisma.liveTripStop.findMany({
+    where: {
+      liveTripId: liveTrip.id,
+    },
+    select: {
+      stopCode: true,
+      outletCode: true,
+    },
+  });
+
+  const persistedStopByCode = new Map(
+    persistedStops.map((stop) => [stop.stopCode, stop])
+  );
+  const driverStopByOrderCode = new Map(
+    driverTrip.stops.map((stop) => [stop.orderId, stop])
+  );
+
+  const publishedAllocations = [];
+
+  for (const order of orders) {
+    const driverStop = driverStopByOrderCode.get(order.orderCode);
+    const persistedStop = driverStop
+      ? persistedStopByCode.get(driverStop.stopId)
+      : null;
+
+    if (!driverStop || !persistedStop) {
+      throw new Error(
+        `Published stop mapping is unavailable for order ${order.orderCode}.`
+      );
+    }
+
+    const allocation = await allocateConfirmedStoreOrderToStop({
+      orderCode: order.orderCode,
+      stopCode: persistedStop.stopCode,
+    });
+
+    const published = await publishDeliveryAllocation(allocation.id);
+    publishedAllocations.push(published);
+  }
+
+  return publishedAllocations;
+}
+
 export async function publishDispatcherPlan({
   trip,
   dispatcherUser,
@@ -525,16 +577,43 @@ export async function publishDispatcherPlan({
     throw new Error("The plan needs a vehicle and at least one order.");
   }
 
+  const actorScope = await resolveActorScope(dispatcherUser);
+  const requestedOrderIds = [
+    ...new Set(
+      trip.orderIds
+        .map(Number)
+        .filter((id) => Number.isInteger(id) && id > 0)
+    ),
+  ];
+
+  if (requestedOrderIds.length !== trip.orderIds.length) {
+    throw new Error("The plan contains an invalid or duplicate order selection.");
+  }
+
   const orders = await prisma.storeOrder.findMany({
     where: {
       id: {
-        in: trip.orderIds.map(Number),
+        in: requestedOrderIds,
       },
+      ...(dispatcherUser?.role === "DISPATCHER"
+        ? actorScope.where
+        : {}),
     },
     include: {
       outlet: {
         include: {
           depot: true,
+        },
+      },
+      deliveryAllocations: {
+        where: {
+          status: {
+            in: ["ALLOCATED", "PUBLISHED"],
+          },
+        },
+        select: {
+          id: true,
+          status: true,
         },
       },
     },
@@ -543,29 +622,58 @@ export async function publishDispatcherPlan({
     },
   });
 
-  if (!orders.length) {
-    throw new Error("No valid orders were found for this plan.");
+  if (orders.length !== requestedOrderIds.length) {
+    throw new Error(
+      "One or more selected orders are unavailable in the authenticated Dispatcher depot."
+    );
   }
 
+  const orderDepotIds = [
+    ...new Set(
+      orders
+        .map((order) => order.outlet?.depotId)
+        .filter(Boolean)
+    ),
+  ];
+
+  if (orderDepotIds.length !== 1) {
+    throw new Error("A published trip must contain orders from one depot only.");
+  }
+
+  if (orders.some((order) => order.status === "DEFERRED" || order.status === "CANCELLED")) {
+    throw new Error("Deferred or cancelled orders cannot be published in a trip.");
+  }
+
+  if (orders.some((order) => order.deliveryAllocations.length > 0)) {
+    throw new Error("One or more selected orders already have an active delivery allocation.");
+  }
+
+  const tripDepotId = orderDepotIds[0];
+
   const driver = trip.driverUserId
-    ? await prisma.user.findUnique({
-        where: { id: Number(trip.driverUserId) },
+    ? await prisma.user.findFirst({
+        where: {
+          id: Number(trip.driverUserId),
+          role: "DRIVER",
+          isActive: true,
+          depotId: tripDepotId,
+        },
         include: { depot: true },
       })
     : await prisma.user.findFirst({
         where: {
           role: "DRIVER",
           isActive: true,
-          ...(orders[0].outlet?.depotId
-            ? { depotId: orders[0].outlet.depotId }
-            : {}),
+          depotId: tripDepotId,
         },
         include: { depot: true },
         orderBy: { id: "asc" },
       });
 
   if (!driver) {
-    throw new Error("Assign an active Driver before publishing the plan.");
+    throw new Error(
+      "Assign an active Driver from the delivery depot before publishing the plan."
+    );
   }
 
   const tripCode = `TRIP${Date.now().toString().slice(-6)}`;
@@ -592,28 +700,74 @@ export async function publishDispatcherPlan({
     stops,
   };
 
-  state.trips.push(driverTrip);
+  const previousOrderStatuses = new Map(
+    orders.map((order) => [order.id, order.status])
+  );
+  let liveTrip = null;
 
-  for (const order of orders) {
-    await prisma.storeOrder.update({
-      where: { id: order.id },
-      data: { status: "CONFIRMED" },
+  try {
+    for (const order of orders) {
+      await prisma.storeOrder.update({
+        where: { id: order.id },
+        data: { status: "CONFIRMED" },
+      });
+    }
+
+    liveTrip = await synchronizeTripForDriver({
+      trip: driverTrip,
+      driverUser: driver,
+      emit: false,
     });
+
+    if (!liveTrip) {
+      throw new Error(
+        "The published plan could not be synchronized to live delivery tracking."
+      );
+    }
+
+    const publishedAllocations =
+      await publishStoreManagerAllocationsForTrip({
+        orders,
+        driverTrip,
+        liveTrip,
+      });
+
+    // Keep the in-memory Driver workflow in sync only after the persisted
+    // LiveTrip + StoreOrder -> LiveTripStop delivery bridge is complete.
+    state.trips.push(driverTrip);
+
+    emitMonitoringUpdate({
+      reason: "dispatcher-plan-published",
+      tripCode,
+      notifyTripOutlets: true,
+    });
+
+    return {
+      tripCode,
+      driverTrip,
+      publishedDeliveryCount: publishedAllocations.length,
+    };
+  } catch (error) {
+    // If the final bridge fails, do not leave a published LiveTrip or partial
+    // DeliveryAllocation set behind. LiveTrip deletion cascades through stops
+    // and any allocations already created for those stops.
+    if (liveTrip?.id) {
+      await prisma.liveTrip.delete({
+        where: { id: liveTrip.id },
+      }).catch(() => null);
+    }
+
+    await Promise.all(
+      orders.map((order) =>
+        prisma.storeOrder.update({
+          where: { id: order.id },
+          data: {
+            status: previousOrderStatuses.get(order.id),
+          },
+        })
+      )
+    ).catch(() => null);
+
+    throw error;
   }
-
-  await synchronizeTripForDriver({
-    trip: driverTrip,
-    driverUser: driver,
-    emit: false,
-  });
-
-  emitMonitoringUpdate({
-    reason: "dispatcher-plan-published",
-    tripCode,
-  });
-
-  return {
-    tripCode,
-    driverTrip,
-  };
 }

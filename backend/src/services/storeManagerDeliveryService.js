@@ -40,6 +40,13 @@ const DELIVERY_SUMMARY_INCLUDE = {
           },
         },
       },
+      receivedConfirmedBy: {
+        select: {
+          id: true,
+          userId: true,
+          fullName: true,
+        },
+      },
     },
   },
 };
@@ -250,6 +257,13 @@ export async function getStoreManagerDeliveryTracking(
               },
             },
           },
+          receivedConfirmedBy: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+            },
+          },
         },
       },
     },
@@ -296,6 +310,200 @@ export async function getStoreManagerDeliveryTracking(
 }
 
 // ============================================================
+// STORE MANAGER RECEIPT CONFIRMATION
+// ============================================================
+
+/**
+ * Confirms that the authenticated Store Manager has received a completed
+ * delivery for their own outlet.
+ *
+ * Rules:
+ * - outlet identity is always taken from the trusted authenticated context
+ * - the delivery must have a published allocation
+ * - only DELIVERED or PARTIAL outcomes may be acknowledged
+ * - PARTIAL requires an explicit acknowledgement flag from the UI
+ * - repeated confirmation is idempotent and never creates duplicate records
+ */
+export async function confirmStoreManagerDeliveryReceived(
+  context,
+  orderCode,
+  {
+    acknowledgePartial = false,
+    note = "",
+  } = {}
+) {
+  const outletId = requireTrustedOutletId(context);
+  const userDatabaseId = Number(context?.userDatabaseId);
+  const normalizedOrderCode = normalizeIdentifier(
+    orderCode,
+    "orderCode"
+  );
+  const normalizedNote = normalizeReceiptNote(note);
+
+  if (!Number.isInteger(userDatabaseId) || userDatabaseId <= 0) {
+    throw new StoreManagerDeliveryError(
+      "Store Manager identity is unavailable.",
+      {
+        status: 403,
+        code: "STORE_MANAGER_DELIVERY_USER_REQUIRED",
+      }
+    );
+  }
+
+  const order = await prisma.storeOrder.findFirst({
+    where: {
+      orderCode: normalizedOrderCode,
+      outletId,
+    },
+    include: {
+      outlet: {
+        include: {
+          depot: true,
+        },
+      },
+      deliveryAllocations: {
+        where: {
+          status: "PUBLISHED",
+        },
+        orderBy: {
+          allocatedAt: "desc",
+        },
+        take: 1,
+        include: {
+          liveTripStop: {
+            include: {
+              liveTrip: true,
+            },
+          },
+          receivedConfirmedBy: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new StoreManagerDeliveryError(
+      "Delivery was not found for this outlet.",
+      {
+        status: 404,
+        code: "STORE_MANAGER_DELIVERY_NOT_FOUND",
+      }
+    );
+  }
+
+  const allocation = order.deliveryAllocations?.[0] ?? null;
+
+  if (!allocation) {
+    throw new StoreManagerDeliveryError(
+      "This delivery has not been published yet.",
+      {
+        status: 409,
+        code: "STORE_MANAGER_DELIVERY_NOT_PUBLISHED",
+      }
+    );
+  }
+
+  assertAllocationBelongsToTrustedOutlet(allocation, context);
+
+  const stop = allocation.liveTripStop;
+  const trip = stop?.liveTrip ?? null;
+  const deliveryStatus = deriveStoreManagerDeliveryStatus({
+    orderStatus: order.status,
+    allocationStatus: allocation.status,
+    tripStatus: trip?.status,
+    stopStatus: stop?.status,
+    stopOutcome: stop?.outcome,
+  });
+
+  if (!["DELIVERED", "PARTIAL"].includes(deliveryStatus)) {
+    throw new StoreManagerDeliveryError(
+      "Only delivered or partial deliveries can be confirmed as received.",
+      {
+        status: 409,
+        code: "STORE_MANAGER_DELIVERY_NOT_RECEIVABLE",
+      }
+    );
+  }
+
+  if (
+    deliveryStatus === "PARTIAL" &&
+    acknowledgePartial !== true
+  ) {
+    throw new StoreManagerDeliveryError(
+      "A partial delivery must be explicitly acknowledged before confirmation.",
+      {
+        status: 422,
+        code: "STORE_MANAGER_PARTIAL_ACKNOWLEDGEMENT_REQUIRED",
+      }
+    );
+  }
+
+  if (allocation.receivedConfirmedAt) {
+    return {
+      orderCode: order.orderCode,
+      deliveryStatus,
+      alreadyConfirmed: true,
+      receipt: mapDeliveryReceipt(allocation, deliveryStatus),
+    };
+  }
+
+  const confirmedAt = new Date();
+
+  const updateResult = await prisma.deliveryAllocation.updateMany({
+    where: {
+      id: allocation.id,
+      receivedConfirmedAt: null,
+    },
+    data: {
+      receivedConfirmedAt: confirmedAt,
+      receivedConfirmedByUserId: userDatabaseId,
+      receivedConfirmationNote: normalizedNote,
+    },
+  });
+
+  const updatedAllocation = await prisma.deliveryAllocation.findUnique({
+    where: {
+      id: allocation.id,
+    },
+    include: {
+      receivedConfirmedBy: {
+        select: {
+          id: true,
+          userId: true,
+          fullName: true,
+        },
+      },
+    },
+  });
+
+  if (!updatedAllocation?.receivedConfirmedAt) {
+    throw new StoreManagerDeliveryError(
+      "Unable to confirm this delivery as received.",
+      {
+        status: 409,
+        code: "STORE_MANAGER_RECEIPT_CONFIRMATION_FAILED",
+      }
+    );
+  }
+
+  return {
+    orderCode: order.orderCode,
+    deliveryStatus,
+    alreadyConfirmed: updateResult.count === 0,
+    receipt: mapDeliveryReceipt(
+      updatedAllocation,
+      deliveryStatus
+    ),
+  };
+}
+
+// ============================================================
 // MAPPERS
 // ============================================================
 
@@ -328,6 +536,16 @@ function mapDeliverySummary(order) {
       order.estimatedVolumeM3
     ),
     outlet: mapOutlet(order.outlet),
+    receipt: mapDeliveryReceipt(
+      allocation,
+      deriveStoreManagerDeliveryStatus({
+        orderStatus: order.status,
+        allocationStatus: allocation?.status,
+        tripStatus: trip?.status,
+        stopStatus: stop?.status,
+        stopOutcome: stop?.outcome,
+      })
+    ),
     plan: allocation
       ? {
           allocationId: allocation.id,
@@ -445,6 +663,13 @@ function mapSafeTracking(order, allocation) {
   const stop = allocation.liveTripStop;
   const trip = stop.liveTrip;
   const allStops = trip.stops ?? [];
+  const deliveryStatus = deriveStoreManagerDeliveryStatus({
+    orderStatus: order.status,
+    allocationStatus: allocation.status,
+    tripStatus: trip.status,
+    stopStatus: stop.status,
+    stopOutcome: stop.outcome,
+  });
 
   const pendingBeforeOutlet = allStops.filter(
     (candidate) =>
@@ -460,13 +685,8 @@ function mapSafeTracking(order, allocation) {
 
   return {
     orderCode: order.orderCode,
-    deliveryStatus: deriveStoreManagerDeliveryStatus({
-      orderStatus: order.status,
-      allocationStatus: allocation.status,
-      tripStatus: trip.status,
-      stopStatus: stop.status,
-      stopOutcome: stop.outcome,
-    }),
+    deliveryStatus,
+    receipt: mapDeliveryReceipt(allocation, deliveryStatus),
     outlet: mapOutlet(order.outlet),
     trip: {
       tripCode: trip.tripCode,
@@ -505,6 +725,62 @@ function mapSafeTracking(order, allocation) {
     eta: trackingEta.value,
     etaSource: trackingEta.source,
   };
+}
+
+function mapDeliveryReceipt(allocation, deliveryStatus) {
+  if (!allocation) {
+    return {
+      confirmed: false,
+      confirmedAt: null,
+      confirmedBy: null,
+      note: null,
+      canConfirm: false,
+      requiresPartialAcknowledgement: false,
+    };
+  }
+
+  const confirmed = Boolean(allocation.receivedConfirmedAt);
+
+  return {
+    confirmed,
+    confirmedAt: allocation.receivedConfirmedAt ?? null,
+    confirmedBy: allocation.receivedConfirmedBy
+      ? {
+          userId: allocation.receivedConfirmedBy.userId,
+          fullName: allocation.receivedConfirmedBy.fullName,
+        }
+      : null,
+    note: allocation.receivedConfirmationNote ?? null,
+    canConfirm:
+      !confirmed &&
+      ["DELIVERED", "PARTIAL"].includes(deliveryStatus),
+    requiresPartialAcknowledgement:
+      !confirmed && deliveryStatus === "PARTIAL",
+  };
+}
+
+function normalizeReceiptNote(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.length > 500) {
+    throw new StoreManagerDeliveryError(
+      "Receipt note must be 500 characters or fewer.",
+      {
+        status: 422,
+        code: "STORE_MANAGER_RECEIPT_NOTE_TOO_LONG",
+      }
+    );
+  }
+
+  return normalized;
 }
 
 // ============================================================

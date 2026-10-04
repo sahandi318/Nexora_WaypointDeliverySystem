@@ -75,6 +75,24 @@ enum DeliveryAllocationStatus {
 }
 
 // ============================================================
+// STORE MANAGER ISSUE LIFECYCLE
+// ============================================================
+
+enum StoreManagerIssueStatus {
+  OPEN
+  RESOLVED
+}
+
+enum StoreManagerIssueCategory {
+  DELIVERY_SHORTFALL
+  DAMAGED_GOODS
+  LATE_DELIVERY
+  DELIVERY_EXCEPTION
+  ORDER_PROBLEM
+  OTHER
+}
+
+// ============================================================
 // DEPOT
 // ============================================================
 
@@ -126,8 +144,9 @@ model Outlet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users       User[]
-  storeOrders StoreOrder[]
+  users              User[]
+  storeOrders        StoreOrder[]
+  storeManagerIssues StoreManagerIssue[]
 
   @@index([depotId])
   @@index([district])
@@ -171,21 +190,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps     PasswordResetOtp[]
-  liveTripsAsDriver     LiveTrip[]            @relation("LiveTripDriver")
-  createdStoreOrders    StoreOrder[]          @relation("StoreOrderCreatedBy")
+  passwordResetOtps          PasswordResetOtp[]
+  liveTripsAsDriver          LiveTrip[]           @relation("LiveTripDriver")
+  createdStoreOrders         StoreOrder[]         @relation("StoreOrderCreatedBy")
+  storeOrderDecisions        StoreOrderDecision[] @relation("StoreOrderDecisionBy")
+  dispatcherDeliveryPlans    DeliveryPlan[]       @relation("DispatcherDeliveryPlans")
+  confirmedDeliveryReceipts  DeliveryAllocation[] @relation("DeliveryReceiptConfirmedBy")
+  reportedStoreManagerIssues StoreManagerIssue[]  @relation("StoreManagerIssueReportedBy")
+  resolvedStoreManagerIssues StoreManagerIssue[]  @relation("StoreManagerIssueResolvedBy")
 
-  loaderTrips LoaderTripState[] @relation("LoaderTripUser")
-
-  loadingIssuesReported LoadingIssue[] @relation("LoadingIssueLoader")
-
-  loadingIssuesResolved LoadingIssue[] @relation("LoadingIssueResolver")
-
-  loaderHandovers DriverHandover[] @relation("HandoverLoader")
-
-  driverHandovers DriverHandover[] @relation("HandoverDriver")
-  storeOrderDecisions   StoreOrderDecision[]  @relation("StoreOrderDecisionBy")
-  dispatcherDeliveryPlans DeliveryPlan[] @relation("DispatcherDeliveryPlans")
+  loaderTrips           LoaderTripState[] @relation("LoaderTripUser")
+  loadingIssuesReported LoadingIssue[]    @relation("LoadingIssueLoader")
+  loadingIssuesResolved LoadingIssue[]    @relation("LoadingIssueResolver")
+  loaderHandovers       DriverHandover[]  @relation("HandoverLoader")
+  driverHandovers       DriverHandover[]  @relation("HandoverDriver")
 
   @@index([role])
   @@index([outletId])
@@ -296,10 +314,10 @@ model LiveTrip {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stops             LiveTripStop[]
-  events            LiveTripEvent[]
+  stops  LiveTripStop[]
+  events LiveTripEvent[]
 
-  loaderState LoaderTripState?
+  loaderState       LoaderTripState?
   loadingExceptions LoadingException[]
 
   @@index([deliveryDate])
@@ -471,13 +489,12 @@ model StoreOrder {
 
   liveTripStops LiveTripStop[]
 
-  liveTripStops LiveTripStop[]
-
   items               StoreOrderItem[]
   deliveryAllocations DeliveryAllocation[]
   dispatcherDecisions StoreOrderDecision[]
-  tripAllocations   TripOrderAllocation[]
-  loadingExceptions LoadingException[]
+  tripAllocations     TripOrderAllocation[]
+  loadingExceptions   LoadingException[]
+  storeManagerIssues  StoreManagerIssue[]
 
   @@index([outletId, submittedAt])
   @@index([outletId, status])
@@ -486,7 +503,6 @@ model StoreOrder {
   @@index([effectiveDispatchDate])
   @@map("store_orders")
 }
-
 
 // ============================================================
 // STORE ORDER DISPATCHER DECISION HISTORY
@@ -542,6 +558,46 @@ model StoreOrderItem {
   @@unique([orderId, productId])
   @@index([productId])
   @@map("store_order_items")
+}
+
+// ============================================================
+// STORE MANAGER ISSUE
+// ============================================================
+
+model StoreManagerIssue {
+  id Int @id @default(autoincrement())
+
+  issueCode String @unique @map("issue_code") @db.VarChar(50)
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  outletId Int    @map("outlet_id")
+  outlet   Outlet @relation(fields: [outletId], references: [id])
+
+  reportedByUserId Int  @map("reported_by_user_id")
+  reportedByUser   User @relation("StoreManagerIssueReportedBy", fields: [reportedByUserId], references: [id])
+
+  category    StoreManagerIssueCategory
+  description String                    @db.VarChar(1000)
+  status      StoreManagerIssueStatus   @default(OPEN)
+
+  reportedAt DateTime @default(now()) @map("reported_at")
+
+  resolvedByUserId Int?  @map("resolved_by_user_id")
+  resolvedByUser   User? @relation("StoreManagerIssueResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  resolutionNote String?   @map("resolution_note") @db.VarChar(1000)
+  resolvedAt     DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([outletId, status, reportedAt])
+  @@index([storeOrderId, status])
+  @@index([reportedByUserId])
+  @@index([resolvedByUserId])
+  @@map("store_manager_issues")
 }
 
 // ============================================================
@@ -731,12 +787,18 @@ model DeliveryAllocation {
 
   cancellationReason String? @map("cancellation_reason") @db.VarChar(500)
 
+  receivedConfirmedAt       DateTime? @map("received_confirmed_at")
+  receivedConfirmedByUserId Int?      @map("received_confirmed_by_user_id")
+  receivedConfirmedBy       User?     @relation("DeliveryReceiptConfirmedBy", fields: [receivedConfirmedByUserId], references: [id], onDelete: SetNull)
+  receivedConfirmationNote  String?   @map("received_confirmation_note") @db.VarChar(500)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([storeOrderId, liveTripStopId])
   @@index([storeOrderId, status])
   @@index([liveTripStopId, status])
+  @@index([receivedConfirmedByUserId])
   @@map("delivery_allocations")
 }
 

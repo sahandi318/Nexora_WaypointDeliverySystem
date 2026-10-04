@@ -1,5 +1,6 @@
 import {
   StoreManagerDeliveryError,
+  confirmStoreManagerDeliveryReceived,
   getStoreManagerDeliveryByOrderCode,
   getStoreManagerDeliveryTracking,
   listStoreManagerDeliveries,
@@ -50,6 +51,36 @@ export async function getStoreManagerDelivery(
       res,
       error,
       "Unable to load the Store Manager delivery."
+    );
+  }
+}
+
+export async function postStoreManagerDeliveryReceiptConfirmation(
+  req,
+  res
+) {
+  try {
+    const confirmation = await confirmStoreManagerDeliveryReceived(
+      req.storeManagerContext,
+      req.params.orderCode,
+      {
+        acknowledgePartial:
+          req.body?.acknowledgePartial === true,
+        note: req.body?.note ?? "",
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        confirmation,
+      },
+    });
+  } catch (error) {
+    return handleDeliveryError(
+      res,
+      error,
+      "Unable to confirm this delivery as received."
     );
   }
 }
