@@ -21,7 +21,8 @@
     "test:store-manager-orders": "tsx src/scripts/testStoreManagerOrders.js",
     "test:store-manager-catalog": "tsx src/scripts/testStoreManagerCatalogBranding.js",
     "translation:warmup": "tsx src/scripts/warmTranslationModel.js",
-    "test:store-manager-catalog-advanced": "tsx src/scripts/testStoreManagerCatalogAdvanced.js"
+    "test:store-manager-catalog-advanced": "tsx src/scripts/testStoreManagerCatalogAdvanced.js",
+    "test:delivery-integration": "tsx src/scripts/testDeliveryIntegrationFoundation.js"
   },
   "keywords": [
     "nexora",

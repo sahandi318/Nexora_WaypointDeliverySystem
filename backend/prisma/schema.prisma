@@ -56,6 +56,16 @@ enum StoreOrderType {
 }
 
 // ============================================================
+// DELIVERY ALLOCATION STATUS
+// ============================================================
+
+enum DeliveryAllocationStatus {
+  ALLOCATED
+  PUBLISHED
+  CANCELLED
+}
+
+// ============================================================
 // DEPOT
 // ============================================================
 
@@ -303,6 +313,8 @@ model LiveTripStop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  deliveryAllocations DeliveryAllocation[]
+
   @@index([liveTripId, sequence])
   @@index([outletCode])
   @@map("live_trip_stops")
@@ -427,7 +439,8 @@ model StoreOrder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items StoreOrderItem[]
+  items               StoreOrderItem[]
+  deliveryAllocations DeliveryAllocation[]
 
   @@index([outletId, submittedAt])
   @@index([outletId, status])
@@ -457,4 +470,42 @@ model StoreOrderItem {
   @@unique([orderId, productId])
   @@index([productId])
   @@map("store_order_items")
+}
+
+// ============================================================
+// DELIVERY ALLOCATION BRIDGE
+// ============================================================
+
+/// Connects a confirmed Store Manager order to the exact live trip stop
+/// that will deliver it. This bridge keeps the business order lifecycle
+/// separate from transport execution while still allowing multiple store
+/// orders to share the same outlet stop.
+model DeliveryAllocation {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  liveTripStopId Int          @map("live_trip_stop_id")
+  liveTripStop   LiveTripStop @relation(fields: [liveTripStopId], references: [id], onDelete: Cascade)
+
+  status DeliveryAllocationStatus @default(ALLOCATED)
+
+  // Snapshot of the StoreOrder total units at allocation time.
+  // The dispatcher does not provide this value from the browser.
+  allocatedUnits Int @map("allocated_units")
+
+  allocatedAt DateTime  @default(now()) @map("allocated_at")
+  publishedAt DateTime? @map("published_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  cancellationReason String? @map("cancellation_reason") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([storeOrderId, liveTripStopId])
+  @@index([storeOrderId, status])
+  @@index([liveTripStopId, status])
+  @@map("delivery_allocations")
 }
