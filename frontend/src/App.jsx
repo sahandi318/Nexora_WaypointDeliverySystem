@@ -32,6 +32,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleWorkspacePage from "./pages/RoleWorkspacePage";
 import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+import LoaderWorkspacePage from "./pages/loader/LoaderWorkspacePage";
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 
 
@@ -346,11 +347,15 @@ function App() {
               "LOADER",
             ]}
           >
-            <RoleWorkspacePage />
+            <LoaderWorkspacePage />
           </ProtectedRoute>
         }
       />
-
+{/*
+      <Route
+      path="/loader/*"
+      element={<LoaderWorkspacePage />}
+      />*/}
       {/* =====================================================
           DRIVER
           ===================================================== */}
