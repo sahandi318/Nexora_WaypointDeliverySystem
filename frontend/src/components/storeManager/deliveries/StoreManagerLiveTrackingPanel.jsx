@@ -1,4 +1,5 @@
 import {
+  CheckCircle2,
   Clock3,
   MapPin,
   Navigation,
@@ -32,6 +33,14 @@ import {
 const PENDING_CODES = new Set([
   "STORE_MANAGER_DELIVERY_NOT_PLANNED",
   "STORE_MANAGER_DELIVERY_NOT_PUBLISHED",
+]);
+
+const TERMINAL_TRACKING_STATUSES = new Set([
+  "DELIVERED",
+  "PARTIAL",
+  "EXCEPTION",
+  "RECEIVED",
+  "COMPLETED",
 ]);
 
 function StoreManagerLiveTrackingPanel({
@@ -135,27 +144,58 @@ function TrackingWorkspace({
   const lastOperationalUpdate =
     trip.latestDriverUpdateAt || null;
 
+  const displayStatus =
+    getTrackingDisplayStatus(tracking);
+  const isTerminal =
+    TERMINAL_TRACKING_STATUSES.has(displayStatus);
+
   return (
     <div className="p-4 sm:p-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {isTerminal ? (
+        <TrackingFinalStateBanner
+          tracking={tracking}
+          language={language}
+          t={t}
+        />
+      ) : null}
+
+      <div className={`${isTerminal ? "mt-4 " : ""}grid gap-3 sm:grid-cols-2 xl:grid-cols-5`}>
         <TrackingMetric
           icon={Clock3}
           label={t("storeManager.liveTrackingEta")}
-          value={etaValue}
-          detail={
-            tracking.etaSource === "LIVE"
-              ? t("storeManager.liveTrackingEtaLive")
-              : tracking.etaSource === "PLANNED"
-                ? t("storeManager.liveTrackingEtaPlanned")
-                : t("storeManager.deliveriesEtaPending")
+          value={
+            isTerminal
+              ? t("storeManager.liveTrackingCompletedValue")
+              : etaValue
           }
-          tone={tracking.etaSource === "LIVE" ? "success" : tracking.etaSource === "PLANNED" ? "warning" : "neutral"}
+          detail={
+            isTerminal
+              ? t("storeManager.liveTrackingFinalEtaHint")
+              : tracking.etaSource === "LIVE"
+                ? t("storeManager.liveTrackingEtaLive")
+                : tracking.etaSource === "PLANNED"
+                  ? t("storeManager.liveTrackingEtaPlanned")
+                  : t("storeManager.deliveriesEtaPending")
+          }
+          tone={
+            isTerminal
+              ? "success"
+              : tracking.etaSource === "LIVE"
+                ? "success"
+                : tracking.etaSource === "PLANNED"
+                  ? "warning"
+                  : "neutral"
+          }
         />
         <TrackingMetric
           icon={Route}
           label={t("storeManager.liveTrackingStopsRemaining")}
-          value={String(stop.stopsRemainingBeforeOutlet ?? 0)}
-          detail={t("storeManager.liveTrackingStopsRemainingHint")}
+          value={String(isTerminal ? 0 : (stop.stopsRemainingBeforeOutlet ?? 0))}
+          detail={
+            isTerminal
+              ? t("storeManager.liveTrackingFinalStopsHint")
+              : t("storeManager.liveTrackingStopsRemainingHint")
+          }
           tone="info"
         />
         <TrackingMetric
@@ -264,6 +304,69 @@ function TrackingWorkspace({
             </div>
           </div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function TrackingFinalStateBanner({ tracking, language, t }) {
+  const displayStatus = getTrackingDisplayStatus(tracking);
+  const receipt = tracking.receipt || {};
+  const needsAttention = ["PARTIAL", "EXCEPTION"].includes(displayStatus);
+  const Icon = needsAttention ? TriangleAlert : CheckCircle2;
+
+  const messageKey =
+    displayStatus === "RECEIVED"
+      ? "storeManager.liveTrackingFinalReceivedHint"
+      : displayStatus === "PARTIAL"
+        ? "storeManager.liveTrackingFinalPartialHint"
+        : displayStatus === "EXCEPTION"
+          ? "storeManager.liveTrackingFinalExceptionHint"
+          : "storeManager.liveTrackingFinalDeliveredHint";
+
+  return (
+    <div
+      className={`rounded-[18px] border px-4 py-4 ${
+        needsAttention
+          ? "border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)]/65"
+          : "border-[var(--color-success)]/28 bg-[var(--color-success-soft)]/65"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
+            needsAttention
+              ? "border-[var(--color-warning)]/25 bg-[var(--color-surface)] text-[var(--color-warning)]"
+              : "border-[var(--color-success)]/25 bg-[var(--color-surface)] text-[var(--color-success)]"
+          }`}
+        >
+          <Icon size={16} />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[12px] font-extrabold text-[var(--color-text)]">
+              {t("storeManager.liveTrackingFinalTitle")}
+            </p>
+            <DeliveryStatusBadge status={displayStatus} t={t} compact />
+          </div>
+          <p className="mt-1.5 text-[10px] leading-5 text-[var(--color-text-secondary)]">
+            {t(messageKey)}
+          </p>
+
+          {receipt.confirmed ? (
+            <p className="mt-2 text-[9.5px] font-semibold text-[var(--color-text-secondary)]">
+              {t("storeManager.liveTrackingReceiptConfirmedAt")}: {formatTimestamp(
+                receipt.confirmedAt,
+                language,
+                t("storeManager.notSpecified")
+              )}
+              {receipt.confirmedBy?.fullName
+                ? ` · ${receipt.confirmedBy.fullName}`
+                : ""}
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -387,6 +490,7 @@ function FitTrackingMap({ points }) {
 function TrackingStatusCard({ tracking, language, t }) {
   const trip = tracking.trip || {};
   const stop = tracking.myStop || {};
+  const displayStatus = getTrackingDisplayStatus(tracking);
 
   return (
     <div className="rounded-[18px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -396,10 +500,10 @@ function TrackingStatusCard({ tracking, language, t }) {
             {t("storeManager.liveTrackingCurrentState")}
           </p>
           <p className="mt-1.5 text-[14px] font-bold text-[var(--color-text)]">
-            {getDeliveryStatusLabel(t, tracking.deliveryStatus)}
+            {getDeliveryStatusLabel(t, displayStatus)}
           </p>
         </div>
-        <DeliveryStatusBadge status={tracking.deliveryStatus} t={t} compact />
+        <DeliveryStatusBadge status={displayStatus} t={t} compact />
       </div>
 
       <div className="mt-4 grid gap-3">
@@ -553,6 +657,14 @@ function TrackingError({ message, onRefresh, t }) {
       </button>
     </div>
   );
+}
+
+function getTrackingDisplayStatus(tracking) {
+  if (tracking?.receipt?.confirmed) {
+    return "RECEIVED";
+  }
+
+  return tracking?.deliveryStatus || "SCHEDULED";
 }
 
 function InfoRow({ label, value }) {

@@ -17,6 +17,7 @@ const STATUS_META = {
   ARRIVING: { tone: "transit", icon: Truck },
   ARRIVED: { tone: "ready", icon: CircleDot },
   DELIVERED: { tone: "success", icon: CheckCircle2 },
+  RECEIVED: { tone: "success", icon: CheckCircle2 },
   COMPLETED: { tone: "success", icon: CheckCircle2 },
   DEFERRED: { tone: "danger", icon: AlertTriangle },
   DELAYED: { tone: "warning", icon: AlertTriangle },
@@ -59,6 +60,7 @@ export const ACTIVE_STATUSES = new Set([
 
 export const COMPLETED_STATUSES = new Set([
   "DELIVERED",
+  "RECEIVED",
   "COMPLETED",
 ]);
 
@@ -77,6 +79,7 @@ export const DELIVERY_PROGRESS_STEPS = [
   "ARRIVING",
   "ARRIVED",
   "DELIVERED",
+  "RECEIVED",
 ];
 
 export function getDeliveryStatusLabel(t, status) {

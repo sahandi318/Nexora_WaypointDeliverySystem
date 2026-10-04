@@ -1675,6 +1675,33 @@ const STATIC_TRANSLATIONS = {
     "storeManager.liveTrackingLoadFailed":
       "Unable to load live tracking",
 
+    "storeManager.liveTrackingFinalTitle":
+      "Final delivery state",
+
+    "storeManager.liveTrackingCompletedValue":
+      "Completed",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "Live ETA is no longer required for this completed stop.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "Your outlet stop has been completed.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "The driver recorded a full delivery. Confirm receipt below if your store has received the goods.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "The driver recorded a partial delivery. Review what was received and report any discrepancy before confirming receipt.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "The driver could not complete this delivery. Review the issue details before taking further action.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "Your store has confirmed receipt. Live movement tracking for this delivery is complete.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt confirmed",
+
     "storeManager.deliveriesUpcoming":
       "Upcoming",
 
@@ -1803,6 +1830,9 @@ const STATIC_TRANSLATIONS = {
 
     "storeManager.deliveryStatusDelivered":
       "Delivered",
+
+    "storeManager.deliveryStatusReceived":
+      "Received",
 
     "storeManager.deliveryStatusCompleted":
       "Completed",
@@ -4428,6 +4458,33 @@ const STATIC_TRANSLATIONS = {
     "storeManager.liveTrackingLoadFailed":
       "සජීවී tracking පූරණය කළ නොහැක",
 
+    "storeManager.liveTrackingFinalTitle":
+      "අවසන් delivery තත්ත්වය",
+
+    "storeManager.liveTrackingCompletedValue":
+      "සම්පූර්ණයි",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "මෙම stop එක සම්පූර්ණ නිසා live ETA තවදුරටත් අවශ්‍ය නොවේ.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "ඔබගේ outlet stop එක සම්පූර්ණයි.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "Driver full delivery එක record කර ඇත. Goods ලැබී ඇත්නම් පහතින් receipt confirm කරන්න.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "Driver partial delivery එක record කර ඇත. ලැබුණු items පරීක්ෂා කර discrepancy එකක් තිබේ නම් issue එකක් report කර receipt confirm කරන්න.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "Driverට මෙම delivery එක සම්පූර්ණ කළ නොහැකි විය. ඊළඟ action එකට පෙර issue details බලන්න.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "ඔබගේ store එක receipt තහවුරු කර ඇත. මෙම delivery එකේ live movement tracking සම්පූර්ණයි.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt තහවුරු කළේ",
+
     "storeManager.deliveriesUpcoming":
       "ඉදිරියට ඇති",
 
@@ -4556,6 +4613,9 @@ const STATIC_TRANSLATIONS = {
 
     "storeManager.deliveryStatusDelivered":
       "බෙදාහැර ඇත",
+
+    "storeManager.deliveryStatusReceived":
+      "ලැබුණු බව තහවුරුයි",
 
     "storeManager.deliveryStatusCompleted":
       "සම්පූර්ණ",
@@ -7181,6 +7241,33 @@ const STATIC_TRANSLATIONS = {
     "storeManager.liveTrackingLoadFailed":
       "நேரலை trackingஐ ஏற்ற முடியவில்லை",
 
+    "storeManager.liveTrackingFinalTitle":
+      "இறுதி delivery நிலை",
+
+    "storeManager.liveTrackingCompletedValue":
+      "முடிந்தது",
+
+    "storeManager.liveTrackingFinalEtaHint":
+      "இந்த stop முடிந்ததால் live ETA இனி தேவையில்லை.",
+
+    "storeManager.liveTrackingFinalStopsHint":
+      "உங்கள் outlet stop முடிந்தது.",
+
+    "storeManager.liveTrackingFinalDeliveredHint":
+      "Driver முழு delivery பதிவு செய்துள்ளார். பொருட்கள் கிடைத்திருந்தால் கீழே receipt confirm செய்யவும்.",
+
+    "storeManager.liveTrackingFinalPartialHint":
+      "Driver partial delivery பதிவு செய்துள்ளார். கிடைத்த பொருட்களை சரிபார்த்து discrepancy இருந்தால் issue report செய்து receipt confirm செய்யவும்.",
+
+    "storeManager.liveTrackingFinalExceptionHint":
+      "Driver இந்த deliveryஐ முடிக்க முடியவில்லை. அடுத்த நடவடிக்கைக்கு முன் issue detailsஐ பார்க்கவும்.",
+
+    "storeManager.liveTrackingFinalReceivedHint":
+      "உங்கள் store receiptஐ உறுதிப்படுத்தியுள்ளது. இந்த deliveryக்கான live movement tracking முடிந்தது.",
+
+    "storeManager.liveTrackingReceiptConfirmedAt":
+      "Receipt உறுதி",
+
     "storeManager.deliveriesUpcoming":
       "வரவிருப்பவை",
 
@@ -7309,6 +7396,9 @@ const STATIC_TRANSLATIONS = {
 
     "storeManager.deliveryStatusDelivered":
       "வழங்கப்பட்டது",
+
+    "storeManager.deliveryStatusReceived":
+      "பெறப்பட்டது",
 
     "storeManager.deliveryStatusCompleted":
       "முடிந்தது",

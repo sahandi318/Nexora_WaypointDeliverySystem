@@ -257,6 +257,13 @@ export async function getStoreManagerDeliveryTracking(
               },
             },
           },
+          receivedConfirmedBy: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+            },
+          },
         },
       },
     },
@@ -656,6 +663,13 @@ function mapSafeTracking(order, allocation) {
   const stop = allocation.liveTripStop;
   const trip = stop.liveTrip;
   const allStops = trip.stops ?? [];
+  const deliveryStatus = deriveStoreManagerDeliveryStatus({
+    orderStatus: order.status,
+    allocationStatus: allocation.status,
+    tripStatus: trip.status,
+    stopStatus: stop.status,
+    stopOutcome: stop.outcome,
+  });
 
   const pendingBeforeOutlet = allStops.filter(
     (candidate) =>
@@ -671,13 +685,8 @@ function mapSafeTracking(order, allocation) {
 
   return {
     orderCode: order.orderCode,
-    deliveryStatus: deriveStoreManagerDeliveryStatus({
-      orderStatus: order.status,
-      allocationStatus: allocation.status,
-      tripStatus: trip.status,
-      stopStatus: stop.status,
-      stopOutcome: stop.outcome,
-    }),
+    deliveryStatus,
+    receipt: mapDeliveryReceipt(allocation, deliveryStatus),
     outlet: mapOutlet(order.outlet),
     trip: {
       tripCode: trip.tripCode,

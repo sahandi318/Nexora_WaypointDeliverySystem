@@ -15,6 +15,7 @@ import {
   StoreManagerDeliveryError,
   confirmStoreManagerDeliveryReceived,
   getStoreManagerDeliveryByOrderCode,
+  getStoreManagerDeliveryTracking,
 } from "../services/storeManagerDeliveryService.js";
 
 const USER_ID =
@@ -253,8 +254,19 @@ async function main() {
     assert.ok(fullDetails.receipt.confirmedAt);
     assert.equal(fullDetails.receipt.canConfirm, false);
 
+    const fullTracking = await getStoreManagerDeliveryTracking(
+      context,
+      full.order.orderCode
+    );
+    assert.equal(fullTracking.deliveryStatus, "DELIVERED");
+    assert.equal(fullTracking.receipt.confirmed, true);
+    assert.equal(
+      fullTracking.receipt.confirmedBy.userId,
+      storeManager.userId
+    );
+
     console.log(
-      "PASS delivered delivery can be confirmed and receipt persists"
+      "PASS delivered delivery can be confirmed and receipt persists in final tracking state"
     );
 
     const repeated = await confirmStoreManagerDeliveryReceived(

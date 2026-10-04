@@ -390,7 +390,10 @@ function DeliveryWorkspace({
             title={t("storeManager.deliveryDetailsProgress")}
             description={t("storeManager.deliveryDetailsProgressDescription")}
           >
-            <DeliveryProgress status={delivery.deliveryStatus} t={t} />
+            <DeliveryProgress
+              status={delivery.receipt?.confirmed ? "RECEIVED" : delivery.deliveryStatus}
+              t={t}
+            />
           </Panel>
 
           <Panel
@@ -724,10 +727,19 @@ function DeliveryProgress({ status, t }) {
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-7">
+    <div className="grid gap-2 sm:grid-cols-8">
       {DELIVERY_PROGRESS_STEPS.map((step, index) => {
-        const complete = index < currentIndex || status === "DELIVERED" || status === "COMPLETED";
-        const active = index === currentIndex && status !== "DELIVERED" && status !== "COMPLETED";
+        const isTerminalSuccess = [
+          "DELIVERED",
+          "COMPLETED",
+          "RECEIVED",
+        ].includes(status);
+        const complete =
+          index < currentIndex ||
+          (index === currentIndex && isTerminalSuccess);
+        const active =
+          index === currentIndex &&
+          !isTerminalSuccess;
 
         return (
           <div key={step} className="relative">
