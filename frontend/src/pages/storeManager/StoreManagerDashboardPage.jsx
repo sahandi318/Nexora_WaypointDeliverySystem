@@ -14,8 +14,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import ThemeToggle from "../../components/common/ThemeToggle";
-
 import useAuth from "../../hooks/useAuth";
 import useStoreManagerContext from "../../hooks/useStoreManagerContext";
 
@@ -242,6 +240,8 @@ function StoreManagerDashboardPage() {
               flex
               items-center
               gap-2
+              pr-12
+              sm:pr-12
             "
           >
             <button
@@ -287,9 +287,6 @@ function StoreManagerDashboardPage() {
 
               Refresh
             </button>
-
-
-            <ThemeToggle />
 
 
             <button

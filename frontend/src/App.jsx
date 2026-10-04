@@ -57,13 +57,17 @@ import {
 // ============================================================
 
 function App() {
-  const location =
-    useLocation();
+  const {
+    user,
+    isInitializing,
+  } = useAuth();
 
-  // Landing navigation and footer belong only to the
-  // public landing page.
-  const showLandingChrome =
-    location.pathname === "/";
+  // Keep the public navigation visible across public/auth pages
+  // until a user is authenticated. Protected workspaces use
+  // their own role-specific navigation.
+  const showPublicNavbar =
+    !isInitializing &&
+    !user;
 
   return (
     <div
@@ -77,7 +81,7 @@ function App() {
     >
       <ThemeToggle />
 
-      {showLandingChrome && (
+      {showPublicNavbar && (
         <LandingNavbar />
       )}
 
@@ -85,7 +89,7 @@ function App() {
         className={`
           flex-1
           ${
-            showLandingChrome
+            showPublicNavbar
               ? "pt-16 sm:pt-20"
               : ""
           }
@@ -482,9 +486,7 @@ function App() {
         </Routes>
       </div>
 
-      {showLandingChrome && (
-        <Footer />
-      )}
+      <Footer />
     </div>
   );
 }

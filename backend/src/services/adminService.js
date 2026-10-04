@@ -15,13 +15,16 @@ import {
 const PASSWORD_HASH_ROUNDS =
   12;
 
-const ADMIN_ROLES = new Set([
-  "ADMIN",
+const STAFF_ROLE_VALUES = Object.freeze([
   "STORE_MANAGER",
   "DISPATCHER",
   "LOADER",
   "DRIVER",
 ]);
+
+const STAFF_ROLES = new Set(
+  STAFF_ROLE_VALUES
+);
 
 const STATUS_FILTERS = new Set([
   "ALL",
@@ -600,7 +603,7 @@ export async function getAccountDirectory({
   assignment = "ALL",
   passwordStatus = "ALL",
   page = 1,
-  limit = 12,
+  limit = 8,
 }) {
   const normalizedRole =
     String(role)
@@ -625,7 +628,7 @@ export async function getAccountDirectory({
   const safeRole =
     normalizedRole ===
       "ALL" ||
-    ADMIN_ROLES.has(
+    STAFF_ROLES.has(
       normalizedRole
     )
       ? normalizedRole
@@ -664,7 +667,7 @@ export async function getAccountDirectory({
     Math.min(
       Math.max(
         Number(limit) ||
-        12,
+        8,
         1
       ),
       50
@@ -674,7 +677,13 @@ export async function getAccountDirectory({
     String(search)
       .trim();
 
-  const andConditions = [];
+  const andConditions = [
+    {
+      role: {
+        in: STAFF_ROLE_VALUES,
+      },
+    },
+  ];
 
 
   if (cleanedSearch) {
@@ -837,10 +846,19 @@ export async function getAccountDirectory({
       where,
     }),
 
-    prisma.user.count(),
+    prisma.user.count({
+      where: {
+        role: {
+          in: STAFF_ROLE_VALUES,
+        },
+      },
+    }),
 
     prisma.user.count({
       where: {
+        role: {
+          in: STAFF_ROLE_VALUES,
+        },
         isActive:
           true,
       },
@@ -848,6 +866,9 @@ export async function getAccountDirectory({
 
     prisma.user.count({
       where: {
+        role: {
+          in: STAFF_ROLE_VALUES,
+        },
         isActive:
           false,
       },
@@ -909,16 +930,71 @@ export async function getAccountDirectory({
 
 
 // ============================================================
-// STAFF REGISTRATION
+// REMOVE STAFF ACCOUNT
 // ============================================================
 
-const STAFF_ROLES = new Set([
-  "STORE_MANAGER",
-  "DISPATCHER",
-  "LOADER",
-  "DRIVER",
-]);
+export async function deleteStaffAccount({
+  userDatabaseId,
+}) {
+  const existingUser =
+    await prisma.user.findUnique({
+      where: {
+        id:
+          userDatabaseId,
+      },
 
+      include: {
+        outlet:
+          true,
+
+        depot:
+          true,
+      },
+    });
+
+
+  if (!existingUser) {
+    return {
+      success: false,
+
+      reason:
+        "USER_NOT_FOUND",
+    };
+  }
+
+
+  if (existingUser.role === "ADMIN") {
+    return {
+      success: false,
+
+      reason:
+        "ADMIN_PROTECTED",
+    };
+  }
+
+
+  await prisma.user.delete({
+    where: {
+      id:
+        userDatabaseId,
+    },
+  });
+
+
+  return {
+    success: true,
+
+    deletedAccount:
+      serializeAccount(
+        existingUser
+      ),
+  };
+}
+
+
+// ============================================================
+// STAFF REGISTRATION
+// ============================================================
 
 export async function registerStaffMember({
   role,

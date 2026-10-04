@@ -1,4 +1,5 @@
 import {
+  deleteStaffAccount,
   getAccountDirectory,
   getActiveDepots,
   getActiveOutlets,
@@ -651,6 +652,116 @@ export async function getAdminAccounts(
         success: true,
 
         ...result,
+      });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+
+// ============================================================
+// REMOVE STAFF ACCOUNT
+// ============================================================
+
+export async function deleteAdminManagedAccount(
+  req,
+  res,
+  next
+) {
+  try {
+    const accountId =
+      Number(
+        req.params.accountId
+      );
+
+
+    if (
+      !Number.isInteger(
+        accountId
+      ) ||
+      accountId <= 0
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+
+          message:
+            "Enter a valid account ID.",
+        });
+    }
+
+
+    const result =
+      await deleteStaffAccount({
+        userDatabaseId:
+          accountId,
+      });
+
+
+    if (!result.success) {
+      if (
+        result.reason ===
+        "USER_NOT_FOUND"
+      ) {
+        return res
+          .status(404)
+          .json({
+            success: false,
+
+            message:
+              "That staff account was not found.",
+          });
+      }
+
+
+      if (
+        result.reason ===
+        "ADMIN_PROTECTED"
+      ) {
+        return res
+          .status(403)
+          .json({
+            success: false,
+
+            message:
+              "Administrator profiles are protected and cannot be removed from the account directory.",
+          });
+      }
+
+
+      return res
+        .status(400)
+        .json({
+          success: false,
+
+          message:
+            "Unable to remove the staff account.",
+        });
+    }
+
+
+    return res
+      .status(200)
+      .json({
+        success: true,
+
+        message:
+          `${result.deletedAccount.fullName} was removed successfully.`,
+
+        deletedAccount: {
+          id:
+            result.deletedAccount.id,
+
+          userId:
+            result.deletedAccount.userId,
+
+          fullName:
+            result.deletedAccount.fullName,
+
+          role:
+            result.deletedAccount.role,
+        },
       });
   } catch (error) {
     return next(error);

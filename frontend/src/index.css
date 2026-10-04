@@ -788,44 +788,31 @@ html[data-theme="dark"] .landing-footer-surface::before {
 
 .landing-hero-hq {
   isolation: isolate;
-
-  background:
-    #dfeee8;
+  background: transparent;
 }
 
 .landing-hero-hq-image {
-  transform:
-    scale(1.012);
-
-  object-position:
-    54% center;
-
+  transform: scale(1.01);
+  object-position: 58% center;
   filter:
-    brightness(1.08)
-    contrast(0.96)
-    saturate(0.90)
-    temperature(1);
+    brightness(0.98)
+    contrast(0.97)
+    saturate(0.92);
 
   transition:
     filter 0.45s ease,
     transform 0.7s ease;
 }
 
-/*
-  Light mode:
-  keep the building bright and naturally sunlit.
-  The pale overlay softens remaining warm/artificial highlights
-  without altering the building geometry.
-*/
 .landing-hero-hq-lighting {
   z-index: 1;
 
   background:
     linear-gradient(
       180deg,
-      rgba(207, 234, 249, 0.13) 0%,
-      rgba(255, 255, 255, 0.07) 44%,
-      rgba(246, 255, 250, 0.12) 100%
+      rgba(229, 244, 252, 0.10) 0%,
+      rgba(255, 255, 255, 0.05) 42%,
+      rgba(246, 255, 250, 0.10) 100%
     );
 }
 
@@ -835,83 +822,77 @@ html[data-theme="dark"] .landing-footer-surface::before {
   background:
     linear-gradient(
       90deg,
-      color-mix(
-        in srgb,
-        var(--color-bg) 84%,
-        transparent
-      ) 0%,
-      color-mix(
-        in srgb,
-        var(--color-bg) 49%,
-        transparent
-      ) 9%,
-      transparent 27%
+      color-mix(in srgb, var(--color-bg) 98%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 88%, transparent) 12%,
+      color-mix(in srgb, var(--color-bg) 58%, transparent) 24%,
+      transparent 43%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03),
+      transparent 25%,
+      rgba(8, 34, 28, 0.05) 100%
     );
 }
 
 .landing-hero-hq-brand-glow {
   z-index: 3;
-
-  opacity: 0.08;
+  opacity: 0.12;
 
   background:
     radial-gradient(
-      circle at 61% 30%,
-      rgba(20, 184, 122, 0.18),
-      transparent 21%
+      circle at 83% 28%,
+      rgba(20, 184, 122, 0.15),
+      transparent 16%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 62%,
+      rgba(16, 220, 148, 0.035) 100%
     );
 
-  transition:
-    opacity 0.45s ease;
+  transition: opacity 0.45s ease;
 }
 
 .landing-hero-hq-status-dot {
-  background:
-    #8de7bd;
-
-  box-shadow:
-    0 0 0 4px
-    rgba(141, 231, 189, 0.16);
+  background: #8de7bd;
+  box-shadow: 0 0 0 4px rgba(141, 231, 189, 0.16);
 }
 
 .landing-hero-hq-night-copy {
   display: none;
 }
 
-
-/* DARK MODE — SAME BUILDING, NIGHT LIGHTING ONLY */
-
 html[data-theme="dark"] .landing-hero-hq {
-  background:
-    #041d18;
+  background: transparent;
 }
 
 html[data-theme="dark"] .landing-hero-hq-image {
   filter:
-    brightness(0.50)
-    contrast(1.20)
-    saturate(1.16)
-    hue-rotate(-3deg);
+    brightness(0.60)
+    contrast(1.10)
+    saturate(1.06)
+    hue-rotate(-2deg);
 }
 
 html[data-theme="dark"] .landing-hero-hq-lighting {
   background:
     linear-gradient(
       180deg,
-      rgba(3, 18, 26, 0.60) 0%,
-      rgba(4, 31, 26, 0.31) 35%,
-      rgba(2, 18, 15, 0.18) 62%,
-      rgba(2, 20, 16, 0.43) 100%
+      rgba(3, 18, 26, 0.48) 0%,
+      rgba(4, 31, 26, 0.28) 35%,
+      rgba(2, 18, 15, 0.16) 62%,
+      rgba(2, 20, 16, 0.38) 100%
     ),
     radial-gradient(
-      circle at 62% 30%,
+      circle at 82% 28%,
       rgba(24, 232, 157, 0.18),
-      transparent 20%
+      transparent 16%
     ),
     radial-gradient(
-      circle at 51% 68%,
-      rgba(255, 201, 125, 0.13),
-      transparent 30%
+      circle at 66% 68%,
+      rgba(255, 201, 125, 0.11),
+      transparent 26%
     );
 }
 
@@ -919,17 +900,16 @@ html[data-theme="dark"] .landing-hero-hq-fade {
   background:
     linear-gradient(
       90deg,
-      color-mix(
-        in srgb,
-        var(--color-bg) 92%,
-        transparent
-      ) 0%,
-      color-mix(
-        in srgb,
-        var(--color-bg) 62%,
-        transparent
-      ) 11%,
-      transparent 31%
+      color-mix(in srgb, var(--color-bg) 99%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 92%, transparent) 12%,
+      color-mix(in srgb, var(--color-bg) 70%, transparent) 25%,
+      transparent 45%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.05),
+      transparent 28%,
+      rgba(0, 0, 0, 0.18) 100%
     );
 }
 
@@ -938,34 +918,30 @@ html[data-theme="dark"] .landing-hero-hq-brand-glow {
 
   background:
     radial-gradient(
-      circle at 60% 30%,
-      rgba(34, 255, 177, 0.28),
-      transparent 13%
+      circle at 82% 28%,
+      rgba(34, 255, 177, 0.24),
+      transparent 11%
     ),
     radial-gradient(
-      circle at 59% 33%,
-      rgba(9, 168, 113, 0.18),
-      transparent 25%
+      circle at 80% 30%,
+      rgba(9, 168, 113, 0.16),
+      transparent 22%
     ),
     linear-gradient(
       90deg,
-      transparent 60%,
+      transparent 58%,
       rgba(16, 220, 148, 0.06) 100%
     );
 
-  mix-blend-mode:
-    screen;
+  mix-blend-mode: screen;
 }
 
 html[data-theme="dark"] .landing-hero-hq-status-dot {
-  background:
-    #2de39b;
+  background: #2de39b;
 
   box-shadow:
-    0 0 8px
-    rgba(45, 227, 155, 0.95),
-    0 0 0 4px
-    rgba(45, 227, 155, 0.14);
+    0 0 8px rgba(45, 227, 155, 0.95),
+    0 0 0 4px rgba(45, 227, 155, 0.14);
 }
 
 html[data-theme="dark"] .landing-hero-hq-day-copy {
@@ -976,23 +952,17 @@ html[data-theme="dark"] .landing-hero-hq-night-copy {
   display: inline;
 }
 
-
 @media (max-width: 1023px) {
   .landing-hero-hq-image {
-    object-position:
-      55% center;
+    object-position: 60% center;
   }
 
   .landing-hero-hq-fade {
     background:
       linear-gradient(
         180deg,
-        transparent 65%,
-        color-mix(
-          in srgb,
-          var(--color-bg) 20%,
-          transparent
-        ) 100%
+        transparent 62%,
+        color-mix(in srgb, var(--color-bg) 24%, transparent) 100%
       );
   }
 
@@ -1000,22 +970,93 @@ html[data-theme="dark"] .landing-hero-hq-night-copy {
     background:
       linear-gradient(
         180deg,
-        transparent 60%,
-        color-mix(
-          in srgb,
-          var(--color-bg) 42%,
-          transparent
-        ) 100%
+        transparent 58%,
+        color-mix(in srgb, var(--color-bg) 45%, transparent) 100%
       );
   }
 }
 
-
 @media (max-width: 639px) {
   .landing-hero-hq-image {
-    object-position:
-      57% center;
+    object-position: 62% center;
   }
 }
 
 /* END LANDING HERO HEADQUARTERS IMAGE */
+
+/* =========================================================
+   SHARED NAVIGATION SURFACES
+   Landing and Admin use the same restrained glass treatment.
+   ========================================================= */
+
+.landing-navbar-surface,
+.admin-navbar-surface {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 94%, transparent),
+      color-mix(in srgb, var(--color-surface) 88%, transparent)
+    );
+
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  backdrop-filter: blur(16px) saturate(135%);
+
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--color-primary) 8%, transparent),
+    0 10px 28px color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.landing-navbar-surface::after,
+.admin-navbar-surface::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: min(92%, 78rem);
+  height: 1px;
+  transform: translateX(-50%);
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-primary) 38%, transparent),
+      transparent
+    );
+}
+
+html[data-theme="dark"] .landing-navbar-surface,
+html[data-theme="dark"] .admin-navbar-surface {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 90%, transparent),
+      color-mix(in srgb, var(--color-bg) 86%, transparent)
+    );
+
+  box-shadow:
+    0 1px 0 rgba(61, 203, 143, 0.10),
+    0 14px 34px rgba(0, 0, 0, 0.20);
+}
+
+.admin-mobile-nav {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent),
+      color-mix(in srgb, var(--color-surface-soft) 88%, transparent)
+    );
+
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+html[data-theme="dark"] .admin-mobile-nav {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent),
+      color-mix(in srgb, var(--color-bg) 92%, transparent)
+    );
+}

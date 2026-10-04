@@ -570,15 +570,17 @@ function LoginPage() {
               className="
                 flex
                 flex-1
-                items-center
+                items-start
                 justify-center
-                py-[clamp(1rem,3vh,2.5rem)]
+                pb-[clamp(1.5rem,4vh,3rem)]
+                pt-[clamp(2rem,7vh,5rem)]
               "
             >
               <div
                 className="
                   w-full
                   max-w-[470px]
+                  shrink-0
                 "
               >
                 <div
