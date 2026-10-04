@@ -7,6 +7,14 @@ import {
 } from "../controllers/storeManagerController.js";
 
 import {
+  getStoreManagerCatalog,
+  getStoreManagerOrder,
+  getStoreManagerOrders,
+  getStoreManagerOrderSetupController,
+  postStoreManagerOrder,
+} from "../controllers/storeManagerOrderController.js";
+
+import {
   authenticateToken,
   requirePasswordChangeCompleted,
 } from "../middleware/authMiddleware.js";
@@ -19,10 +27,8 @@ import {
   requireStoreManagerOutlet,
 } from "../middleware/storeManagerMiddleware.js";
 
-
 const router =
   Router();
-
 
 // ============================================================
 // STORE MANAGER SECURITY PIPELINE
@@ -37,29 +43,25 @@ const router =
  * 4. STORE_MANAGER role
  * 5. A valid active outlet assignment
  *
- * Future Store Manager routes should be added below this
- * security pipeline.
+ * The authenticated database user's outlet is the only trusted
+ * Store Manager outlet context.
  */
 
 router.use(
   authenticateToken
 );
 
-
 router.use(
   requirePasswordChangeCompleted
 );
-
 
 router.use(
   requireStoreManager
 );
 
-
 router.use(
   requireStoreManagerOutlet
 );
-
 
 // ============================================================
 // STORE MANAGER CONTEXT
@@ -70,5 +72,42 @@ router.get(
   getStoreManagerContext
 );
 
+// ============================================================
+// CREATE ORDER SETUP / CUTOFF PREVIEW
+// ============================================================
+
+router.get(
+  "/order-setup",
+  getStoreManagerOrderSetupController
+);
+
+
+// ============================================================
+// STORE MANAGER PRODUCT CATALOG
+// ============================================================
+
+router.get(
+  "/catalog",
+  getStoreManagerCatalog
+);
+
+// ============================================================
+// STORE MANAGER ORDERS
+// ============================================================
+
+router.get(
+  "/orders",
+  getStoreManagerOrders
+);
+
+router.get(
+  "/orders/:orderCode",
+  getStoreManagerOrder
+);
+
+router.post(
+  "/orders",
+  postStoreManagerOrder
+);
 
 export default router;

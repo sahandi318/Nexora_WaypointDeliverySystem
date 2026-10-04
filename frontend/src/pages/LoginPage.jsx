@@ -22,6 +22,7 @@ import {
 import LoginUtilityBar from "../components/common/LoginUtilityBar";
 
 import useAuth from "../hooks/useAuth";
+import useTranslations from "../hooks/useTranslations";
 
 import {
   getRoleHomePath,
@@ -30,6 +31,90 @@ import {
 import waypointLogo from "../assets/waypoint-logo.png";
 import waypointLoginHero from "../assets/login/waypoint-login-hero.png";
 
+// ============================================================
+// LANGUAGE TYPOGRAPHY
+// ============================================================
+
+function getLanguageTypography(
+  language
+) {
+  if (
+    language === "si"
+  ) {
+    return {
+      fontFamily:
+        '"Nirmala UI", "Noto Sans Sinhala", "Segoe UI", Arial, sans-serif',
+
+      heroFontSize:
+        "clamp(2.15rem, 3.35vw, 3.45rem)",
+
+      heroLineHeight:
+        1.08,
+
+      heroLetterSpacing:
+        "-0.025em",
+
+      cardTitleFontSize:
+        "clamp(1.65rem, 1.85vw, 2rem)",
+
+      cardTitleLineHeight:
+        1.14,
+
+      bodyLineHeight:
+        1.72,
+    };
+  }
+
+  if (
+    language === "ta"
+  ) {
+    return {
+      fontFamily:
+        '"Nirmala UI", "Noto Sans Tamil", "Segoe UI", Arial, sans-serif',
+
+      heroFontSize:
+        "clamp(2.15rem, 3.35vw, 3.45rem)",
+
+      heroLineHeight:
+        1.08,
+
+      heroLetterSpacing:
+        "-0.02em",
+
+      cardTitleFontSize:
+        "clamp(1.65rem, 1.85vw, 2rem)",
+
+      cardTitleLineHeight:
+        1.14,
+
+      bodyLineHeight:
+        1.7,
+    };
+  }
+
+  return {
+    fontFamily:
+      'Inter, "Segoe UI", Arial, sans-serif',
+
+    heroFontSize:
+      "clamp(2.55rem, 4vw, 4rem)",
+
+    heroLineHeight:
+      1.04,
+
+    heroLetterSpacing:
+      "-0.047em",
+
+    cardTitleFontSize:
+      "clamp(1.85rem, 2.2vw, 2.25rem)",
+
+    cardTitleLineHeight:
+      1.12,
+
+    bodyLineHeight:
+      1.65,
+  };
+}
 
 function LoginPage() {
   const navigate =
@@ -39,6 +124,15 @@ function LoginPage() {
     login,
   } = useAuth();
 
+  const {
+    t,
+    language,
+  } = useTranslations();
+
+  const typography =
+    getLanguageTypography(
+      language
+    );
 
   const [
     identifier,
@@ -65,7 +159,6 @@ function LoginPage() {
     setErrorMessage,
   ] = useState("");
 
-
   // ==========================================================
   // LOGIN
   // ==========================================================
@@ -75,34 +168,37 @@ function LoginPage() {
   ) {
     event.preventDefault();
 
-
     const cleanedIdentifier =
       identifier.trim();
 
-
     if (!cleanedIdentifier) {
       setErrorMessage(
-        "Enter your User ID or email."
+        t(
+          "auth.identifierRequired"
+        )
       );
 
       return;
     }
-
 
     if (!password) {
       setErrorMessage(
-        "Enter your password."
+        t(
+          "auth.passwordRequired"
+        )
       );
 
       return;
     }
 
-
     try {
-      setIsSubmitting(true);
+      setIsSubmitting(
+        true
+      );
 
-      setErrorMessage("");
-
+      setErrorMessage(
+        ""
+      );
 
       const authenticatedUser =
         await login({
@@ -111,7 +207,6 @@ function LoginPage() {
 
           password,
         });
-
 
       navigate(
         getRoleHomePath(
@@ -125,31 +220,35 @@ function LoginPage() {
       const message =
         error.response?.data
           ?.message ||
-        error.message ||
-        "Unable to sign in. Please try again.";
-
+        t(
+          "auth.signInFailed"
+        );
 
       setErrorMessage(
         message
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(
+        false
+      );
     }
   }
-
 
   return (
     <main
       className="
         min-h-dvh
         bg-[var(--color-bg)]
-        font-sans
         text-[var(--color-text)]
 
         lg:h-dvh
         lg:min-h-0
         lg:overflow-hidden
       "
+      style={{
+        fontFamily:
+          typography.fontFamily,
+      }}
     >
       <div
         className="
@@ -176,8 +275,6 @@ function LoginPage() {
             lg:h-full
           "
         >
-          {/* BACKGROUND IMAGE */}
-
           <img
             src={
               waypointLoginHero
@@ -194,9 +291,6 @@ function LoginPage() {
             "
           />
 
-
-          {/* IMAGE OVERLAYS */}
-
           <div
             className="
               absolute
@@ -205,7 +299,6 @@ function LoginPage() {
             "
           />
 
-
           <div
             className="
               absolute
@@ -213,9 +306,6 @@ function LoginPage() {
               bg-[linear-gradient(90deg,rgba(2,34,26,0.18)_0%,transparent_54%,rgba(2,34,26,0.05)_100%)]
             "
           />
-
-
-          {/* LEFT CONTENT */}
 
           <div
             className="
@@ -229,19 +319,14 @@ function LoginPage() {
               py-[clamp(2rem,4vh,3.5rem)]
             "
           >
-            {/* LOGO */}
-
             <BrandLockup
               inverse
             />
 
-
-            {/* HERO */}
-
             <div
               className="
                 mt-auto
-                max-w-[650px]
+                max-w-[670px]
                 pb-[clamp(0.5rem,2vh,1.75rem)]
               "
             >
@@ -268,25 +353,41 @@ function LoginPage() {
                   strokeWidth={1.9}
                 />
 
-                Delivery Operations
+                {t(
+                  "auth.heroEyebrow"
+                )}
               </div>
-
 
               <h1
                 className="
-                  max-w-[620px]
+                  max-w-[660px]
                   font-[750]
-                  leading-[1.03]
-                  tracking-[-0.047em]
                   text-white
                 "
                 style={{
                   fontSize:
-                    "clamp(2.75rem, 4vw, 4rem)",
+                    typography.heroFontSize,
+
+                  lineHeight:
+                    typography.heroLineHeight,
+
+                  letterSpacing:
+                    typography.heroLetterSpacing,
                 }}
               >
-                Smarter delivery
-                operations,
+                {t(
+                  "auth.heroTitleLine1"
+                )}
+
+                <span
+                  className="
+                    block
+                  "
+                >
+                  {t(
+                    "auth.heroTitleLine2"
+                  )}
+                </span>
 
                 <span
                   className="
@@ -294,29 +395,28 @@ function LoginPage() {
                     text-[#8DE0B6]
                   "
                 >
-                  from depot to store.
+                  {t(
+                    "auth.heroTitleLine3"
+                  )}
                 </span>
               </h1>
-
 
               <p
                 className="
                   mt-[clamp(1rem,2.4vh,1.5rem)]
-                  max-w-[590px]
-                  text-[clamp(0.93rem,1vw,1.08rem)]
-                  leading-[1.65]
+                  max-w-[610px]
+                  text-[clamp(0.9rem,1vw,1.05rem)]
                   text-white/88
                 "
+                style={{
+                  lineHeight:
+                    typography.bodyLineHeight,
+                }}
               >
-                Coordinate store orders,
-                dispatch, loading and
-                deliveries through one
-                connected Waypoint
-                operations network.
+                {t(
+                  "auth.heroDescription"
+                )}
               </p>
-
-
-              {/* FEATURE BADGES */}
 
               <div
                 className="
@@ -330,26 +430,29 @@ function LoginPage() {
                   icon={
                     ShieldCheck
                   }
-                  text="Role-based access"
+                  text={t(
+                    "auth.roleBasedAccess"
+                  )}
                 />
 
                 <FeatureBadge
                   icon={
                     LockKeyhole
                   }
-                  text="Secure operations"
+                  text={t(
+                    "auth.secureOperations"
+                  )}
                 />
 
                 <FeatureBadge
                   icon={
                     Truck
                   }
-                  text="Connected delivery network"
+                  text={t(
+                    "auth.connectedDeliveryNetwork"
+                  )}
                 />
               </div>
-
-
-              {/* NETWORK */}
 
               <div
                 className="
@@ -367,13 +470,13 @@ function LoginPage() {
                   strokeWidth={1.9}
                 />
 
-                Peliyagoda & Kandy
-                distribution network
+                {t(
+                  "auth.distributionNetwork"
+                )}
               </div>
             </div>
           </div>
         </section>
-
 
         {/* ==================================================
             LOGIN SIDE
@@ -391,8 +494,6 @@ function LoginPage() {
             lg:overflow-y-auto
           "
         >
-          {/* SUBTLE BACKGROUND */}
-
           <div
             className="
               pointer-events-none
@@ -408,7 +509,6 @@ function LoginPage() {
             "
           />
 
-
           <div
             className="
               pointer-events-none
@@ -423,7 +523,6 @@ function LoginPage() {
               blur-3xl
             "
           />
-
 
           <div
             className="
@@ -445,12 +544,13 @@ function LoginPage() {
               lg:px-[clamp(2rem,3.2vw,3rem)]
             "
           >
-            {/* TOP NAVIGATION */}
-
-            <div className="shrink-0">
+            <div
+              className="
+                shrink-0
+              "
+            >
               <LoginUtilityBar />
             </div>
-
 
             {/* MOBILE BRAND */}
 
@@ -458,15 +558,13 @@ function LoginPage() {
               className="
                 mt-7
                 shrink-0
-
                 lg:hidden
               "
             >
               <BrandLockup />
             </div>
 
-
-            {/* FORM AREA */}
+            {/* FORM */}
 
             <div
               className="
@@ -483,8 +581,6 @@ function LoginPage() {
                   max-w-[470px]
                 "
               >
-                {/* LOGIN CARD */}
-
                 <div
                   className="
                     rounded-[26px]
@@ -498,8 +594,6 @@ function LoginPage() {
                     duration-300
                   "
                 >
-                  {/* CARD HEADER */}
-
                   <div>
                     <div
                       className="
@@ -513,7 +607,6 @@ function LoginPage() {
                         py-1.5
                         text-xs
                         font-bold
-                        tracking-[0.01em]
                         text-[var(--color-primary)]
                       "
                     >
@@ -522,44 +615,55 @@ function LoginPage() {
                         strokeWidth={2}
                       />
 
-                      Secure staff access
+                      {t(
+                        "auth.secureStaffAccess"
+                      )}
                     </div>
-
 
                     <h2
                       className="
                         font-[750]
-                        leading-[1.12]
-                        tracking-[-0.04em]
                         text-[var(--color-text)]
                       "
                       style={{
                         fontSize:
-                          "clamp(1.85rem, 2.2vw, 2.25rem)",
+                          typography.cardTitleFontSize,
+
+                        lineHeight:
+                          typography.cardTitleLineHeight,
+
+                        letterSpacing:
+                          language ===
+                          "en"
+                            ? "-0.04em"
+                            : "-0.015em",
                       }}
                     >
-                      Sign in to Waypoint
+                      {t(
+                        "auth.signInTitle"
+                      )}
                     </h2>
-
 
                     <p
                       className="
                         mt-2.5
                         max-w-md
                         text-[0.92rem]
-                        leading-6
                         text-[var(--color-text-secondary)]
                       "
+                      style={{
+                        lineHeight:
+                          language ===
+                          "en"
+                            ? 1.5
+                            : 1.65,
+                      }}
                     >
-                      Use your assigned
-                      User ID or registered
-                      email and password to
-                      access your workspace.
+                      {t(
+                        "auth.signInDescription"
+                      )}
                     </p>
                   </div>
-
-
-                  {/* FORM */}
 
                   <form
                     className="
@@ -583,11 +687,16 @@ function LoginPage() {
                           text-[var(--color-text)]
                         "
                       >
-                        User ID or Email
+                        {t(
+                          "auth.userIdOrEmail"
+                        )}
                       </label>
 
-
-                      <div className="relative">
+                      <div
+                        className="
+                          relative
+                        "
+                      >
                         <UserRound
                           size={18}
                           strokeWidth={1.8}
@@ -600,7 +709,6 @@ function LoginPage() {
                             text-[var(--color-text-muted)]
                           "
                         />
-
 
                         <input
                           id="identifier"
@@ -618,11 +726,14 @@ function LoginPage() {
                             event
                           ) =>
                             setIdentifier(
-                              event.target
+                              event
+                                .target
                                 .value
                             )
                           }
-                          placeholder="Enter User ID or email"
+                          placeholder={t(
+                            "auth.userIdPlaceholder"
+                          )}
                           className="
                             nexora-focus
                             h-[52px]
@@ -650,7 +761,6 @@ function LoginPage() {
                       </div>
                     </div>
 
-
                     {/* PASSWORD */}
 
                     <div>
@@ -664,11 +774,16 @@ function LoginPage() {
                           text-[var(--color-text)]
                         "
                       >
-                        Password
+                        {t(
+                          "auth.password"
+                        )}
                       </label>
 
-
-                      <div className="relative">
+                      <div
+                        className="
+                          relative
+                        "
+                      >
                         <LockKeyhole
                           size={18}
                           strokeWidth={1.8}
@@ -681,7 +796,6 @@ function LoginPage() {
                             text-[var(--color-text-muted)]
                           "
                         />
-
 
                         <input
                           id="password"
@@ -702,11 +816,14 @@ function LoginPage() {
                             event
                           ) =>
                             setPassword(
-                              event.target
+                              event
+                                .target
                                 .value
                             )
                           }
-                          placeholder="Enter your password"
+                          placeholder={t(
+                            "auth.passwordPlaceholder"
+                          )}
                           className="
                             nexora-focus
                             h-[52px]
@@ -732,7 +849,6 @@ function LoginPage() {
                           "
                         />
 
-
                         <button
                           type="button"
                           disabled={
@@ -740,7 +856,9 @@ function LoginPage() {
                           }
                           onClick={() =>
                             setShowPassword(
-                              (current) =>
+                              (
+                                current
+                              ) =>
                                 !current
                             )
                           }
@@ -766,8 +884,21 @@ function LoginPage() {
                           "
                           aria-label={
                             showPassword
-                              ? "Hide password"
-                              : "Show password"
+                              ? t(
+                                  "auth.hidePassword"
+                                )
+                              : t(
+                                  "auth.showPassword"
+                                )
+                          }
+                          title={
+                            showPassword
+                              ? t(
+                                  "auth.hidePassword"
+                                )
+                              : t(
+                                  "auth.showPassword"
+                                )
                           }
                         >
                           {showPassword ? (
@@ -784,7 +915,6 @@ function LoginPage() {
                         </button>
                       </div>
                     </div>
-
 
                     {/* FORGOT PASSWORD */}
 
@@ -809,10 +939,11 @@ function LoginPage() {
                           hover:underline-offset-4
                         "
                       >
-                        Forgot password?
+                        {t(
+                          "auth.forgotPassword"
+                        )}
                       </Link>
                     </div>
-
 
                     {/* ERROR */}
 
@@ -844,11 +975,12 @@ function LoginPage() {
                         />
 
                         <span>
-                          {errorMessage}
+                          {
+                            errorMessage
+                          }
                         </span>
                       </div>
                     )}
-
 
                     {/* LOGIN BUTTON */}
 
@@ -896,11 +1028,15 @@ function LoginPage() {
                             "
                           />
 
-                          Signing in...
+                          {t(
+                            "auth.signingIn"
+                          )}
                         </>
                       ) : (
                         <>
-                          Sign in
+                          {t(
+                            "auth.signIn"
+                          )}
 
                           <ArrowRight
                             size={18}
@@ -910,7 +1046,6 @@ function LoginPage() {
                       )}
                     </button>
                   </form>
-
 
                   {/* ADMIN */}
 
@@ -946,13 +1081,12 @@ function LoginPage() {
                         strokeWidth={2}
                       />
 
-                      Administrator access
+                      {t(
+                        "auth.administratorAccess"
+                      )}
                     </Link>
                   </div>
                 </div>
-
-
-                {/* SECURITY NOTE */}
 
                 <p
                   className="
@@ -963,9 +1097,9 @@ function LoginPage() {
                     text-[var(--color-text-muted)]
                   "
                 >
-                  Access is restricted to
-                  authorized Waypoint
-                  operations personnel.
+                  {t(
+                    "auth.restrictedNotice"
+                  )}
                 </p>
               </div>
             </div>
@@ -975,7 +1109,6 @@ function LoginPage() {
     </main>
   );
 }
-
 
 // ============================================================
 // BRAND LOCKUP
@@ -1002,6 +1135,7 @@ function BrandLockup({
           justify-center
           overflow-hidden
           rounded-[14px]
+
           ${
             inverse
               ? "bg-white/10 p-1 backdrop-blur-sm"
@@ -1022,13 +1156,13 @@ function BrandLockup({
         />
       </div>
 
-
       <div>
         <p
           className={`
             text-[1.05rem]
             font-extrabold
             tracking-[0.045em]
+
             ${
               inverse
                 ? "text-white"
@@ -1039,7 +1173,6 @@ function BrandLockup({
           WAYPOINT
         </p>
 
-
         <p
           className={`
             mt-0.5
@@ -1047,6 +1180,7 @@ function BrandLockup({
             font-bold
             uppercase
             tracking-[0.18em]
+
             ${
               inverse
                 ? "text-white/72"
@@ -1054,13 +1188,12 @@ function BrandLockup({
             }
           `}
         >
-          Delivery Operations
+          DELIVERY OPERATIONS
         </p>
       </div>
     </div>
   );
 }
-
 
 // ============================================================
 // FEATURE BADGE
@@ -1097,6 +1230,5 @@ function FeatureBadge({
     </div>
   );
 }
-
 
 export default LoginPage;

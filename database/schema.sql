@@ -1,7 +1,8 @@
 -- Nexora / Waypoint Group — Driver normal scenario database schema
 -- Designed for MySQL 8+
 
-CREATE DATABASE IF NOT EXISTS nexora_waypoint
+CREATE DATABASE IF NOT EXISTS nexora_waypoint;
+CREATE DATABASE IF NOT EXISTS nexora_waypoint_shadow;
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 USE nexora_waypoint;

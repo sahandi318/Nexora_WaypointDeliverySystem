@@ -15,6 +15,7 @@ import {
 
 import {
   sendPasswordResetOtp,
+  getSafeMailError,
 } from "./mailService.js";
 
 
@@ -340,6 +341,10 @@ function verifyPasswordResetToken(
 export async function requestPasswordReset({
   identifier,
 }) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("Password reset email request received");
+  }
+
   const user =
     await findUserByIdentifier(
       identifier
@@ -364,6 +369,14 @@ export async function requestPasswordReset({
     };
   }
 
+
+  if (process.env.NODE_ENV !== "production") {
+    const [local, domain] = user.email.split("@");
+    const maskedRecipient = domain && /^[a-zA-Z0-9.-]+$/.test(domain)
+      ? `${/^[a-zA-Z0-9]$/.test(local[0]) ? local[0] : "*"}***@${domain}`
+      : "[invalid email]";
+    console.info(`Recipient resolved: ${maskedRecipient}`);
+  }
 
   // ==========================================================
   // RESEND COOLDOWN
@@ -511,11 +524,6 @@ export async function requestPasswordReset({
       });
 
 
-    console.log(
-      `✓ Password reset email sent for ${user.userId}`
-    );
-
-
     return {
       accepted: true,
     };
@@ -532,13 +540,11 @@ export async function requestPasswordReset({
 
     console.error(
       "Password reset email delivery failed:",
-      error.message
+      getSafeMailError(error)
     );
 
-
-    throw new Error(
-      "Password reset email could not be sent."
-    );
+    // Keep the response identical for unknown accounts and delivery failures.
+    return { accepted: true };
   }
 }
 

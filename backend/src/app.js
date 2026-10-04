@@ -1,18 +1,30 @@
 import express from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
-
 import prisma from "./config/database.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import storeManagerRoutes from "./routes/storeManagerRoutes.js";
 import loaderRoutes from "./routes/loaderRoutes.js";
+import translationRoutes from "./routes/translationRoutes.js";
+
+import {
+  authenticateToken,
+  requirePasswordChangeCompleted,
+  authorizeRoles,
+} from "./middleware/authMiddleware.js";
 
 import {
   resetState,
   state,
 } from "./mockData.js";
+
+import {
+  LIVE_MONITORING_EVENT_TYPES,
+  recordDriverRouteSnapshot,
+  recordDriverWorkflowEvent,
+  synchronizeTripForDriver,
+} from "./services/liveMonitoringService.js";
 
 const app = express();
 
@@ -45,53 +57,22 @@ app.use(
 );
 
 // ============================================================
-// DRIVER AUTH MIDDLEWARE
+// DRIVER ACCESS MIDDLEWARE
 // ============================================================
 
-/*
- * Driver routes temporarily use the same JWT issued by the
- * shared authentication system.
- *
- * There is NO Driver-specific login endpoint here.
+/**
+ * Driver APIs use the SAME authentication and RBAC pipeline as
+ * the rest of the application. The authenticated user is loaded
+ * from MySQL on every protected request, so Driver identity is
+ * never taken from mock data or a separate Driver login.
  */
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  "dev-only-nexora-secret";
 
-function driverAuth(req, res, next) {
-  const header =
-    req.headers.authorization;
+const driverAccess = [
+  authenticateToken,
+  requirePasswordChangeCompleted,
+  authorizeRoles("DRIVER"),
+];
 
-  if (
-    !header ||
-    !header.startsWith("Bearer ")
-  ) {
-    return res.status(401).json({
-      success: false,
-      message:
-        "Authentication required.",
-    });
-  }
-
-  try {
-    const token =
-      header.slice(7);
-
-    req.user =
-      jwt.verify(
-        token,
-        JWT_SECRET
-      );
-
-    next();
-  } catch {
-    return res.status(401).json({
-      success: false,
-      message:
-        "Invalid or expired token.",
-    });
-  }
-}
 
 // ============================================================
 // API ROOT
@@ -102,8 +83,10 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       name:
         "Nexora Waypoint API",
+
       message:
         "API is running.",
     });
@@ -119,10 +102,13 @@ app.get(
   (req, res) => {
     res.status(200).json({
       success: true,
+
       service:
         "Nexora Waypoint API",
+
       status:
         "running",
+
       timestamp:
         new Date().toISOString(),
     });
@@ -199,6 +185,24 @@ app.use(
 );
 
 // ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
+// TRANSLATION ROUTES
+// ============================================================
+
+app.use(
+  "/api/translations",
+  translationRoutes
+);
+
+// ============================================================
 // LOADER ROUTES
 // ============================================================
 
@@ -249,9 +253,27 @@ function stopView(
 ) {
   return {
     ...stop,
+
     totalStops:
       trip.stops.length,
   };
+}
+
+function sriLankaTimeLabel(value = new Date()) {
+  return new Date(value).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Colombo",
+  });
+}
+
+async function updateDispatcherMonitoring(task, context) {
+  try {
+    return await task();
+  } catch (error) {
+    console.error(`Dispatcher monitoring update failed (${context}):`, error);
+    return null;
+  }
 }
 
 /**
@@ -272,6 +294,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "COMPLETED",
+
       statusLabel:
         "Completed",
     };
@@ -284,6 +307,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "IN_PROGRESS",
+
       statusLabel:
         "In Progress",
     };
@@ -296,6 +320,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "VEHICLE_READY",
+
       statusLabel:
         "Vehicle Ready",
     };
@@ -308,6 +333,7 @@ function operationalTripStatus(
     return {
       statusKey:
         "PLANNED",
+
       statusLabel:
         "Planned",
     };
@@ -316,6 +342,7 @@ function operationalTripStatus(
   return {
     statusKey:
       "WAITING",
+
     statusLabel:
       "Awaiting Plan",
   };
@@ -419,8 +446,16 @@ function updateNextStop(
 
 app.get(
   "/api/driver/trips",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
+    await Promise.all(
+      state.trips.map((trip) =>
+        updateDispatcherMonitoring(
+          () => synchronizeTripForDriver({ trip, driverUser: req.user, emit: false }),
+          `trip-list:${trip.tripId}`
+        )
+      )
+    );
     const activeTrip =
       state.trips.find(
         (trip) =>
@@ -441,10 +476,31 @@ app.get(
     res.json({
       driver: {
         userId:
-          state.user.userId,
+          req.user.userId,
 
         name:
-          state.user.name,
+          req.user.fullName,
+
+        email:
+          req.user.email,
+
+        profilePhotoData:
+          req.user.profilePhotoData ||
+          null,
+
+        depot:
+          req.user.depot
+            ? {
+                id:
+                  req.user.depot.id,
+
+                code:
+                  req.user.depot.code,
+
+                name:
+                  req.user.depot.name,
+              }
+            : null,
       },
 
       vehicle:
@@ -512,8 +568,8 @@ app.get(
 
 app.get(
   "/api/driver/trips/:tripId",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const trip =
       findTrip(
         req.params.tripId
@@ -528,6 +584,11 @@ app.get(
         });
     }
 
+    await updateDispatcherMonitoring(
+      () => synchronizeTripForDriver({ trip, driverUser: req.user, emit: false }),
+      `trip-detail:${trip.tripId}`
+    );
+
     res.json({
       trip:
         tripView(trip),
@@ -537,7 +598,7 @@ app.get(
 
 app.get(
   "/api/driver/trips/:tripId/stops/:stopId",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const trip =
       findTrip(
@@ -575,8 +636,8 @@ app.get(
 
 app.post(
   "/api/driver/stops/:stopId/arrive",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -597,20 +658,22 @@ app.post(
 
     found.stop.arrivalTime =
       found.stop.arrivalTime ||
-      new Date()
-        .toLocaleTimeString(
-          "en-US",
-          {
-            hour:
-              "numeric",
-
-            minute:
-              "2-digit",
-          }
-        );
+      sriLankaTimeLabel();
 
     found.stop.status =
       "arrived";
+
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.ARRIVAL_EVENT_TYPE,
+        message: `Driver arrived at ${found.stop.outletId}.`,
+        payload: { arrivalTime: found.stop.arrivalTime },
+      }),
+      `arrival:${found.stop.stopId}`
+    );
 
     res.json({
       stop:
@@ -624,8 +687,8 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/outcome",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -721,6 +784,18 @@ app.post(
       .deliveredQuantity =
       qty;
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.OUTCOME_EVENT_TYPE,
+        message: `${found.stop.outletId} outcome recorded: ${outcome.replaceAll("_", " ").toLowerCase()}.`,
+        payload: { outcome, deliveredQuantity: qty },
+      }),
+      `outcome:${found.stop.stopId}`
+    );
+
     res.json({
       stop:
         stopView(
@@ -733,8 +808,8 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/exception",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -791,6 +866,18 @@ app.post(
           .toISOString(),
     };
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.EXCEPTION_EVENT_TYPE,
+        message: `Delivery exception recorded at ${found.stop.outletId}: ${reason}.`,
+        payload: found.stop.exception,
+      }),
+      `exception:${found.stop.stopId}`
+    );
+
     res.json({
       exception:
         found.stop.exception,
@@ -800,8 +887,8 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/pod",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -863,6 +950,21 @@ app.post(
           .toISOString(),
     };
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.POD_EVENT_TYPE,
+        message: `Proof of delivery submitted for ${found.stop.outletId}.`,
+        payload: {
+          ...found.stop.pod,
+          deliveredQuantity: found.stop.deliveredQuantity ?? found.stop.expectedUnits,
+        },
+      }),
+      `pod:${found.stop.stopId}`
+    );
+
     res.json({
       pod:
         found.stop.pod,
@@ -872,8 +974,8 @@ app.post(
 
 app.post(
   "/api/driver/stops/:stopId/complete",
-  driverAuth,
-  (req, res) => {
+  driverAccess,
+  async (req, res) => {
     const found =
       findStop(
         req.params.stopId
@@ -940,6 +1042,23 @@ app.post(
         found.trip
       );
 
+    await updateDispatcherMonitoring(
+      () => recordDriverWorkflowEvent({
+        trip: found.trip,
+        stop: found.stop,
+        driverUser: req.user,
+        type: LIVE_MONITORING_EVENT_TYPES.COMPLETION_EVENT_TYPE,
+        message: next
+          ? `${found.stop.outletId} completed. Driver is continuing to ${next.outletId}.`
+          : `Trip ${found.trip.tripId} completed.`,
+        payload: {
+          completedAt: new Date().toISOString(),
+          nextStopId: next?.stopId || null,
+        },
+      }),
+      `complete:${found.stop.stopId}`
+    );
+
     res.json({
       completedStopId:
         found.stop.stopId,
@@ -955,12 +1074,64 @@ app.post(
 );
 
 // ============================================================
+// DRIVER LIVE ROUTE SHARING
+// ============================================================
+
+app.post(
+  "/api/driver/trips/:tripId/stops/:stopId/route-progress",
+  driverAccess,
+  async (req, res) => {
+    const trip = findTrip(req.params.tripId);
+    const stop = trip?.stops.find((item) => item.stopId === req.params.stopId);
+
+    if (!trip || !stop) {
+      return res.status(404).json({
+        success: false,
+        message: "Trip or stop not found.",
+      });
+    }
+
+    const {
+      routePoints,
+      currentLat,
+      currentLng,
+      distanceKm,
+      durationMinutes,
+      etaLabel,
+      recordedAt,
+    } = req.body || {};
+
+    const result = await updateDispatcherMonitoring(
+      () => recordDriverRouteSnapshot({
+        trip,
+        stop,
+        driverUser: req.user,
+        routePoints,
+        currentLat,
+        currentLng,
+        distanceKm,
+        durationMinutes,
+        etaLabel,
+        recordedAt,
+      }),
+      `route:${trip.tripId}:${stop.stopId}`
+    );
+
+    return res.json({
+      success: true,
+      monitoringUpdated: Boolean(result),
+      updatedAt: result?.updatedAt || null,
+    });
+  }
+);
+
+// ============================================================
 // DRIVER OFFLINE / SYNC ROUTES
 // ============================================================
 
 app.get(
   "/api/driver/sync-status",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     res.json({
       pendingCount:
@@ -980,7 +1151,7 @@ app.get(
 
 app.post(
   "/api/driver/sync-recovery",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     const syncedCount =
       Number(
@@ -1039,7 +1210,7 @@ app.post(
 
 app.post(
   "/api/driver/sync-notification/dismiss",
-  driverAuth,
+  driverAccess,
   (req, res) => {
     state.sync
       .recoveryNotification =
