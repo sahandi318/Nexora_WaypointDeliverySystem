@@ -1,8 +1,8 @@
 import AboutSection from "../components/landing/AboutSection";
 import FeatureStrip from "../components/landing/FeatureStrip";
 import HeroSection from "../components/landing/HeroSection";
+import PlatformOverviewSection from "../components/landing/PlatformOverviewSection";
 import StoreSection from "../components/landing/StoreSection";
-
 
 function LandingPage() {
   return (
@@ -22,10 +22,10 @@ function LandingPage() {
         <FeatureStrip />
         <StoreSection />
         <AboutSection />
+        <PlatformOverviewSection />
       </main>
     </div>
   );
 }
-
 
 export default LandingPage;

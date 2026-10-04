@@ -13,11 +13,10 @@ import {
   getLiveMonitoringTrip,
 } from "../controllers/dispatcherMonitoringController.js";
 
-
 import {
-  getPlanningWorkspace,
-  postCreateDraftAllocation,
-  postPublishPlanningTrip,
+  deferPlanningOrder,
+  getPlanningSnapshot,
+  publishPlanningTrip,
 } from "../controllers/dispatcherPlanningController.js";
 
 import {
@@ -38,6 +37,24 @@ const dispatcherAccess = [
 router.get("/dashboard", ...dispatcherAccess, getDashboard);
 
 router.get(
+  "/planning",
+  ...dispatcherAccess,
+  getPlanningSnapshot
+);
+
+router.post(
+  "/planning/defer",
+  ...dispatcherAccess,
+  deferPlanningOrder
+);
+
+router.post(
+  "/planning/publish",
+  ...dispatcherAccess,
+  publishPlanningTrip
+);
+
+router.get(
   "/live-monitoring",
   ...dispatcherAccess,
   getLiveMonitoring
@@ -55,28 +72,6 @@ router.get(
   getLiveMonitoringTrip
 );
 
-
-// ============================================================
-// REAL DISPATCHER DELIVERY PLANNING
-// ============================================================
-
-router.get(
-  "/planning/workspace",
-  ...dispatcherAccess,
-  getPlanningWorkspace
-);
-
-router.post(
-  "/planning/orders/:orderCode/allocate",
-  ...dispatcherAccess,
-  postCreateDraftAllocation
-);
-
-router.post(
-  "/planning/trips/:tripCode/publish",
-  ...dispatcherAccess,
-  postPublishPlanningTrip
-);
 
 // ============================================================
 // STORE MANAGER ORDER HANDOFF / DISPATCHER DECISIONS

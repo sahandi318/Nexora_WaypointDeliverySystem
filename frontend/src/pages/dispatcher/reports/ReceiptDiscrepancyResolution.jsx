@@ -1,6 +1,17 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ReceiptDiscrepancyResolution = () => {
+  const navigate = useNavigate();
+
+  const discrepancyRecords = [
+    { tripId: "TRP005", vehicleId: "MS-010" },
+    { tripId: "TRP007", vehicleId: "VEH012" },
+    { tripId: "TRP009", vehicleId: "VEH014" },
+  ];
+
+  const [currentDiscrepancyIndex, setCurrentDiscrepancyIndex] = useState(0);
+
   const [resolution, setResolution] = useState(
     "Arrange replacement delivery"
   );
@@ -56,6 +67,21 @@ const ReceiptDiscrepancyResolution = () => {
     setSaveMessage("");
   };
 
+  const currentDiscrepancy =
+    discrepancyRecords[currentDiscrepancyIndex];
+
+  const handlePreviousDiscrepancy = () => {
+    setCurrentDiscrepancyIndex((index) =>
+      index === 0 ? discrepancyRecords.length - 1 : index - 1
+    );
+  };
+
+  const handleNextDiscrepancy = () => {
+    setCurrentDiscrepancyIndex((index) =>
+      index === discrepancyRecords.length - 1 ? 0 : index + 1
+    );
+  };
+
   const resolutionOptions = [
     "Arrange replacement delivery",
     "Confirm quantity adjustment",
@@ -66,7 +92,7 @@ const ReceiptDiscrepancyResolution = () => {
 
   return (
     <div className="space-y-4">
-      
+
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -105,42 +131,56 @@ const ReceiptDiscrepancyResolution = () => {
 
       {/* Back and trip navigation */}
       <div className="flex items-center justify-between">
-        <button className="text-[9px] font-semibold text-emerald-600">
+        <button
+          type="button"
+          onClick={() => navigate("/dispatcher/reports")}
+          className="text-[9px] font-semibold text-[var(--color-success)]"
+        >
           ← Back to Delivery Reports
         </button>
 
         <div className="flex items-center gap-2 text-[9px]">
-          <button className="flex h-5 w-5 items-center justify-center rounded border border-[var(--color-border)]
+          <button
+            type="button"
+            onClick={handlePreviousDiscrepancy}
+            className="flex h-5 w-5 items-center justify-center rounded border border-[var(--color-border)]
 bg-[var(--color-surface)]
-text-[var(--color-text-secondary)]">
+text-[var(--color-text-secondary)]"
+            aria-label="Previous discrepancy"
+          >
             ‹
           </button>
 
-          <span className="font-semibold text-slate-700">
-            TRP005 - MS-010
+          <span className="font-semibold text-[var(--color-text)]">
+            {currentDiscrepancy.tripId} - {currentDiscrepancy.vehicleId}
           </span>
 
-          <button className="flex h-5 w-5 items-center justify-center rounded border border-[var(--color-border)]
+          <button
+            type="button"
+            onClick={handleNextDiscrepancy}
+            className="flex h-5 w-5 items-center justify-center rounded border border-[var(--color-border)]
 bg-[var(--color-surface)]
-text-[var(--color-text-secondary)]">
+text-[var(--color-text-secondary)]"
+            aria-label="Next discrepancy"
+          >
             ›
           </button>
         </div>
       </div>
 
       {/* Trip details */}
-      <div className="rounded-lg border border-slate-200 bg-white">
-        <div className="grid grid-cols-2 gap-4 border-b border-slate-100 px-4 py-3 md:grid-cols-4">
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-4 py-3 md:grid-cols-4">
           <div>
-            <p className="text-[7px] text-slate-400">TRIP DETAILS</p>
+            <p className="text-[7px] text-[var(--color-text-muted)]">TRIP DETAILS</p>
 
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-[9px] font-semibold text-slate-700">
+              <span className="text-[9px] font-semibold text-[var(--color-text)]">
                 TRP005
               </span>
 
               {hasQuantityDiscrepancy && (
-                <span className="rounded bg-red-50 px-2 py-0.5 text-[7px] font-semibold text-red-500">
+                <span className="rounded bg-red-50 px-2 py-0.5 text-[7px] font-semibold text-[var(--color-danger)]">
                   1 ISSUE TO REVIEW
                 </span>
               )}
@@ -157,7 +197,7 @@ text-[var(--color-text-secondary)]">
                 value="29 Sep 2026, 9:50 AM"
               />
 
-              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[7px] font-semibold text-emerald-600">
+              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[7px] font-semibold text-[var(--color-success)]">
                 COMPLETED
               </span>
             </div>
@@ -177,7 +217,7 @@ text-[var(--color-text-secondary)]">
               />
 
               {hasQuantityDiscrepancy && (
-                <span className="rounded bg-red-50 px-2 py-0.5 text-[7px] font-semibold text-red-500">
+                <span className="rounded bg-red-50 px-2 py-0.5 text-[7px] font-semibold text-[var(--color-danger)]">
                   QUANTITY MISMATCH
                 </span>
               )}
@@ -188,16 +228,16 @@ text-[var(--color-text-secondary)]">
 
       {/* Quantity discrepancy alert */}
       {hasQuantityDiscrepancy && (
-        <div className="flex items-start justify-between rounded-lg border border-red-300 bg-red-50 px-4 py-3">
+        <div className="flex items-start justify-between rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] px-4 py-3">
           <div className="flex gap-2">
-            <div className="mt-0.5 text-red-500">⊙</div>
+            <div className="mt-0.5 text-[var(--color-danger)]">⊙</div>
 
             <div>
-              <p className="text-[9px] font-semibold text-red-600">
+              <p className="text-[9px] font-semibold text-[var(--color-danger)]">
                 Quantity discrepancy detected
               </p>
 
-              <p className="mt-0.5 text-[8px] text-red-500">
+              <p className="mt-0.5 text-[8px] text-[var(--color-danger)]">
                 Driver reported delivering{" "}
                 {discrepancyData.driverReportedQuantity}{" "}
                 {discrepancyData.unit}, but the store manager confirmed
@@ -207,7 +247,7 @@ text-[var(--color-text-secondary)]">
             </div>
           </div>
 
-          <span className="text-[7px] text-slate-400">
+          <span className="text-[7px] text-[var(--color-text-muted)]">
             Reported on: {discrepancyData.reportedAt}
           </span>
         </div>
@@ -233,8 +273,8 @@ text-[var(--color-text-secondary)]">
             ]}
           />
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-[10px] font-semibold text-slate-800">
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <h3 className="text-[10px] font-semibold text-[var(--color-text)]">
               Discrepancy History
             </h3>
 
@@ -278,8 +318,8 @@ text-[var(--color-text-secondary)]">
             ]}
           />
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-[10px] font-semibold text-slate-800">
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <h3 className="text-[10px] font-semibold text-[var(--color-text)]">
               Related Information
             </h3>
 
@@ -293,12 +333,12 @@ text-[var(--color-text-secondary)]">
         </div>
 
         {/* Resolution panel */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-[11px] font-semibold text-slate-800">
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <h3 className="text-[11px] font-semibold text-[var(--color-text)]">
             Resolution & Decision
           </h3>
 
-          <p className="mt-4 text-[8px] font-medium text-slate-500">
+          <p className="mt-4 text-[8px] font-medium text-[var(--color-text-secondary)]">
             Select Resolution *
           </p>
 
@@ -311,8 +351,8 @@ text-[var(--color-text-secondary)]">
                   key={option}
                   className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[8px] ${
                     active
-                      ? "border-emerald-400 bg-emerald-50"
-                      : "border-slate-200 bg-white"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)]"
                   }`}
                 >
                   <input
@@ -323,13 +363,13 @@ text-[var(--color-text-secondary)]">
                     className="accent-emerald-500"
                   />
 
-                  <span className="text-slate-700">{option}</span>
+                  <span className="text-[var(--color-text)]">{option}</span>
                 </label>
               );
             })}
           </div>
 
-          <p className="mt-4 text-[8px] font-medium text-slate-500">
+          <p className="mt-4 text-[8px] font-medium text-[var(--color-text-secondary)]">
             Resolution Notes *
           </p>
 
@@ -339,20 +379,20 @@ text-[var(--color-text-secondary)]">
               onChange={(event) => setNotes(event.target.value)}
               maxLength={500}
               rows={5}
-              className="w-full resize-none rounded-md border border-emerald-400 px-3 py-2 text-[8px] text-slate-600 outline-none"
+              className="w-full resize-none rounded-md border border-[var(--color-primary)] bg-[var(--color-input)] px-3 py-2 text-[8px] text-[var(--color-text)] outline-none"
             />
 
-            <p className="mt-1 text-right text-[7px] text-slate-400">
+            <p className="mt-1 text-right text-[7px] text-[var(--color-text-muted)]">
               {notes.length} / 500
             </p>
           </div>
 
-          <p className="mt-4 text-[8px] font-medium text-slate-500">
+          <p className="mt-4 text-[8px] font-medium text-[var(--color-text-secondary)]">
             Notify Relevant Parties
           </p>
 
           <div className="mt-2 space-y-2">
-            <label className="flex items-center gap-2 text-[8px] text-slate-600">
+            <label className="flex items-center gap-2 text-[8px] text-[var(--color-text-secondary)]">
               <input
                 type="checkbox"
                 defaultChecked
@@ -361,7 +401,7 @@ text-[var(--color-text-secondary)]">
               Notify Driver (Tharindu Silva)
             </label>
 
-            <label className="flex items-center gap-2 text-[8px] text-slate-600">
+            <label className="flex items-center gap-2 text-[8px] text-[var(--color-text-secondary)]">
               <input
                 type="checkbox"
                 defaultChecked
@@ -375,8 +415,8 @@ text-[var(--color-text-secondary)]">
             <p
               className={`mt-4 text-[8px] font-medium ${
                 saveMessage === "Decision saved successfully."
-                  ? "text-emerald-600"
-                  : "text-red-500"
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-danger)]"
               }`}
             >
               {saveMessage}
@@ -387,7 +427,7 @@ text-[var(--color-text-secondary)]">
             <button
               type="button"
               onClick={handleCancel}
-              className="rounded-md border border-slate-200 bg-white py-2 text-[9px] text-slate-500"
+              className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[9px] text-[var(--color-text-secondary)]"
             >
               Cancel
             </button>
@@ -395,7 +435,7 @@ text-[var(--color-text-secondary)]">
             <button
               type="button"
               onClick={handleSaveDecision}
-              className="rounded-md bg-emerald-500 py-2 text-[9px] font-medium text-white transition hover:bg-emerald-600"
+              className="rounded-md bg-[var(--color-primary)] py-2 text-[9px] font-medium text-white transition hover:bg-[var(--color-primary-hover)]"
             >
               Save Decision
             </button>
@@ -409,21 +449,21 @@ text-[var(--color-text-secondary)]">
 const SummaryCard = ({ title, value, change, type, icon }) => {
   const styles = {
     green: {
-      icon: "bg-emerald-50 text-emerald-600",
-      text: "text-emerald-600",
+      icon: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+      text: "text-[var(--color-success)]",
     },
     amber: {
-      icon: "bg-amber-50 text-amber-500",
-      text: "text-orange-500",
+      icon: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+      text: "text-[var(--color-warning)]",
     },
     red: {
-      icon: "bg-red-50 text-red-500",
-      text: "text-red-500",
+      icon: "bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
+      text: "text-[var(--color-danger)]",
     },
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
       <div className="flex items-center gap-3">
         <div
           className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] ${styles[type].icon}`}
@@ -432,9 +472,9 @@ const SummaryCard = ({ title, value, change, type, icon }) => {
         </div>
 
         <div>
-          <p className="text-[8px] text-slate-500">{title}</p>
+          <p className="text-[8px] text-[var(--color-text-secondary)]">{title}</p>
 
-          <p className="text-[20px] font-bold leading-none text-slate-800">
+          <p className="text-[20px] font-bold leading-none text-[var(--color-text)]">
             {value}
           </p>
 
@@ -443,7 +483,7 @@ const SummaryCard = ({ title, value, change, type, icon }) => {
           </p>
         </div>
 
-        <span className="ml-auto text-slate-400">›</span>
+        <span className="ml-auto text-[var(--color-text-muted)]">›</span>
       </div>
     </div>
   );
@@ -452,8 +492,8 @@ const SummaryCard = ({ title, value, change, type, icon }) => {
 const Detail = ({ label, value }) => {
   return (
     <div>
-      <p className="text-[7px] text-slate-400">{label}</p>
-      <p className="mt-0.5 text-[8px] font-semibold text-slate-700">
+      <p className="text-[7px] text-[var(--color-text-muted)]">{label}</p>
+      <p className="mt-0.5 text-[8px] font-semibold text-[var(--color-text)]">
         {value}
       </p>
     </div>
@@ -468,17 +508,17 @@ const EvidenceCard = ({
   files,
 }) => {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold text-slate-800">
+        <h3 className="text-[10px] font-semibold text-[var(--color-text)]">
           {title}
         </h3>
 
         <span
           className={`rounded px-2 py-1 text-[7px] font-semibold ${
             badgeType === "green"
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-amber-50 text-amber-600"
+              ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
+              : "bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
           }`}
         >
           {badge}
@@ -491,34 +531,34 @@ const EvidenceCard = ({
             key={label}
             className="flex items-start justify-between gap-4"
           >
-            <span className="text-[7px] text-slate-400">{label}</span>
+            <span className="text-[7px] text-[var(--color-text-muted)]">{label}</span>
 
-            <span className="max-w-[65%] text-right text-[8px] font-medium text-slate-700">
+            <span className="max-w-[65%] text-right text-[8px] font-medium text-[var(--color-text)]">
               {value}
             </span>
           </div>
         ))}
       </div>
 
-      <p className="mt-4 text-[7px] font-semibold text-slate-400">
+      <p className="mt-4 text-[7px] font-semibold text-[var(--color-text-muted)]">
         EVIDENCE FILES
       </p>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         {files.map(([filename, title]) => (
           <div key={filename}>
-            <div className="flex h-20 items-center justify-center rounded-md bg-slate-100 text-[8px] text-slate-400">
+            <div className="flex h-20 items-center justify-center rounded-md bg-[var(--color-surface-soft)] text-[8px] text-[var(--color-text-muted)]">
               {title}
             </div>
 
-            <p className="mt-1 truncate text-[7px] text-slate-400">
+            <p className="mt-1 truncate text-[7px] text-[var(--color-text-muted)]">
               {filename}
             </p>
           </div>
         ))}
       </div>
 
-      <button className="mt-3 w-full rounded-md border border-slate-200 bg-white py-2 text-[8px] font-medium text-emerald-600">
+      <button className="mt-3 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[8px] font-medium text-[var(--color-success)]">
         ◉ View All Evidence
       </button>
     </div>
@@ -532,14 +572,14 @@ const TimelineItem = ({ color, title, date, text }) => {
 
       <div className="flex-1">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[8px] font-semibold text-slate-700">
+          <p className="text-[8px] font-semibold text-[var(--color-text)]">
             {title}
           </p>
 
-          <span className="text-[7px] text-slate-400">{date}</span>
+          <span className="text-[7px] text-[var(--color-text-muted)]">{date}</span>
         </div>
 
-        <p className="mt-1 text-[7px] text-slate-400">{text}</p>
+        <p className="mt-1 text-[7px] text-[var(--color-text-muted)]">{text}</p>
       </div>
     </div>
   );

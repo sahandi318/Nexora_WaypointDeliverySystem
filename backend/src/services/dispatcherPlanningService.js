@@ -1,261 +1,534 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import prisma from "../config/database.js";
-
-import {
-  DispatcherOrderError,
-  resolveActorScope,
-} from "./dispatcherOrderService.js";
-
-import {
-  allocateConfirmedStoreOrderToStop,
-  publishDeliveryAllocation,
-} from "./deliveryIntegrationService.js";
-
+import { resolveActorScope } from "./dispatcherOrderService.js";
+import { state } from "../mockData.js";
 import {
   emitMonitoringUpdate,
+  synchronizeTripForDriver,
 } from "./liveMonitoringService.js";
 
-const ACTIVE_ALLOCATION_STATUSES = ["ALLOCATED", "PUBLISHED"];
-const MAX_VEHICLE_CODE_LENGTH = 50;
-const MAX_VEHICLE_TYPE_LENGTH = 120;
+const DATA_DIR = path.resolve(process.cwd(), "../data");
 
-export class DispatcherPlanningError extends Error {
-  constructor(
-    message,
-    {
-      status = 400,
-      code = "DISPATCHER_PLANNING_ERROR",
-    } = {}
-  ) {
-    super(message);
-    this.name = "DispatcherPlanningError";
-    this.status = status;
-    this.code = code;
-  }
-}
+function parseCsvLine(line) {
+  const result = [];
+  let current = "";
+  let quoted = false;
 
-function dateOnly(value) {
-  return value
-    ? new Date(value).toISOString().slice(0, 10)
-    : null;
-}
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
 
-function parseDateOnly(value, fieldName = "date") {
-  const normalized = String(value ?? "").trim();
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    throw new DispatcherPlanningError(
-      `${fieldName} must use YYYY-MM-DD format.`,
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_INVALID_DATE",
+    if (char === '"') {
+      if (quoted && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
       }
-    );
-  }
-
-  const parsed = new Date(`${normalized}T00:00:00.000Z`);
-
-  if (
-    Number.isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== normalized
-  ) {
-    throw new DispatcherPlanningError(
-      `${fieldName} is not a valid calendar date.`,
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_INVALID_DATE",
-      }
-    );
-  }
-
-  return parsed;
-}
-
-function normalizeOptionalDate(value) {
-  const normalized = String(value ?? "").trim();
-  return normalized ? parseDateOnly(normalized) : null;
-}
-
-function normalizeVehicleCode(value) {
-  const normalized = String(value ?? "")
-    .trim()
-    .toUpperCase();
-
-  if (!normalized) {
-    throw new DispatcherPlanningError(
-      "A vehicle code is required before creating a draft allocation.",
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_VEHICLE_REQUIRED",
-      }
-    );
-  }
-
-  if (normalized.length > MAX_VEHICLE_CODE_LENGTH) {
-    throw new DispatcherPlanningError(
-      `Vehicle code cannot exceed ${MAX_VEHICLE_CODE_LENGTH} characters.`,
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_VEHICLE_TOO_LONG",
-      }
-    );
-  }
-
-  return normalized;
-}
-
-function normalizeVehicleType(value) {
-  const normalized = String(value ?? "").trim();
-  return normalized.slice(0, MAX_VEHICLE_TYPE_LENGTH) || "Delivery vehicle";
-}
-
-function temperatureLabel(orderType) {
-  return orderType === "CHILLED" ? "Chilled" : "Ambient";
-}
-
-function deliveryWindow(outlet) {
-  const open = outlet?.windowOpenTime || null;
-  const close = outlet?.windowCloseTime || null;
-
-  if (open && close) return `${open} - ${close}`;
-  return open || close || "Not specified";
-}
-
-function restrictionLabel(outlet) {
-  return (
-    outlet?.parkingConstraint ||
-    outlet?.dockType ||
-    "Standard access"
-  );
-}
-
-function serializeScope(scope) {
-  return {
-    type: scope.type,
-    depotId: scope.depotId,
-    depotCode: scope.depotCode,
-    depotName: scope.depotName,
-  };
-}
-
-function mapPlanningOrder(order) {
-  const allocation = order.deliveryAllocations?.[0] || null;
-  const previouslyDeferred = (order.dispatcherDecisions || []).some(
-    (decision) => decision.decision === "DEFERRED"
-  );
-
-  return {
-    id: order.id,
-    orderCode: order.orderCode,
-    status: order.status,
-    orderType: order.orderType,
-    temperature: temperatureLabel(order.orderType),
-    submittedAt: order.submittedAt,
-    requestedDispatchDate: dateOnly(order.requestedDispatchDate),
-    effectiveDispatchDate: dateOnly(order.effectiveDispatchDate),
-    deferredReason: order.deferredReason || null,
-    previouslyDeferred,
-    totalUnits: order.totalUnits,
-    estimatedWeightKg: Number(order.estimatedWeightKg),
-    estimatedVolumeM3: Number(order.estimatedVolumeM3),
-    outlet: {
-      id: order.outlet.id,
-      outletCode: order.outlet.outletCode,
-      brand: order.outlet.brand,
-      district: order.outlet.district,
-      dockType: order.outlet.dockType,
-      parkingConstraint: order.outlet.parkingConstraint,
-      mallWindow: order.outlet.mallWindow,
-      windowOpenTime: order.outlet.windowOpenTime,
-      windowCloseTime: order.outlet.windowCloseTime,
-      deliveryWindow: deliveryWindow(order.outlet),
-      restriction: restrictionLabel(order.outlet),
-      depot: order.outlet.depot
-        ? {
-            id: order.outlet.depot.id,
-            code: order.outlet.depot.code,
-            name: order.outlet.depot.name,
-          }
-        : null,
-    },
-    allocation: allocation
-      ? {
-          id: allocation.id,
-          status: allocation.status,
-          stopCode: allocation.liveTripStop.stopCode,
-          sequence: allocation.liveTripStop.sequence,
-          tripCode: allocation.liveTripStop.liveTrip.tripCode,
-          tripStatus: allocation.liveTripStop.liveTrip.status,
-          deliveryDate: dateOnly(
-            allocation.liveTripStop.liveTrip.deliveryDate
-          ),
-          vehicleCode: allocation.liveTripStop.liveTrip.vehicleCode,
-          driverName: allocation.liveTripStop.liveTrip.driverName,
-        }
-      : null,
-  };
-}
-
-function mapPlanningTrip(trip) {
-  const allocations = [];
-
-  for (const stop of trip.stops || []) {
-    for (const allocation of stop.deliveryAllocations || []) {
-      allocations.push({
-        id: allocation.id,
-        status: allocation.status,
-        orderCode: allocation.storeOrder.orderCode,
-        orderType: allocation.storeOrder.orderType,
-        totalUnits: allocation.storeOrder.totalUnits,
-        stopCode: stop.stopCode,
-        sequence: stop.sequence,
-        outletCode: allocation.storeOrder.outlet.outletCode,
-        brand: allocation.storeOrder.outlet.brand,
-        district: allocation.storeOrder.outlet.district,
-      });
+    } else if (char === "," && !quoted) {
+      result.push(current);
+      current = "";
+    } else {
+      current += char;
     }
   }
 
+  result.push(current);
+  return result;
+}
+
+async function readCsv(fileName) {
+  const raw = await fs.readFile(path.join(DATA_DIR, fileName), "utf8");
+  const lines = raw
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim());
+
+  if (!lines.length) return [];
+
+  const headers = parseCsvLine(lines[0]).map((value) => value.trim());
+
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    return Object.fromEntries(
+      headers.map((header, index) => [header, values[index] ?? ""])
+    );
+  });
+}
+
+function localDateOnly(dateValue) {
+  if (!dateValue) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Colombo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  }
+  return String(dateValue).slice(0, 10);
+}
+
+function dateRange(dateValue) {
+  const dateText = localDateOnly(dateValue);
+  const start = new Date(`${dateText}T00:00:00.000Z`);
+  const end = new Date(`${dateText}T23:59:59.999Z`);
+  return { start, end, dateText };
+}
+
+function orderTemperature(order) {
+  return order.orderType === "CHILLED" ? "Chilled" : "Ambient";
+}
+
+function orderRestriction(outlet) {
+  const parts = [
+    outlet?.parkingConstraint,
+    outlet?.dockType,
+    outlet?.mallWindow ? `Mall: ${outlet.mallWindow}` : null,
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(" · ") : "Standard access";
+}
+
+function orderView(order) {
+  const outlet = order.outlet;
+
   return {
-    id: trip.id,
-    tripCode: trip.tripCode,
-    deliveryDate: dateOnly(trip.deliveryDate),
-    status: trip.status,
-    vehicleCode: trip.vehicleCode,
-    vehicleType: trip.vehicleType,
-    temperature: trip.temperature,
-    driverUserId: trip.driverUserId,
-    driverName: trip.driverName,
-    progressCompleted: trip.progressCompleted,
-    progressTotal: trip.progressTotal,
-    nextDestination: trip.nextDestination,
-    eta: trip.eta,
-    allocations,
-    canPublish:
-      allocations.length > 0 &&
-      allocations.some((item) => item.status === "ALLOCATED"),
-    isPublished:
-      allocations.length > 0 &&
-      allocations.every((item) => item.status === "PUBLISHED"),
+    id: order.id,
+    orderId: order.orderCode,
+    outletId: outlet?.outletCode || `OUT-${order.outletId}`,
+    outletName: outlet?.outletCode || `Outlet ${order.outletId}`,
+    brand: outlet?.brand || "Waypoint",
+    district: outlet?.district || "—",
+    depot: outlet?.depot?.name || "—",
+    depotId: outlet?.depot?.id || null,
+    deliveryWindow:
+      outlet?.windowOpenTime && outlet?.windowCloseTime
+        ? `${outlet.windowOpenTime} – ${outlet.windowCloseTime}`
+        : "Window not set",
+    windowOpen: outlet?.windowOpenTime || null,
+    windowClose: outlet?.windowCloseTime || null,
+    mallWindow: outlet?.mallWindow || null,
+    restriction: orderRestriction(outlet),
+    parkingConstraint: outlet?.parkingConstraint || null,
+    dockType: outlet?.dockType || null,
+    temperature: orderTemperature(order),
+    orderType: order.orderType,
+    totalUnits: order.totalUnits,
+    load: `${order.totalUnits} units`,
+    weightKg: Number(order.estimatedWeightKg || 0),
+    volumeM3: Number(order.estimatedVolumeM3 || 0),
+    weight: `${Number(order.estimatedWeightKg || 0).toFixed(1)} kg`,
+    volume: `${Number(order.estimatedVolumeM3 || 0).toFixed(2)} m³`,
+    status: order.status === "DEFERRED" ? "Deferred" : "Confirmed",
+    previouslyDeferred: order.status === "DEFERRED",
+    previousDeferrals: order.status === "DEFERRED" ? 1 : 0,
+    deferredReason: order.deferredReason || null,
+    location: outlet?.district || "—",
   };
 }
 
-async function getOrderForPlanning(scope, orderCode) {
-  const normalizedOrderCode = String(orderCode ?? "").trim();
+function vehicleView(row, tripsUsed = 0) {
+  const maxWeight = Number(row.weight_cap_kg || 0);
+  const maxVolume = Number(row.volume_cap_m3 || 0);
+  const temperature = String(row.temp || "").toLowerCase() === "reefer"
+    ? "Refrigerated"
+    : "Ambient";
 
-  if (!normalizedOrderCode) {
-    throw new DispatcherPlanningError(
-      "orderCode is required.",
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_ORDER_CODE_REQUIRED",
+  return {
+    vehicleId: row.vehicle_id,
+    type: String(row.type || "vehicle")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    depot: row.depot,
+    temperature,
+    maxWeightKg: maxWeight,
+    maxVolumeM3: maxVolume,
+    maxWeight: `${maxWeight.toLocaleString()} kg`,
+    maxVolume: `${maxVolume.toFixed(1)} m³`,
+    currentLoad: "0 kg / 0 m³",
+    tripsLeft: Math.max(0, 2 - tripsUsed),
+    availability: tripsUsed >= 2 ? "Unavailable" : "Available",
+    capacityGroup: maxWeight >= 5000 ? "HIGH" : maxWeight >= 3500 ? "MEDIUM" : "LOW",
+    isSuitable: tripsUsed < 2,
+    fuelType: row.fuel_type || null,
+    weeklyFuelQuotaL: Number(row.weekly_fuel_quota_l || 0),
+  };
+}
+
+function deterministicCoordinate(outletCode, depotName) {
+  const seed = [...String(outletCode || "OUT")].reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0
+  );
+
+  const kandy = String(depotName || "").toLowerCase().includes("kandy");
+  const base = kandy
+    ? { latitude: 7.2906, longitude: 80.6337 }
+    : { latitude: 6.9271, longitude: 79.8612 };
+
+  const latOffset = ((seed % 19) - 9) * 0.0032;
+  const lngOffset = (((seed * 7) % 19) - 9) * 0.0032;
+
+  return {
+    latitude: base.latitude + latOffset,
+    longitude: base.longitude + lngOffset,
+    source: "DEMO_COORDINATE_DERIVED_FOR_HACKATHON_UI",
+  };
+}
+
+function compatibleVehicle(order, vehicle) {
+  const needsChilled = order.temperature === "Chilled";
+  const isReefer = vehicle.temperature === "Refrigerated";
+  const vanOnly = String(order.parkingConstraint || "")
+    .toLowerCase()
+    .includes("van_only");
+  const isVan = String(vehicle.type || "").toLowerCase().includes("van");
+
+  return (!needsChilled || isReefer) && (!vanOnly || isVan);
+}
+
+function makeSuggestedTrips(orders, fleet, drivers) {
+  const availableOrders = orders.filter((order) => order.status !== "Deferred");
+  const remaining = [...availableOrders];
+  const trips = [];
+  let tripNumber = 1;
+
+  while (remaining.length) {
+    const first = remaining[0];
+    const sameDepot = remaining.filter((order) => order.depot === first.depot);
+    const candidateVehicle =
+      fleet.find(
+        (vehicle) =>
+          vehicle.depot === first.depot &&
+          vehicle.availability === "Available" &&
+          compatibleVehicle(first, vehicle)
+      ) ||
+      fleet.find(
+        (vehicle) =>
+          vehicle.depot === first.depot &&
+          vehicle.availability === "Available"
+      );
+
+    if (!candidateVehicle) break;
+
+    const capacityOrders = [];
+    let weight = 0;
+    let volume = 0;
+
+    for (const order of sameDepot) {
+      if (capacityOrders.length >= 4) break;
+      if (!compatibleVehicle(order, candidateVehicle)) continue;
+
+      const nextWeight = weight + order.weightKg;
+      const nextVolume = volume + order.volumeM3;
+
+      if (
+        nextWeight <= candidateVehicle.maxWeightKg &&
+        nextVolume <= candidateVehicle.maxVolumeM3
+      ) {
+        capacityOrders.push(order);
+        weight = nextWeight;
+        volume = nextVolume;
       }
+    }
+
+    if (!capacityOrders.length) {
+      capacityOrders.push(first);
+    }
+
+    const driver =
+      drivers.find((item) => item.depot === first.depot) ||
+      drivers[0] ||
+      null;
+
+    const tripId = `PLAN-${first.depot.replace(/\s+/g, "").toUpperCase()}-${String(
+      tripNumber
+    ).padStart(2, "0")}`;
+
+    trips.push({
+      tripId,
+      tripCode: tripId,
+      vehicleId: candidateVehicle.vehicleId,
+      vehicleType: candidateVehicle.type,
+      depot: first.depot,
+      driverUserId: driver?.id || null,
+      driverName: driver?.name || "Unassigned Driver",
+      stops: capacityOrders.length,
+      orders: capacityOrders.length,
+      departure: first.windowOpen || "After plan publication",
+      validation:
+        capacityOrders.every((order) => compatibleVehicle(order, candidateVehicle))
+          ? "Ready"
+          : "Warning",
+      capacityUsage: `${weight.toFixed(0)} / ${candidateVehicle.maxWeightKg.toFixed(
+        0
+      )} kg`,
+      stopsList: capacityOrders.map((order, index) => ({
+        sequence: index + 1,
+        orderId: order.orderId,
+        outletId: order.outletId,
+        outletName: order.outletName,
+        district: order.district,
+        deliveryWindow: order.deliveryWindow,
+        plannedArrival: order.windowOpen || null,
+      })),
+      orderIds: capacityOrders.map((order) => order.id),
+    });
+
+    const used = new Set(capacityOrders.map((order) => order.id));
+    for (let index = remaining.length - 1; index >= 0; index -= 1) {
+      if (used.has(remaining[index].id)) remaining.splice(index, 1);
+    }
+
+    tripNumber += 1;
+  }
+
+  return trips;
+}
+
+export async function getDispatcherPlanningSnapshot({
+  date,
+  depotName = null,
+} = {}, actor) {
+  // Authentication middleware loads this actor from the database. Request
+  // filters must never expand a Dispatcher's assigned depot scope.
+  const scope = await resolveActorScope(actor);
+  const dispatcherDepotId = actor.role === "DISPATCHER" ? scope.depotId : null;
+  if (dispatcherDepotId) depotName = scope.depotName;
+  const { start, end, dateText } = dateRange(date);
+
+  const orderWhere = {
+    effectiveDispatchDate: {
+      gte: start,
+      lte: end,
+    },
+    status: {
+      in: ["SUBMITTED", "CONFIRMED", "DEFERRED"],
+    },
+  };
+
+  if (dispatcherDepotId) {
+    orderWhere.outlet = { depotId: dispatcherDepotId };
+  } else if (depotName && depotName !== "ALL") {
+    orderWhere.outlet = {
+      depot: {
+        name: depotName,
+      },
+    };
+  }
+
+  const [ordersDb, vehicleRows, activeTrips, driversDb, depots] =
+    await Promise.all([
+      prisma.storeOrder.findMany({
+        where: orderWhere,
+        include: {
+          outlet: {
+            include: {
+              depot: true,
+            },
+          },
+        },
+        orderBy: {
+          submittedAt: "asc",
+        },
+      }),
+      readCsv("vehicles.csv"),
+      prisma.liveTrip.findMany({
+        where: {
+          ...(dispatcherDepotId ? { depotId: dispatcherDepotId } : {}),
+          deliveryDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        select: {
+          vehicleCode: true,
+          status: true,
+        },
+      }),
+      prisma.user.findMany({
+        where: {
+          role: "DRIVER",
+          isActive: true,
+          ...(dispatcherDepotId ? { depotId: dispatcherDepotId } : {}),
+        },
+        include: {
+          depot: true,
+        },
+        orderBy: {
+          fullName: "asc",
+        },
+      }),
+      prisma.depot.findMany({
+        where: { isActive: true, ...(dispatcherDepotId ? { id: dispatcherDepotId } : {}) },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      }),
+    ]);
+
+  const tripCountByVehicle = new Map();
+  for (const trip of activeTrips) {
+    if (trip.status === "COMPLETED") continue;
+    tripCountByVehicle.set(
+      trip.vehicleCode,
+      (tripCountByVehicle.get(trip.vehicleCode) || 0) + 1
     );
   }
 
-  const order = await prisma.storeOrder.findFirst({
+  const orders = ordersDb.map(orderView);
+
+  const fleet = vehicleRows
+    .filter((row) => !depotName || depotName === "ALL" || row.depot === depotName)
+    .map((row) => vehicleView(row, tripCountByVehicle.get(row.vehicle_id) || 0));
+
+  const drivers = driversDb.map((driver) => ({
+    id: driver.id,
+    userId: driver.userId,
+    name: driver.fullName,
+    depot: driver.depot?.name || null,
+    depotId: driver.depot?.id || null,
+  }));
+
+  const suggestedTrips = makeSuggestedTrips(orders, fleet, drivers);
+
+  const publicationPreview = [
+    {
+      id: "loader",
+      title: "Loader",
+      description:
+        suggestedTrips.length > 0
+          ? `${suggestedTrips.length} trip plan(s) will be available in stop sequence.`
+          : "No trip plan is ready to publish.",
+    },
+    {
+      id: "driver",
+      title: "Driver",
+      description:
+        suggestedTrips.length > 0
+          ? "Assigned published trips become available to Driver workflow and Live Delivery Monitoring."
+          : "No Driver assignment is available yet.",
+    },
+    {
+      id: "store-manager",
+      title: "Store Manager",
+      description:
+        orders.some((order) => order.status === "Deferred")
+          ? "Deferred orders retain a clear reason for Store Manager visibility."
+          : "Confirmed orders remain scheduled for the planned delivery run.",
+    },
+  ];
+
+  const summary = {
+    confirmedOrders: orders.filter((order) => order.status === "Confirmed").length,
+    allocatedOrders: suggestedTrips.reduce(
+      (sum, trip) => sum + trip.orderIds.length,
+      0
+    ),
+    unallocatedOrders: Math.max(
+      0,
+      orders.filter((order) => order.status === "Confirmed").length -
+        suggestedTrips.reduce((sum, trip) => sum + trip.orderIds.length, 0)
+    ),
+    deferredOrders: orders.filter((order) => order.status === "Deferred").length,
+    plannedTrips: suggestedTrips.length,
+    blockingErrors: suggestedTrips.some((trip) => !trip.driverUserId) ? 1 : 0,
+    unassigned: suggestedTrips.filter((trip) => !trip.driverUserId).length,
+    warnings: suggestedTrips.filter((trip) => trip.validation !== "Ready").length,
+    status: suggestedTrips.length ? "Ready for Review" : "Waiting for Orders",
+  };
+
+  return {
+    date: dateText,
+    depots,
+    orders,
+    deferredOrders: orders.filter((order) => order.status === "Deferred"),
+    fleet,
+    drivers,
+    suggestedTrips,
+    publicationPreview,
+    summary,
+  };
+}
+
+export async function deferStoreOrder({
+  orderId,
+  reason,
+}) {
+  const id = Number(orderId);
+  if (!Number.isInteger(id)) {
+    throw new Error("A valid order is required.");
+  }
+
+  return prisma.storeOrder.update({
+    where: { id },
+    data: {
+      status: "DEFERRED",
+      deferredReason: String(reason || "Deferred by Dispatcher").slice(0, 500),
+    },
+  });
+}
+
+function timeLabelFromOrders(orders) {
+  const first = orders[0];
+  if (!first) return "Published delivery plan";
+  const open = first.outlet?.windowOpenTime;
+  const close = orders.at(-1)?.outlet?.windowCloseTime;
+  return open && close ? `${open} – ${close}` : "Published delivery plan";
+}
+
+function stopFromOrder(order, index, tripCode) {
+  const outlet = order.outlet;
+  const coords = deterministicCoordinate(outlet?.outletCode, outlet?.depot?.name);
+
+  return {
+    stopId: `${tripCode}-STOP${String(index + 1).padStart(2, "0")}`,
+    position: index + 1,
+    outletId: outlet?.outletCode || `OUT-${order.outletId}`,
+    orderId: order.orderCode,
+    district: outlet?.district || "",
+    windowOpen: outlet?.windowOpenTime || null,
+    windowClose: outlet?.windowCloseTime || null,
+    plannedArrival: outlet?.windowOpenTime || null,
+    arrivalTime: null,
+    tempRequirement: orderTemperature(order),
+    expectedUnits: order.totalUnits,
+    loadedUnits: order.totalUnits,
+    deliveredQuantity: null,
+    unloadingPoint: outlet?.dockType || "Standard unloading",
+    vehicleAccess: outlet?.parkingConstraint || "Normal access",
+    mallWindow: outlet?.mallWindow || null,
+    mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.latitude}%2C${coords.longitude}`,
+    destination: coords,
+    etaMinutes: null,
+    distanceKm: null,
+    status: index === 0 ? "next" : "pending",
+    completed: false,
+    outcome: null,
+    pod: null,
+    exception: null,
+  };
+}
+
+export async function publishDispatcherPlan({
+  trip,
+  dispatcherUser,
+}) {
+  if (!trip?.vehicleId || !Array.isArray(trip.orderIds) || !trip.orderIds.length) {
+    throw new Error("The plan needs a vehicle and at least one order.");
+  }
+
+  const orders = await prisma.storeOrder.findMany({
     where: {
-      orderCode: normalizedOrderCode,
-      ...scope.where,
+      id: {
+        in: trip.orderIds.map(Number),
+      },
     },
     include: {
       outlet: {
@@ -263,546 +536,83 @@ async function getOrderForPlanning(scope, orderCode) {
           depot: true,
         },
       },
-      deliveryAllocations: {
-        where: {
-          status: {
-            in: ACTIVE_ALLOCATION_STATUSES,
-          },
-        },
-        take: 1,
-        orderBy: {
-          allocatedAt: "desc",
-        },
-        include: {
-          liveTripStop: {
-            include: {
-              liveTrip: true,
-            },
-          },
-        },
-      },
+    },
+    orderBy: {
+      id: "asc",
     },
   });
 
-  if (!order) {
-    throw new DispatcherPlanningError(
-      "Store order was not found in the authenticated Dispatcher depot.",
-      {
-        status: 404,
-        code: "DISPATCHER_PLANNING_ORDER_NOT_FOUND",
-      }
-    );
+  if (!orders.length) {
+    throw new Error("No valid orders were found for this plan.");
   }
 
-  return order;
-}
-
-async function resolveDriverForScope(scope, driverUserId) {
-  const normalized = String(driverUserId ?? "").trim();
-
-  if (!normalized) return null;
-
-  const driver = await prisma.user.findFirst({
-    where: {
-      userId: normalized,
-      role: "DRIVER",
-      isActive: true,
-      ...(scope.depotId
-        ? {
-            depotId: scope.depotId,
-          }
-        : {}),
-    },
-    include: {
-      depot: true,
-    },
-  });
+  const driver = trip.driverUserId
+    ? await prisma.user.findUnique({
+        where: { id: Number(trip.driverUserId) },
+        include: { depot: true },
+      })
+    : await prisma.user.findFirst({
+        where: {
+          role: "DRIVER",
+          isActive: true,
+          ...(orders[0].outlet?.depotId
+            ? { depotId: orders[0].outlet.depotId }
+            : {}),
+        },
+        include: { depot: true },
+        orderBy: { id: "asc" },
+      });
 
   if (!driver) {
-    throw new DispatcherPlanningError(
-      "The selected driver is not an active Driver in this depot.",
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_DRIVER_INVALID",
-      }
-    );
+    throw new Error("Assign an active Driver before publishing the plan.");
   }
 
-  return driver;
-}
+  const tripCode = `TRIP${Date.now().toString().slice(-6)}`;
+  const stops = orders.map((order, index) => stopFromOrder(order, index, tripCode));
 
-export async function getDispatcherPlanningWorkspace(
-  actor,
-  rawQuery = {}
-) {
-  const scope = await resolveActorScope(
-    actor,
-    rawQuery?.depotCode
-  );
-
-  const selectedDate = normalizeOptionalDate(rawQuery?.date);
-
-  const orderWhere = {
-    ...scope.where,
-    ...(selectedDate
-      ? {
-          effectiveDispatchDate: selectedDate,
-        }
-      : {}),
+  const driverTrip = {
+    tripId: tripCode,
+    tripNumber: state.trips.length + 1,
+    brand: orders[0].outlet?.brand || "Waypoint",
+    district: orders[0].outlet?.district || "",
+    vehicleId: trip.vehicleId,
+    assignedDriverUserId: driver.id,
+    assignedDriverUserCode: driver.userId,
+    timeLabel: timeLabelFromOrders(orders),
+    dispatcherPlanStatus: "PUBLISHED",
+    // The Loader module can later change this to VEHICLE_READY.
+    // For the connected Hackathon demo we expose the published plan
+    // to the Driver while preserving the operational state label.
+    loaderStatus: "VEHICLE_READY",
+    driverExecutionStatus: "NOT_STARTED",
+    completedAt: null,
+    publishedBy: dispatcherUser?.userId || null,
+    publishedAt: new Date().toISOString(),
+    stops,
   };
 
-  const tripWhere = {
-    ...(scope.depotId
-      ? {
-          depotId: scope.depotId,
-        }
-      : {}),
-    ...(selectedDate
-      ? {
-          deliveryDate: selectedDate,
-        }
-      : {}),
-    stops: {
-      some: {
-        deliveryAllocations: {
-          some: {
-            status: {
-              in: ACTIVE_ALLOCATION_STATUSES,
-            },
-          },
-        },
-      },
-    },
-  };
+  state.trips.push(driverTrip);
 
-  const [orders, drivers, liveTrips, observedTrips] = await Promise.all([
-    prisma.storeOrder.findMany({
-      where: orderWhere,
-      orderBy: [
-        { effectiveDispatchDate: "asc" },
-        { submittedAt: "asc" },
-      ],
-      include: {
-        outlet: {
-          include: {
-            depot: true,
-          },
-        },
-        dispatcherDecisions: {
-          select: {
-            decision: true,
-          },
-        },
-        deliveryAllocations: {
-          where: {
-            status: {
-              in: ACTIVE_ALLOCATION_STATUSES,
-            },
-          },
-          orderBy: {
-            allocatedAt: "desc",
-          },
-          take: 1,
-          include: {
-            liveTripStop: {
-              include: {
-                liveTrip: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-    prisma.user.findMany({
-      where: {
-        role: "DRIVER",
-        isActive: true,
-        ...(scope.depotId
-          ? {
-              depotId: scope.depotId,
-            }
-          : {}),
-      },
-      orderBy: {
-        fullName: "asc",
-      },
-      select: {
-        id: true,
-        userId: true,
-        fullName: true,
-        depotId: true,
-      },
-    }),
-    prisma.liveTrip.findMany({
-      where: tripWhere,
-      orderBy: [
-        { deliveryDate: "asc" },
-        { tripCode: "asc" },
-      ],
-      include: {
-        stops: {
-          orderBy: {
-            sequence: "asc",
-          },
-          include: {
-            deliveryAllocations: {
-              where: {
-                status: {
-                  in: ACTIVE_ALLOCATION_STATUSES,
-                },
-              },
-              include: {
-                storeOrder: {
-                  include: {
-                    outlet: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-    prisma.liveTrip.findMany({
-      where: {
-        ...(scope.depotId
-          ? {
-              depotId: scope.depotId,
-            }
-          : {}),
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-      take: 100,
-      select: {
-        vehicleCode: true,
-        vehicleType: true,
-        temperature: true,
-      },
-    }),
-  ]);
-
-  const mappedOrders = orders.map(mapPlanningOrder);
-
-  const submittedOrders = mappedOrders.filter(
-    (order) => order.status === "SUBMITTED"
-  );
-  const confirmedOrders = mappedOrders.filter(
-    (order) => order.status === "CONFIRMED"
-  );
-  const deferredOrders = mappedOrders.filter(
-    (order) => order.status === "DEFERRED"
-  );
-
-  const allocatedOrders = confirmedOrders.filter(
-    (order) => Boolean(order.allocation)
-  );
-  const unallocatedOrders = confirmedOrders.filter(
-    (order) => !order.allocation
-  );
-
-  const vehicleMap = new Map();
-  for (const trip of observedTrips) {
-    if (!trip.vehicleCode) continue;
-    if (!vehicleMap.has(trip.vehicleCode)) {
-      vehicleMap.set(trip.vehicleCode, {
-        vehicleCode: trip.vehicleCode,
-        vehicleType: trip.vehicleType || "Delivery vehicle",
-        temperature: trip.temperature || null,
-      });
-    }
-  }
-
-  return {
-    scope: serializeScope(scope),
-    filters: {
-      date: selectedDate ? dateOnly(selectedDate) : null,
-    },
-    summary: {
-      submittedOrders: submittedOrders.length,
-      confirmedOrders: confirmedOrders.length,
-      allocatedOrders: allocatedOrders.length,
-      unallocatedOrders: unallocatedOrders.length,
-      deferredOrders: deferredOrders.length,
-      publishedOrders: allocatedOrders.filter(
-        (order) => order.allocation?.status === "PUBLISHED"
-      ).length,
-      plannedTrips: liveTrips.length,
-    },
-    orders: {
-      submitted: submittedOrders,
-      confirmed: confirmedOrders,
-      deferred: deferredOrders,
-      allocated: allocatedOrders,
-      unallocated: unallocatedOrders,
-    },
-    drivers,
-    vehicles: Array.from(vehicleMap.values()).sort((a, b) =>
-      a.vehicleCode.localeCompare(b.vehicleCode)
-    ),
-    trips: liveTrips.map(mapPlanningTrip),
-  };
-}
-
-export async function allocateDispatcherOrderToDraftTrip(
-  actor,
-  orderCode,
-  payload = {}
-) {
-  const scope = await resolveActorScope(
-    actor,
-    payload?.depotCode
-  );
-
-  const order = await getOrderForPlanning(scope, orderCode);
-
-  if (order.status !== "CONFIRMED") {
-    throw new DispatcherPlanningError(
-      "Only a confirmed Store Manager order can be allocated.",
-      {
-        status: 409,
-        code: "DISPATCHER_PLANNING_ORDER_NOT_CONFIRMED",
-      }
-    );
-  }
-
-  const activeAllocation = order.deliveryAllocations?.[0] || null;
-  if (activeAllocation) {
-    return {
-      allocation: {
-        id: activeAllocation.id,
-        status: activeAllocation.status,
-        tripCode: activeAllocation.liveTripStop.liveTrip.tripCode,
-        stopCode: activeAllocation.liveTripStop.stopCode,
-      },
-      idempotent: true,
-    };
-  }
-
-  if (
-    scope.depotId &&
-    order.outlet.depotId !== scope.depotId
-  ) {
-    throw new DispatcherPlanningError(
-      "The Store Manager order does not belong to the authenticated Dispatcher depot.",
-      {
-        status: 403,
-        code: "DISPATCHER_PLANNING_DEPOT_SCOPE_VIOLATION",
-      }
-    );
-  }
-
-  const driver = await resolveDriverForScope(
-    scope,
-    payload?.driverUserId
-  );
-
-  const vehicleCode = normalizeVehicleCode(payload?.vehicleCode);
-  const vehicleType = normalizeVehicleType(payload?.vehicleType);
-  const deliveryDate = order.effectiveDispatchDate;
-  const tripCode = `PLN-${order.id}-${dateOnly(deliveryDate).replaceAll("-", "")}`;
-  const stopCode = `PLNST-${order.id}`;
-  const plannedEta = order.outlet.windowOpenTime || null;
-
-  const trip = await prisma.liveTrip.upsert({
-    where: {
-      tripCode,
-    },
-    update: {
-      deliveryDate,
-      depotId: order.outlet.depotId,
-      vehicleCode,
-      vehicleType,
-      temperature: temperatureLabel(order.orderType),
-      driverUserId: driver?.id || null,
-      driverName: driver?.fullName || "Unassigned driver",
-      status: "PLANNED",
-      progressCompleted: 0,
-      progressTotal: 1,
-      nextDestination: order.outlet.outletCode,
-      eta: plannedEta,
-      isDriverOnline: false,
-      latestDriverUpdate: "Draft delivery plan created. Awaiting publication.",
-      latestDriverUpdateAt: new Date(),
-    },
-    create: {
-      tripCode,
-      deliveryDate,
-      depotId: order.outlet.depotId,
-      vehicleCode,
-      vehicleType,
-      temperature: temperatureLabel(order.orderType),
-      driverUserId: driver?.id || null,
-      driverName: driver?.fullName || "Unassigned driver",
-      status: "PLANNED",
-      progressCompleted: 0,
-      progressTotal: 1,
-      nextDestination: order.outlet.outletCode,
-      eta: plannedEta,
-      isDriverOnline: false,
-      latestDriverUpdate: "Draft delivery plan created. Awaiting publication.",
-      latestDriverUpdateAt: new Date(),
-    },
-  });
-
-  await prisma.liveTripStop.upsert({
-    where: {
-      stopCode,
-    },
-    update: {
-      liveTripId: trip.id,
-      sequence: 1,
-      outletCode: order.outlet.outletCode,
-      outletName: `${order.outlet.brand} · ${order.outlet.outletCode}`,
-      district: order.outlet.district,
-      plannedEta,
-      actualArrival: null,
-      status: "PENDING",
-      outcome: null,
-    },
-    create: {
-      stopCode,
-      liveTripId: trip.id,
-      sequence: 1,
-      outletCode: order.outlet.outletCode,
-      outletName: `${order.outlet.brand} · ${order.outlet.outletCode}`,
-      district: order.outlet.district,
-      plannedEta,
-      status: "PENDING",
-    },
-  });
-
-  let allocation;
-  try {
-    allocation = await allocateConfirmedStoreOrderToStop({
-      orderCode: order.orderCode,
-      stopCode,
+  for (const order of orders) {
+    await prisma.storeOrder.update({
+      where: { id: order.id },
+      data: { status: "CONFIRMED" },
     });
-  } catch (error) {
-    if (error instanceof DispatcherOrderError) throw error;
-    throw error;
   }
 
+  await synchronizeTripForDriver({
+    trip: driverTrip,
+    driverUser: driver,
+    emit: false,
+  });
+
   emitMonitoringUpdate({
-    reason: "dispatcher-draft-allocation",
+    reason: "dispatcher-plan-published",
     tripCode,
-    notifyTripOutlets: true,
   });
 
   return {
-    allocation,
-    idempotent: false,
-  };
-}
-
-export async function publishDispatcherPlanningTrip(
-  actor,
-  tripCode,
-  payload = {}
-) {
-  const scope = await resolveActorScope(
-    actor,
-    payload?.depotCode
-  );
-
-  const normalizedTripCode = String(tripCode ?? "").trim();
-  if (!normalizedTripCode) {
-    throw new DispatcherPlanningError(
-      "tripCode is required.",
-      {
-        status: 400,
-        code: "DISPATCHER_PLANNING_TRIP_CODE_REQUIRED",
-      }
-    );
-  }
-
-  const trip = await prisma.liveTrip.findFirst({
-    where: {
-      tripCode: normalizedTripCode,
-      ...(scope.depotId
-        ? {
-            depotId: scope.depotId,
-          }
-        : {}),
-    },
-    include: {
-      stops: {
-        include: {
-          deliveryAllocations: {
-            where: {
-              status: {
-                in: ACTIVE_ALLOCATION_STATUSES,
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!trip) {
-    throw new DispatcherPlanningError(
-      "Planning trip was not found in the authenticated Dispatcher depot.",
-      {
-        status: 404,
-        code: "DISPATCHER_PLANNING_TRIP_NOT_FOUND",
-      }
-    );
-  }
-
-  const allocations = trip.stops.flatMap(
-    (stop) => stop.deliveryAllocations || []
-  );
-
-  if (allocations.length === 0) {
-    throw new DispatcherPlanningError(
-      "This trip has no active Store Manager order allocations to publish.",
-      {
-        status: 409,
-        code: "DISPATCHER_PLANNING_TRIP_EMPTY",
-      }
-    );
-  }
-
-  const published = [];
-  for (const allocation of allocations) {
-    published.push(
-      await publishDeliveryAllocation(allocation.id)
-    );
-  }
-
-  await prisma.liveTrip.update({
-    where: {
-      id: trip.id,
-    },
-    data: {
-      status: "PLANNED",
-      latestDriverUpdate: "Delivery plan published. Awaiting driver start.",
-      latestDriverUpdateAt: new Date(),
-    },
-  });
-
-  await prisma.liveTripEvent.create({
-    data: {
-      liveTripId: trip.id,
-      type: "DISPATCHER_PLAN_PUBLISHED",
-      message: `Dispatcher published ${normalizedTripCode}.`,
-      payload: {
-        tripCode: normalizedTripCode,
-        allocationCount: allocations.length,
-      },
-    },
-  });
-
-  emitMonitoringUpdate({
-    reason: "plan-published",
-    tripCode: normalizedTripCode,
-    notifyTripOutlets: true,
-  });
-
-  return {
-    tripCode: normalizedTripCode,
-    publishedAllocations: published.length,
+    tripCode,
+    driverTrip,
   };
 }

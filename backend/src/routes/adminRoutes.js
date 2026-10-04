@@ -3,6 +3,7 @@ import {
 } from "express";
 
 import {
+  deleteAdminManagedAccount,
   getAdminAccessCheck,
   getAdminAccounts,
   getAdminDepots,
@@ -69,6 +70,12 @@ router.get(
 router.get(
   "/accounts",
   getAdminAccounts
+);
+
+
+router.delete(
+  "/accounts/:accountId",
+  deleteAdminManagedAccount
 );
 
 

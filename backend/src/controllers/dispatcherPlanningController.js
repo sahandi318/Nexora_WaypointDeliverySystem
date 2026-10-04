@@ -1,101 +1,65 @@
 import {
-  DispatcherPlanningError,
-  allocateDispatcherOrderToDraftTrip,
-  getDispatcherPlanningWorkspace,
-  publishDispatcherPlanningTrip,
+  deferStoreOrder,
+  getDispatcherPlanningSnapshot,
+  publishDispatcherPlan,
 } from "../services/dispatcherPlanningService.js";
 
-import {
-  DispatcherOrderError,
-} from "../services/dispatcherOrderService.js";
-
-import {
-  DeliveryIntegrationError,
-} from "../services/deliveryIntegrationService.js";
-
-function handlePlanningError(res, error, fallbackMessage) {
-  if (
-    error instanceof DispatcherPlanningError ||
-    error instanceof DispatcherOrderError ||
-    error instanceof DeliveryIntegrationError
-  ) {
-    return res.status(error.status).json({
-      success: false,
-      code: error.code,
-      message: error.message,
-    });
-  }
-
-  console.error(
-    "Dispatcher planning request failed:",
-    error?.message || error
-  );
-
-  return res.status(500).json({
-    success: false,
-    code: "DISPATCHER_PLANNING_INTERNAL_ERROR",
-    message: fallbackMessage,
-  });
-}
-
-export async function getPlanningWorkspace(req, res) {
+export async function getPlanningSnapshot(req, res, next) {
   try {
-    const data = await getDispatcherPlanningWorkspace(
-      req.user,
-      req.query
-    );
+    const requestedDepot = String(
+      req.query.depot || ""
+    ).trim();
+
+    const snapshot =
+      await getDispatcherPlanningSnapshot({
+        date: req.query.date,
+
+        depotName:
+          requestedDepot &&
+          requestedDepot !== "ALL"
+            ? requestedDepot
+            : null,
+      }, req.user);
 
     return res.status(200).json({
       success: true,
-      data,
+      ...snapshot,
     });
   } catch (error) {
-    return handlePlanningError(
-      res,
-      error,
-      "Unable to load Dispatcher planning data."
-    );
+    return next(error);
   }
 }
 
-export async function postCreateDraftAllocation(req, res) {
+export async function deferPlanningOrder(req, res, next) {
   try {
-    const data = await allocateDispatcherOrderToDraftTrip(
-      req.user,
-      req.params.orderCode,
-      req.body
-    );
+    const updated = await deferStoreOrder({
+      orderId: req.body?.orderId,
+      reason: req.body?.reason,
+    });
 
     return res.status(200).json({
       success: true,
-      data,
+      message: "Order deferred with a recorded reason.",
+      orderId: updated.id,
     });
   } catch (error) {
-    return handlePlanningError(
-      res,
-      error,
-      "Unable to allocate the confirmed order."
-    );
+    return next(error);
   }
 }
 
-export async function postPublishPlanningTrip(req, res) {
+export async function publishPlanningTrip(req, res, next) {
   try {
-    const data = await publishDispatcherPlanningTrip(
-      req.user,
-      req.params.tripCode,
-      req.body
-    );
+    const result = await publishDispatcherPlan({
+      trip: req.body?.trip,
+      dispatcherUser: req.user,
+    });
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      data,
+      message: "Delivery plan published to the Driver workflow.",
+      ...result,
     });
   } catch (error) {
-    return handlePlanningError(
-      res,
-      error,
-      "Unable to publish the delivery plan."
-    );
+    return next(error);
   }
 }

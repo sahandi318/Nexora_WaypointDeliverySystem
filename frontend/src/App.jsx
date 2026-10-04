@@ -10,6 +10,10 @@ import {
 
 } from "react-router-dom";
 
+import {
+  useEffect,
+} from "react";
+
 
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -65,6 +69,8 @@ import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 
 
 import StoreManagerDashboardPage from "./pages/storeManager/StoreManagerDashboardPage";
+import LoaderWorkspacePage from "./pages/loader/LoaderWorkspacePage";
+import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModuleEntryPage";
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
@@ -73,11 +79,14 @@ import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDe
 import StoreManagerIssuesPage from "./pages/storeManager/StoreManagerIssuesPage";
 
 import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
+import DispatcherLiveMonitoring from "./pages/dispatcher/DispatcherLiveMonitoring";
 import ConfirmedOrders from "./pages/dispatcher/planning/ConfirmedOrders";
 import FleetAvailability from "./pages/dispatcher/planning/FleetAvailability";
 import DeliveryPlanner from "./pages/dispatcher/planning/DeliveryPlanner";
 import DeferredOrders from "./pages/dispatcher/planning/DeferredOrders";
 import ReviewPublish from "./pages/dispatcher/planning/ReviewPublish";
+import LoadingCoordination from "./pages/dispatcher/loading/LoadingCoordination";
+import LoadingExceptions from "./pages/dispatcher/loading/LoadingExceptions";
 import ReportsCapacity from "./pages/dispatcher/reports/ReportsCapacity";
 import DeliveryReports from "./pages/dispatcher/reports/DeliveryReports";
 import ReceiptDiscrepancyResolution from "./pages/dispatcher/reports/ReceiptDiscrepancyResolution";
@@ -127,32 +136,91 @@ import {
 
 // ============================================================
 
+const publicNavbarPaths = new Set([
+  "/",
+  "/login",
+  "/admin/login",
+  "/admin/register",
+  "/forgot-password",
+  "/verify-reset-otp",
+  "/reset-password",
+]);
+
 
 
 function App() {
-
   const location =
 
     useLocation();
+
+  useEffect(() => {
+    const animationFrame =
+      window.requestAnimationFrame(
+        () => {
+          if (location.hash) {
+            const targetId =
+              decodeURIComponent(
+                location.hash.slice(1)
+              );
+
+            document
+              .getElementById(targetId)
+              ?.scrollIntoView({
+                block: "start",
+              });
+
+            return;
+          }
+
+          if (
+            document.scrollingElement
+          ) {
+            document.scrollingElement.scrollTop =
+              0;
+            document.scrollingElement.scrollLeft =
+              0;
+          }
+
+          document.body.scrollTop =
+            0;
+          document.body.scrollLeft =
+            0;
+        }
+      );
+
+    return () =>
+      window.cancelAnimationFrame(
+        animationFrame
+      );
+  }, [
+    location.pathname,
+    location.search,
+    location.hash,
+  ]);
+
+  const showPublicNavbar =
+    publicNavbarPaths.has(
+      location.pathname
+    );
+
   const isDispatcherRoute =
   location.pathname.startsWith("/dispatcher");
 
+  const isStoreManagerRoute =
+    location.pathname.startsWith("/store-manager");
 
-  // Landing navigation and footer belong only to the
+  const isLoaderRoute =
+    location.pathname.startsWith("/loader");
 
-  // public landing page.
-
-  const showLandingChrome =
-
-    location.pathname === "/";
-
-
-
-  // Reports pages use the fixed Dispatcher sidebar.
-
-  const isDispatcherReportsRoute =
-
-    location.pathname.startsWith("/dispatcher/reports");
+  const footerContainerClassName =
+    isDispatcherRoute &&
+    location.pathname !== "/dispatcher/live"
+      ? "ml-[75px] w-[calc(100%-75px)] min-[761px]:ml-[242px] min-[761px]:w-[calc(100%-242px)]"
+      : isStoreManagerRoute
+        ? "w-full lg:ml-[236px] lg:w-[calc(100%-236px)]"
+        : isLoaderRoute
+          ? "w-full lg:ml-[248px] lg:w-[calc(100%-248px)]"
+          : "w-full";
 
 
 
@@ -180,8 +248,7 @@ function App() {
 
 
 
-      {showLandingChrome && (
-
+      {showPublicNavbar && (
         <LandingNavbar />
 
       )}
@@ -195,9 +262,7 @@ function App() {
           flex-1
 
           ${
-
-            showLandingChrome
-
+            showPublicNavbar
               ? "pt-16 sm:pt-20"
 
               : ""
@@ -936,7 +1001,31 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dispatcher/loading"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <LoadingCoordination />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/dispatcher/loading/exceptions"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <LoadingExceptions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dispatcher/live"
+            element={
+              <ProtectedRoute allowedRoles={["DISPATCHER"]}>
+                <DispatcherLiveMonitoring />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
 
@@ -1026,39 +1115,22 @@ function App() {
 
               ===================================================== */}
 
+      <Route
+        path="/loader/*"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LOADER",
+            ]}
+          >
+            <LoaderWorkspacePage />
+          </ProtectedRoute>
+        }
+      />
 
-
-          <Route
-
-            path="/loader/*"
-
-            element={
-
-              <ProtectedRoute
-
-                allowedRoles={[
-
-                  "LOADER",
-
-                ]}
-
-              >
-
-                <RoleWorkspacePage />
-
-              </ProtectedRoute>
-
-            }
-
-          />
-
-
-
-          {/* =====================================================
-
-              DRIVER
-
-              ===================================================== */}
+      {/* =====================================================
+          DRIVER
+          ===================================================== */}
 
 
 
@@ -1290,28 +1362,13 @@ function App() {
 
       </div>
 
-
-
-      {showLandingChrome ? (
-
+      <div
+        className={
+          footerContainerClassName
+        }
+      >
         <Footer />
-
-      ) : isDispatcherReportsRoute ? (
-
-        <div
-
-          className="ml-[230px]"
-
-          style={{ width: "calc(100% - 230px)" }}
-
-        >
-
-          <Footer />
-
-        </div>
-
-      ) : null}
-
+      </div>
     </div>
 
   );

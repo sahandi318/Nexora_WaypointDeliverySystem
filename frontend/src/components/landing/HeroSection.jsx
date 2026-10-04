@@ -2,27 +2,9 @@ import {
   ArrowRight,
   Building2,
   MapPin,
-  Navigation,
-  Store,
 } from "lucide-react";
 
 import headquartersImage from "../../assets/landing/waypoint-headquarters-hero.webp";
-
-
-const mobileBenefits = [
-  {
-    icon: MapPin,
-    label: "Locations",
-  },
-  {
-    icon: Store,
-    label: "Local Stores",
-  },
-  {
-    icon: Navigation,
-    label: "Easy to Find",
-  },
-];
 
 
 function HeroSection() {
@@ -47,22 +29,19 @@ function HeroSection() {
           max-w-7xl
           gap-8
           px-4
-          py-8
+          py-10
           sm:px-6
-          sm:py-12
+          sm:py-14
           md:gap-10
-          md:py-14
-          lg:grid-cols-[0.92fr_1.08fr]
+          lg:grid-cols-[0.9fr_1.1fr]
           lg:items-center
           lg:gap-10
           lg:px-8
-          lg:py-16
+          lg:py-18
           xl:gap-14
-          xl:py-20
+          xl:py-22
         "
       >
-        {/* HERO COPY */}
-
         <div
           className="
             relative
@@ -79,7 +58,7 @@ function HeroSection() {
               border
               border-[var(--color-border)]
               bg-[var(--color-surface-soft)]
-              px-3
+              px-3.5
               py-1.5
               text-[10px]
               font-semibold
@@ -91,63 +70,47 @@ function HeroSection() {
             "
           >
             <MapPin size={14} />
-            Stores across Sri Lanka
+            Trusted store coverage across Sri Lanka
           </div>
-
 
           <h1
             className="
               mt-4
               max-w-2xl
-              text-[2rem]
+              text-[2.2rem]
               font-black
-              leading-[1.03]
+              leading-[1.02]
               tracking-tight
               text-[var(--color-text)]
-              min-[420px]:text-[2.35rem]
+              min-[420px]:text-[2.55rem]
               sm:mt-6
               sm:text-5xl
-              lg:text-[3.45rem]
-              xl:text-6xl
+              lg:text-[3.65rem]
+              xl:text-[4.25rem]
             "
           >
-            Your Local Stores,
-
-            <span
-              className="
-                mt-1
-                block
-                text-[var(--color-primary)]
-                sm:mt-2
-              "
-            >
-              Always Within Reach
+            Waypoint stores,
+            <span className="mt-1 block text-[var(--color-primary)] sm:mt-2">
+              easier to discover
             </span>
           </h1>
-
 
           <p
             className="
               mt-4
-              max-w-lg
+              max-w-xl
               text-sm
               leading-6
               text-[var(--color-text-secondary)]
               sm:mt-6
               sm:text-lg
-              sm:leading-7
+              sm:leading-8
             "
           >
-            <span className="sm:hidden">
-              Find convenient Nexora Waypoint stores near you.
-            </span>
-
-            <span className="hidden sm:inline">
-              Discover Nexora Waypoint stores across Sri Lanka and find a
-              convenient location closer to you.
-            </span>
+            Discover the Nexora Waypoint network through a clear, professional
+            experience. Browse outlets, filter by district or brand and find the
+            location information you need without unnecessary complexity.
           </p>
-
 
           <div
             className="
@@ -183,14 +146,14 @@ function HeroSection() {
                 sm:px-6
               "
             >
-              Explore Stores
+              Explore outlets
               <ArrowRight size={17} />
             </a>
 
             <a
               href="#about"
               className="
-                hidden
+                inline-flex
                 items-center
                 justify-center
                 gap-2
@@ -208,157 +171,27 @@ function HeroSection() {
                 hover:-translate-y-0.5
                 hover:border-[var(--color-primary)]
                 hover:bg-[var(--color-surface-soft)]
-                sm:inline-flex
               "
             >
-              <Store size={18} />
-              Learn More
+              <Building2 size={18} />
+              Learn more
             </a>
           </div>
-
-
-          <div
-            className="
-              mt-6
-              grid
-              grid-cols-3
-              gap-2
-              border-t
-              border-[var(--color-border)]
-              pt-5
-              sm:hidden
-            "
-          >
-            {mobileBenefits.map((item) => {
-              const Icon =
-                item.icon;
-
-
-              return (
-                <div
-                  key={
-                    item.label
-                  }
-                  className="
-                    landing-glass-card
-                    flex
-                    min-w-0
-                    flex-col
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    px-1
-                    py-3
-                    text-center
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      h-8
-                      w-8
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-[var(--color-surface-soft)]
-                      text-[var(--color-primary)]
-                    "
-                  >
-                    <Icon size={15} />
-                  </div>
-
-                  <span
-                    className="
-                      block
-                      w-full
-                      truncate
-                      text-[9px]
-                      font-bold
-                      leading-tight
-                      text-[var(--color-text)]
-                    "
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-
-          <div
-            className="
-              mt-10
-              hidden
-              grid-cols-3
-              gap-6
-              border-t
-              border-[var(--color-border)]
-              pt-6
-              sm:grid
-            "
-          >
-            <div>
-              <p className="text-sm font-bold text-[var(--color-text)]">
-                Multiple Locations
-              </p>
-
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Across Sri Lanka
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-[var(--color-text)]">
-                Local Stores
-              </p>
-
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Easy to reach
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-[var(--color-text)]">
-                Convenient Service
-              </p>
-
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Closer to you
-              </p>
-            </div>
-          </div>
         </div>
-
-
-        {/* THEME-AWARE HEADQUARTERS VISUAL
-            IMPORTANT:
-            The exact same image is used in light and dark mode.
-            Only filters/lighting overlays change, so the building
-            structure and camera angle never change.
-        */}
 
         <div
           className="
             landing-hero-hq
             relative
-            min-h-[330px]
+            min-h-[340px]
             overflow-hidden
-            rounded-[24px]
-            border
-            border-[var(--color-border)]
-            shadow-[var(--shadow-lg)]
-            sm:min-h-[430px]
-            sm:rounded-[30px]
-            lg:min-h-[590px]
-            xl:min-h-[620px]
+            sm:min-h-[440px]
+            lg:min-h-[620px]
+            xl:min-h-[660px]
           "
         >
           <img
-            src={
-              headquartersImage
-            }
+            src={headquartersImage}
             alt="Nexora Waypoint headquarters"
             className="
               landing-hero-hq-image
@@ -397,87 +230,10 @@ function HeroSection() {
             "
           />
 
-
-          <div
-            className="
-              absolute
-              left-4
-              top-4
-              z-10
-              inline-flex
-              items-center
-              gap-2
-              rounded-full
-              border
-              border-white/20
-              bg-black/25
-              px-3
-              py-1.5
-              text-[10px]
-              font-extrabold
-              uppercase
-              tracking-[0.15em]
-              text-white
-              shadow-lg
-              backdrop-blur-md
-              sm:left-5
-              sm:top-5
-              sm:text-xs
-            "
-          >
-            <Building2 size={14} />
-            Waypoint Headquarters
-          </div>
-
-
-          <div
-            className="
-              landing-hero-hq-mode
-              absolute
-              bottom-4
-              right-4
-              z-10
-              flex
-              items-center
-              gap-2
-              rounded-full
-              border
-              border-white/20
-              bg-black/30
-              px-3
-              py-1.5
-              text-[10px]
-              font-bold
-              text-white
-              shadow-lg
-              backdrop-blur-md
-              sm:bottom-5
-              sm:right-5
-              sm:text-xs
-            "
-          >
-            <span
-              className="
-                landing-hero-hq-status-dot
-                h-2
-                w-2
-                rounded-full
-              "
-            />
-
-            <span className="landing-hero-hq-day-copy">
-              Natural daylight
-            </span>
-
-            <span className="landing-hero-hq-night-copy">
-              Night illumination
-            </span>
-          </div>
         </div>
       </div>
     </section>
   );
 }
-
 
 export default HeroSection;

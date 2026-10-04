@@ -73,13 +73,13 @@ function LandingNavbar() {
   return (
     <header
       className="
+        landing-navbar-surface
         fixed
         inset-x-0
         top-0
         z-50
         border-b
         border-[var(--color-border)]
-        bg-[var(--color-surface)]
         transition-colors
         duration-300
       "

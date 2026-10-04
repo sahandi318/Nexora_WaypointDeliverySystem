@@ -32,6 +32,7 @@ import PasswordRequirements, {
 } from "../../components/common/PasswordRequirements";
 import useAuth from "../../hooks/useAuth";
 import api from "../../services/api";
+import adminPortalImage from "../../assets/admin/admin-portal-hero.webp";
 
 
 const INITIAL_FORM = {
@@ -74,7 +75,7 @@ function AdminRegisterPage() {
         title="Register administrator"
         description="Create another administrator account using the private administrator registration key."
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-4xl">
           <RegistrationCard
             authenticatedAdmin
           />
@@ -97,6 +98,16 @@ function AdminRegisterPage() {
         sm:px-6
       "
     >
+      <img
+        src={adminPortalImage}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.16]"
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-[var(--color-bg)] opacity-[0.74]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent_0%,rgba(15,169,104,0.08)_42%,transparent_100%)]" />
+
       <div
         className="
           pointer-events-none
@@ -128,7 +139,7 @@ function AdminRegisterPage() {
       />
 
 
-      <div className="relative z-10 mx-auto w-full max-w-3xl">
+      <div className="relative z-10 mx-auto w-full max-w-4xl">
         <LoginUtilityBar />
 
         <div className="mt-6">
@@ -350,17 +361,19 @@ function RegistrationCard({
   return (
     <section
       className="
+        relative
         overflow-hidden
         rounded-[28px]
         border
         border-[var(--color-border-strong)]
         bg-[var(--color-surface)]
-        shadow-[var(--shadow-lg)]
+        shadow-[0_28px_80px_rgba(5,65,47,0.14)]
+        backdrop-blur-xl
       "
     >
-      <div className="h-1 bg-[var(--color-primary)]" />
+      <div className="h-[3px] bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent),transparent)]" />
 
-      <div className="p-5 sm:p-8">
+      <div className="p-5 sm:p-8 lg:p-9">
         <div
           className="
             flex
@@ -390,7 +403,7 @@ function RegistrationCard({
               "
             >
               <ShieldCheck size={14} />
-              Verified administrator registration
+              Protected administrator registration
             </div>
 
             <h1
@@ -402,7 +415,7 @@ function RegistrationCard({
                 sm:text-3xl
               "
             >
-              Create administrator account
+              Create a protected administrator account
             </h1>
 
             <p
@@ -414,7 +427,7 @@ function RegistrationCard({
                 text-[var(--color-text-secondary)]
               "
             >
-              Enter the administrator's personal details and the private admin key. The key is verified only by the backend and is never stored in the browser.
+              Create a verified administrator profile using the protected registration key. Account credentials and access controls remain secured by the backend.
             </p>
           </div>
 
