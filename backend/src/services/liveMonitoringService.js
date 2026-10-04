@@ -10,6 +10,7 @@ const EXCEPTION_EVENT_TYPE = "EXCEPTION_RECORDED";
 const OUTCOME_EVENT_TYPE = "DELIVERY_OUTCOME";
 const ARRIVAL_EVENT_TYPE = "STOP_ARRIVED";
 const COMPLETION_EVENT_TYPE = "STOP_COMPLETED";
+const RECEIPT_DECISION_EVENT_TYPE = "RECEIPT_DISCREPANCY_DECISION";
 
 function todayUtcDate() {
   const now = new Date();
@@ -207,11 +208,13 @@ async function upsertTripFromDriverState(trip, driverUser, depot, { preferExisti
     : depot?.id || existing?.depotId || null;
 
   const commonData = {
-    deliveryDate: todayUtcDate(),
-    depotId: assignedDepotId,
+    deliveryDate: trip.deliveryDate
+      ? new Date(`${String(trip.deliveryDate).slice(0, 10)}T00:00:00.000Z`)
+      : existing?.deliveryDate || todayUtcDate(),
+    depotId: trip.depotId || assignedDepotId,
     vehicleCode: trip.vehicleId || state.vehicle?.vehicleId || "UNASSIGNED",
-    vehicleType: state.vehicle?.type || "Vehicle",
-    temperature: state.vehicle?.temp || "Ambient",
+    vehicleType: trip.vehicleType || state.vehicle?.type || "Vehicle",
+    temperature: trip.temperature || state.vehicle?.temp || "Ambient",
     driverUserId: assignedDriverUserId,
     driverName: assignedDriverName,
     status: deriveTripStatus(trip, isOnline),
@@ -249,6 +252,7 @@ async function upsertTripFromDriverState(trip, driverUser, depot, { preferExisti
         liveTripId: liveTrip.id,
         sequence: stop.position,
         outletCode: stop.outletId,
+        outletName: stop.outletName || stop.outletId,
         storeOrderId: stop.storeOrderId ? Number(stop.storeOrderId): null,
         outletName: stop.outletId,
         district: stop.district || trip.district || null,
@@ -264,6 +268,7 @@ async function upsertTripFromDriverState(trip, driverUser, depot, { preferExisti
         liveTripId: liveTrip.id,
         sequence: stop.position,
         outletCode: stop.outletId,
+        outletName: stop.outletName || stop.outletId,
         storeOrderId: stop.storeOrderId ? Number(stop.storeOrderId) : null,
         outletName: stop.outletId,
         district: stop.district || trip.district || null,
@@ -282,69 +287,8 @@ async function upsertTripFromDriverState(trip, driverUser, depot, { preferExisti
   return liveTrip;
 }
 
-async function ensureAdditionalDemoTrips(depot) {
-  if (!depot) return;
-
-  const demo = [
-    { code: "TRP002", vehicle: "VEH002", driver: "Kasun Silva", status: "ON_ROUTE", done: 3, total: 6, next: "OUT024", eta: "11:15 AM" },
-    { code: "TRP003", vehicle: "VEH003", driver: "Tharindu Jayasekara", status: "DELAYED", done: 1, total: 5, next: "OUT031", eta: "11:40 AM" },
-    { code: "TRP004", vehicle: "VEH004", driver: "Amal Fernando", status: "ON_ROUTE", done: 4, total: 7, next: "OUT042", eta: "12:05 PM" },
-    { code: "TRP005", vehicle: "VEH005", driver: "Ravindu Dias", status: "OFFLINE", done: 0, total: 3, next: "OUT051", eta: "12:20 PM" },
-  ];
-
-  for (const item of demo) {
-    const existing = await prisma.liveTrip.findUnique({ where: { tripCode: item.code } });
-    const lastSynchronized = existing?.lastSynchronized
-      || (item.status === "OFFLINE" ? new Date(Date.now() - 12 * 60 * 1000) : new Date());
-
-    await prisma.liveTrip.upsert({
-      where: { tripCode: item.code },
-      update: {
-        deliveryDate: todayUtcDate(),
-        depotId: depot.id,
-        vehicleCode: item.vehicle,
-        vehicleType: item.code === "TRP003" ? "Dry-box Truck" : "Truck",
-        temperature: item.code === "TRP002" ? "Chilled (2°C - 8°C)" : "Ambient",
-        driverName: item.driver,
-        status: item.status,
-        progressCompleted: item.done,
-        progressTotal: item.total,
-        nextDestination: item.next,
-        eta: item.eta,
-        isDriverOnline: item.status !== "OFFLINE",
-        lastSynchronized,
-        latestDriverUpdate: item.status === "OFFLINE"
-          ? "Driver device is offline. Showing the last synchronized progress."
-          : `Driver is continuing to ${item.next}.`,
-        latestDriverUpdateAt: existing?.latestDriverUpdateAt || new Date(),
-      },
-      create: {
-        tripCode: item.code,
-        deliveryDate: todayUtcDate(),
-        depotId: depot.id,
-        vehicleCode: item.vehicle,
-        vehicleType: item.code === "TRP003" ? "Dry-box Truck" : "Truck",
-        temperature: item.code === "TRP002" ? "Chilled (2°C - 8°C)" : "Ambient",
-        driverName: item.driver,
-        status: item.status,
-        progressCompleted: item.done,
-        progressTotal: item.total,
-        nextDestination: item.next,
-        eta: item.eta,
-        isDriverOnline: item.status !== "OFFLINE",
-        lastSynchronized,
-        latestDriverUpdate: item.status === "OFFLINE"
-          ? "Driver device is offline. Showing the last synchronized progress."
-          : `Driver is continuing to ${item.next}.`,
-        latestDriverUpdateAt: new Date(),
-      },
-    });
-  }
-}
-
 export const STORE_MANAGER_DELIVERY_SOCKET_EVENT =
   "store-manager:delivery-update";
-
 export function setMonitoringIo(io) {
   ioInstance = io;
 }
@@ -516,40 +460,11 @@ export function emitMonitoringUpdate(payload = {}) {
 }
 
 export async function initializeLiveMonitoring() {
-  const driver = await resolveDriverUser();
-  const depot = await resolveDepot(driver);
-
-  // Remove legacy monitoring-only demo rows from earlier development
-  // versions. Real Driver trips and Dispatcher-published plans are kept.
-  await prisma.liveTrip.deleteMany({
-    where: {
-      tripCode: {
-        in: ["TRP002", "TRP003", "TRP004", "TRP005"],
-      },
-    },
-  });
-
-  for (const trip of state.trips || []) {
-    await upsertTripFromDriverState(trip, driver, depot);
-  }
+  // Published plans and Driver updates are the source of monitoring data.
 }
 
 export async function synchronizeDriverState() {
-  const driver = await resolveDriverUser();
-  const depot = await resolveDepot(driver);
-
-  for (const trip of state.trips || []) {
-    await upsertTripFromDriverState(
-      trip,
-      driver,
-      depot
-    );
-
-    emitMonitoringUpdate({
-      reason: "driver-state-sync",
-      tripCode: trip.tripId,
-    });
-  }
+  emitMonitoringUpdate({ reason: "driver-state-sync" });
 }
 
 export async function synchronizeTripForDriver({ trip, driverUser, emit = true }) {
@@ -609,8 +524,14 @@ export async function updateDriverPresence({
     },
   });
 
-  const validLat = Number.isFinite(Number(latitude)) ? Number(latitude) : null;
-  const validLng = Number.isFinite(Number(longitude)) ? Number(longitude) : null;
+  const validLat =
+    latitude !== null && latitude !== undefined && Number.isFinite(Number(latitude))
+      ? Number(latitude)
+      : null;
+  const validLng =
+    longitude !== null && longitude !== undefined && Number.isFinite(Number(longitude))
+      ? Number(longitude)
+      : null;
   const now = new Date();
 
   for (const trip of trips) {
@@ -874,9 +795,22 @@ export async function getDispatcherDeliveryReports({ depotName = null } = {}) {
   const trips = depotName
     ? assignedTrips.filter((trip) => trip.depot?.name === depotName)
     : assignedTrips;
+  const plannedTrips = trips.length
+    ? await prisma.plannedTrip.findMany({
+        where: { tripCode: { in: trips.map((trip) => trip.tripCode) } },
+        include: {
+          allocations: {
+            include: { storeOrder: true },
+            orderBy: { stopSequence: "asc" },
+          },
+        },
+      })
+    : [];
+  const plannedByCode = new Map(plannedTrips.map((trip) => [trip.tripCode, trip]));
 
   const records = trips
     .map((trip) => {
+      const plannedTrip = plannedByCode.get(trip.tripCode);
       const podEvents = trip.events.filter((event) => event.type === POD_EVENT_TYPE);
       const completionEvent = getLatestEvent(trip.events, COMPLETION_EVENT_TYPE);
       const latestPodEvent = podEvents[0] || null;
@@ -886,20 +820,43 @@ export async function getDispatcherDeliveryReports({ depotName = null } = {}) {
         const exceptionEvent = trip.events.find(
           (event) => event.type === EXCEPTION_EVENT_TYPE && safeJsonObject(event.payload).stopId === stop.stopCode
         ) || null;
+        const outcomeEvent = trip.events.find(
+          (event) => event.type === OUTCOME_EVENT_TYPE && safeJsonObject(event.payload).stopId === stop.stopCode
+        ) || null;
+        const resolutionEvent = trip.events.find(
+          (event) =>
+            event.type === RECEIPT_DECISION_EVENT_TYPE &&
+            safeJsonObject(event.payload).stopCode === stop.stopCode
+        ) || null;
+        const allocation = plannedTrip?.allocations.find(
+          (item) => item.stopSequence === stop.sequence
+        );
         const pod = podEvent ? { ...safeJsonObject(podEvent.payload), createdAt: podEvent.createdAt } : null;
         const exception = exceptionEvent ? { ...safeJsonObject(exceptionEvent.payload), createdAt: exceptionEvent.createdAt } : null;
+        const outcome = safeJsonObject(outcomeEvent?.payload);
+        const resolution = resolutionEvent
+          ? { ...safeJsonObject(resolutionEvent.payload), createdAt: resolutionEvent.createdAt }
+          : null;
 
         return {
           stopCode: stop.stopCode,
           sequence: stop.sequence,
           outletCode: stop.outletCode,
           outletName: stop.outletName,
+          orderCode: allocation?.storeOrder.orderCode || null,
+          expectedUnits: allocation?.storeOrder.totalUnits ?? null,
+          deliveredQuantity:
+            outcome.deliveredQuantity ??
+            pod?.deliveredQuantity ??
+            exception?.deliveredQuantity ??
+            null,
           plannedEta: stop.plannedEta,
           actualArrival: stop.actualArrival,
           status: stop.status,
           outcome: stop.outcome,
           pod,
           exception,
+          resolution,
         };
       });
 
@@ -935,16 +892,130 @@ export async function getDispatcherDeliveryReports({ depotName = null } = {}) {
           : null,
       };
     })
-    .filter((trip) => trip.proofRecords > 0 || trip.completedStops > 0 || trip.tripStatus === "COMPLETED");
+    .filter((trip) =>
+      trip.proofRecords > 0 ||
+      trip.completedStops > 0 ||
+      trip.tripStatus === "COMPLETED" ||
+      trip.stops.some((stop) =>
+        ["PARTIAL_DELIVERY", "UNABLE_TO_DELIVER"].includes(stop.outcome)
+      )
+    );
+
+  const discrepancies = records.flatMap((trip) =>
+    trip.stops
+      .filter((stop) =>
+        ["PARTIAL_DELIVERY", "UNABLE_TO_DELIVER"].includes(stop.outcome)
+      )
+      .map((stop) => {
+        const expectedQuantity = Number(stop.expectedUnits || 0);
+        const driverReportedQuantity = Number(stop.deliveredQuantity || 0);
+        const resolution = stop.resolution;
+        return {
+          id: `${trip.tripCode}:${stop.stopCode}`,
+          tripCode: trip.tripCode,
+          tripId: trip.tripCode,
+          stopCode: stop.stopCode,
+          vehicleCode: trip.vehicleCode,
+          vehicleId: trip.vehicleCode,
+          driverName: trip.driverName,
+          depot: trip.depot,
+          orderCode: stop.orderCode,
+          orderId: stop.orderCode,
+          outletCode: stop.outletCode,
+          outletName: stop.outletName,
+          outcome: stop.outcome,
+          expectedQuantity,
+          driverReportedQuantity,
+          quantityDifference: expectedQuantity - driverReportedQuantity,
+          unit: "units",
+          reportedAt: stop.pod?.recordedAt || stop.exception?.recordedAt || trip.lastActivityAt,
+          driverNote: stop.pod?.deliveryNote || stop.exception?.notes || stop.exception?.reason || "",
+          status: resolution?.resolved ? "RESOLVED" : "OPEN",
+          resolutionAction: resolution?.action || null,
+          resolutionNote: resolution?.note || null,
+          resolvedAt: resolution?.resolved ? resolution.createdAt : null,
+        };
+      })
+  );
 
   const summary = {
     completedTrips: records.filter((trip) => trip.tripStatus === "COMPLETED").length,
     deliveredOrders: records.reduce((sum, trip) => sum + trip.deliveredOrders, 0),
     partialFailedDeliveries: records.reduce((sum, trip) => sum + trip.partialFailed, 0),
     proofRecords: records.reduce((sum, trip) => sum + trip.proofRecords, 0),
+    openDiscrepancies: discrepancies.filter((item) => item.status === "OPEN").length,
+    resolvedDiscrepancies: discrepancies.filter((item) => item.status === "RESOLVED").length,
   };
 
-  return { summary, trips: records };
+  return { summary, trips: records, discrepancies };
+}
+
+export async function saveDispatcherReceiptDecision({
+  tripCode,
+  stopCode,
+  action,
+  note,
+  dispatcherUser,
+}) {
+  const allowedActions = new Set([
+    "Arrange replacement delivery",
+    "Confirm quantity adjustment",
+    "Request additional evidence",
+    "Escalate for further investigation",
+    "Mark as resolved (no further action)",
+  ]);
+  const cleanNote = String(note || "").trim();
+  if (!allowedActions.has(action) || !cleanNote) {
+    throw Object.assign(new Error("Select a resolution and enter a note."), { status: 400 });
+  }
+
+  const trip = await prisma.liveTrip.findUnique({
+    where: { tripCode: String(tripCode) },
+    include: {
+      stops: { where: { stopCode: String(stopCode) } },
+      events: {
+        where: { type: RECEIPT_DECISION_EVENT_TYPE },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+  const stop = trip?.stops[0];
+  if (!trip || !stop) {
+    throw Object.assign(new Error("Delivery discrepancy not found."), { status: 404 });
+  }
+  if (!["PARTIAL_DELIVERY", "UNABLE_TO_DELIVER"].includes(stop.outcome)) {
+    throw Object.assign(new Error("This stop has no reported delivery discrepancy."), { status: 409 });
+  }
+
+  const resolved = [
+    "Confirm quantity adjustment",
+    "Mark as resolved (no further action)",
+  ].includes(action);
+  const event = await prisma.liveTripEvent.create({
+    data: {
+      liveTripId: trip.id,
+      type: RECEIPT_DECISION_EVENT_TYPE,
+      message: `Dispatcher ${resolved ? "resolved" : "updated"} the delivery discrepancy for ${stop.outletCode}.`,
+      payload: {
+        stopCode: stop.stopCode,
+        action,
+        note: cleanNote.slice(0, 5000),
+        resolved,
+        dispatcherUserId: dispatcherUser?.id || null,
+      },
+    },
+  });
+  emitMonitoringUpdate({ reason: "receipt-discrepancy-decision", tripCode: trip.tripCode });
+  return {
+    id: `${trip.tripCode}:${stop.stopCode}`,
+    tripCode: trip.tripCode,
+    stopCode: stop.stopCode,
+    action,
+    note: cleanNote.slice(0, 5000),
+    status: resolved ? "RESOLVED" : "OPEN",
+    resolvedAt: resolved ? event.createdAt : null,
+    createdAt: event.createdAt,
+  };
 }
 
 export function serializeTripForDispatcher(trip) {

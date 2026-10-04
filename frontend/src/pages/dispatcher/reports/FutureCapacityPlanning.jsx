@@ -1,483 +1,267 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { getDispatcherCapacity } from "../../../services/dispatcherPlanningService";
 
-const MetricCard = ({
-  title,
-  value,
-  unit,
-  change,
-  icon,
-  iconStyle,
-}) => {
-  return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <div className="flex items-center gap-3">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${iconStyle}`}
-        >
-          {icon}
+function formatNumber(value, digits = 0) {
+  const number = Number(value || 0);
+  return Number.isFinite(number)
+    ? number.toLocaleString("en-LK", { maximumFractionDigits: digits })
+    : "0";
+}
+
+const MetricCard = ({ title, value, unit, note, icon, iconStyle }) => (
+  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+    <div className="flex items-center gap-3">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${iconStyle}`}>{icon}</div>
+      <div>
+        <p className="text-[9px] text-[var(--color-text-secondary)]">{title}</p>
+        <div className="flex items-end gap-1">
+          <p className="text-2xl font-bold text-[var(--color-text)]">{value}</p>
+          <span className="mb-1 text-[8px] text-[var(--color-text-muted)]">{unit}</span>
         </div>
-
-        <div>
-          <p className="text-[9px] text-[var(--color-text-secondary)]">{title}</p>
-
-          <div className="flex items-end gap-1">
-            <p className="text-2xl font-bold text-[var(--color-text)]">{value}</p>
-            <span className="mb-1 text-[8px] text-[var(--color-text-muted)]">{unit}</span>
-          </div>
-
-          {change && (
-            <p className="mt-1 text-[8px] text-[var(--color-success)]">{change}</p>
-          )}
-        </div>
+        {note && <p className="mt-1 text-[8px] text-[var(--color-text-muted)]">{note}</p>}
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-const forecastData = [
-  {
-    week: "Week 1",
-    date: "5 - 11 Oct",
-    fresh: 480,
-    style: 210,
-    tech: 95,
-    total: 785,
-    chilled: 260,
-    trips: 11,
-    status: "Sufficient",
-  },
-  {
-    week: "Week 2",
-    date: "12 - 18 Oct",
-    fresh: 520,
-    style: 230,
-    tech: 110,
-    total: 860,
-    chilled: 290,
-    trips: 12,
-    status: "Sufficient",
-  },
-  {
-    week: "Week 3",
-    date: "19 - 25 Oct",
-    fresh: 560,
-    style: 300,
-    tech: 150,
-    total: 1010,
-    chilled: 360,
-    trips: 14,
-    status: "Shortfall",
-  },
-  {
-    week: "Week 4",
-    date: "26 Oct - 1 Nov",
-    fresh: 490,
-    style: 260,
-    tech: 125,
-    total: 875,
-    chilled: 310,
-    trips: 13,
-    status: "Sufficient",
-  },
-];
+const CapacityBar = ({ label, value, percentage, color, status }) => (
+  <div>
+    <p className="text-[8px] text-[var(--color-text-secondary)]">{label}</p>
+    <div className="mt-1 flex items-center gap-3">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-surface-soft)]">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${percentage}%` }} />
+      </div>
+      <span className="w-20 text-right text-[8px] font-semibold">{value}</span>
+    </div>
+    <p className="mt-1 text-right text-[7px] text-[var(--color-text-muted)]">{status}</p>
+  </div>
+);
 
 const FutureCapacityPlanning = () => {
   const navigate = useNavigate();
-  const maxDemand = 600;
+  const {
+    selectedPlanningWeek = "",
+    planningWeeks = [],
+    selectedDepot = "",
+  } = useOutletContext() || {};
+  const [capacity, setCapacity] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Temporary frontend capacity value. Replace with backend data later.
-  const availableRefrigeratedCapacity = 200;
+  const week = planningWeeks.find((item) => item.value === selectedPlanningWeek);
 
-  // Find the forecast week with the largest refrigerated-capacity shortfall.
-  // If no week exceeds capacity, no capacity alert is shown.
-  const refrigeratedShortfalls = forecastData
-    .map((item) => ({
-      ...item,
-      shortfall: item.chilled - availableRefrigeratedCapacity,
-    }))
-    .filter((item) => item.shortfall > 0);
+  useEffect(() => {
+    if (!week?.startDate || !week?.endDate) {
+      setCapacity(null);
+      setLoading(false);
+      return undefined;
+    }
+    const controller = new AbortController();
+    async function loadCapacity() {
+      setLoading(true);
+      setError("");
+      try {
+        const result = await getDispatcherCapacity({
+          startDate: week.startDate,
+          endDate: week.endDate,
+          depot: selectedDepot || undefined,
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) setCapacity(result);
+      } catch (requestError) {
+        if (!controller.signal.aborted) {
+          setCapacity(null);
+          setError(
+            requestError.response?.data?.message ||
+              requestError.message ||
+              "Unable to load capacity data."
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    loadCapacity();
+    return () => controller.abort();
+  }, [week?.startDate, week?.endDate, selectedDepot]);
 
-  const criticalCapacityAlert =
-    refrigeratedShortfalls.length > 0
-      ? refrigeratedShortfalls.reduce((largest, item) =>
-          item.shortfall > largest.shortfall ? item : largest
-        )
-      : null;
+  const demand = capacity?.demand || {};
+  const fleet = capacity?.fleet || {};
+  const byBrand = capacity?.byBrand || [];
+  const byDate = capacity?.byDate || [];
+  const maxBrandOrders = Math.max(1, ...byBrand.map((item) => Number(item.orders || 0)));
+  const weightCapacity = Number(fleet.totalWeightCapacityKg || 0);
+  const reeferCapacity = Number(fleet.refrigeratedCapacityWeightKg || 0);
+  const totalWeightRatio = weightCapacity
+    ? Math.min(100, (Number(demand.weightKg || 0) / weightCapacity) * 100)
+    : 0;
+  const chilledWeightRatio = reeferCapacity
+    ? Math.min(100, (Number(demand.chilledWeightKg || 0) / reeferCapacity) * 100)
+    : 0;
+  const capacityAlerts = useMemo(() => {
+    const alerts = [];
+    if (Number(demand.totalOrders || 0) > 0 && Number(fleet.activeVehicles || 0) === 0) {
+      alerts.push("Orders are scheduled, but no active vehicles are recorded for the selected depot.");
+    }
+    if (Number(demand.chilledOrders || 0) > 0 && Number(fleet.refrigeratedVehicles || 0) === 0) {
+      alerts.push("Chilled orders are scheduled, but no active refrigerated vehicles are recorded.");
+    }
+    return alerts;
+  }, [demand.totalOrders, demand.chilledOrders, fleet.activeVehicles, fleet.refrigeratedVehicles]);
 
-  const handlePlanAllocation = () => {
-    navigate("/dispatcher/planning", {
-      state: criticalCapacityAlert
-        ? {
-            source: "future-capacity",
-            week: criticalCapacityAlert.week,
-            dateRange: criticalCapacityAlert.date,
-            shortfall: criticalCapacityAlert.shortfall,
-            capacityType: "refrigerated",
-            depot: "Kandy",
-          }
-        : undefined,
-    });
-  };
+  function openPlanning() {
+    const planDate = byDate[0]?.date || week?.startDate;
+    if (planDate) sessionStorage.setItem("dispatcherPlanningDate", planDate);
+    if (selectedDepot && selectedDepot !== "ALL") {
+      sessionStorage.setItem("dispatcherPlanningDepot", selectedDepot);
+    } else {
+      sessionStorage.removeItem("dispatcherPlanningDepot");
+    }
+    navigate("/dispatcher/planning");
+  }
 
   return (
     <div>
+      {error && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[10px] text-red-700">
+          <span>{error}</span>
+          <button type="button" className="font-semibold underline" onClick={() => setError("")}>Dismiss</button>
+        </div>
+      )}
+      {!week && !loading && (
+        <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-[10px] text-[var(--color-text-muted)]">
+          Select an operating week from the Reports & Capacity filters to load the database-backed schedule.
+        </div>
+      )}
 
-
-      {/* Capacity summary */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="Predicted Total Demand"
-          value="968"
-          unit="orders"
-          change="↑ 12% vs. previous week"
-          icon="◇"
-          iconStyle="bg-[var(--color-success-soft)] text-emerald-500"
-        />
-
-        <MetricCard
-          title="Predicted Chilled Demand"
-          value="316"
-          unit="orders"
-          change="↑ 28% vs. previous week"
-          icon="❄"
-          iconStyle="bg-blue-50 text-blue-500"
-        />
-
-        <MetricCard
-          title="Available Vehicles"
-          value="16"
-          unit="vehicles (Kandy Depot)"
-          icon="▣"
-          iconStyle="bg-purple-50 text-purple-500"
-        />
-
-        <MetricCard
-          title="Refrigerated Vehicles"
-          value="4"
-          unit="vehicles (Kandy Depot)"
-          icon="♨"
-          iconStyle="bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
-        />
+        <MetricCard title="Scheduled Demand" value={loading ? "…" : formatNumber(demand.totalOrders)} unit="orders" note="Confirmed orders in the selected week" icon="◇" iconStyle="bg-[var(--color-success-soft)] text-emerald-500" />
+        <MetricCard title="Scheduled Chilled Demand" value={loading ? "…" : formatNumber(demand.chilledOrders)} unit="orders" note={`${formatNumber(demand.chilledWeightKg, 1)} kg recorded`} icon="❄" iconStyle="bg-blue-50 text-blue-500" />
+        <MetricCard title="Active Vehicles" value={loading ? "…" : formatNumber(fleet.activeVehicles)} unit={`vehicles · ${capacity?.depot || "all depots"}`} note="From the Prisma vehicle table" icon="▣" iconStyle="bg-purple-50 text-purple-500" />
+        <MetricCard title="Refrigerated Vehicles" value={loading ? "…" : formatNumber(fleet.refrigeratedVehicles)} unit="vehicles" note="Active reefer vehicles" icon="♨" iconStyle="bg-[var(--color-warning-soft)] text-[var(--color-warning)]" />
       </div>
 
-      {/* Forecast chart and capacity comparison */}
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_290px]">
-        {/* Demand chart */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-[11px] font-semibold text-[var(--color-text)]">
-              Predicted Demand by Brand (Kandy Depot)
+              Recorded Orders by Outlet Brand ({capacity?.depot || "All Depots"})
             </h2>
-
-            <div className="flex gap-3 text-[8px] text-[var(--color-text-secondary)]">
-              <span>🟢 Fresh</span>
-              <span>🟣 Style</span>
-              <span>🟠 Tech</span>
-            </div>
+            <span className="text-[8px] text-[var(--color-text-muted)]">Not a forecast</span>
           </div>
-
-          <div className="flex h-[190px] items-end justify-around gap-5 border-b border-[var(--color-border)] px-5 pb-4">
-            {forecastData.map((item) => (
-              <div
-                key={item.week}
-                className="flex h-full flex-1 flex-col justify-end"
-              >
-                <div className="flex items-end justify-center gap-2">
-                  {/* Fresh */}
-                  <div className="flex flex-col items-center">
-                    <span className="mb-1 text-[7px] font-semibold">
-                      {item.fresh}
-                    </span>
-
-                    <div
-                      className="w-4 rounded-t bg-[var(--color-success)]"
-                      style={{
-                        height: `${(item.fresh / maxDemand) * 130}px`,
-                      }}
-                    />
+          {byBrand.length ? (
+            <div className="flex h-[190px] items-end justify-around gap-3 overflow-x-auto border-b border-[var(--color-border)] px-3 pb-4">
+              {byBrand.map((item) => (
+                <div key={item.brand} className="flex h-full min-w-14 flex-1 flex-col justify-end">
+                  <div className="flex items-end justify-center gap-1">
+                    <div className="flex flex-col items-center">
+                      <span className="mb-1 text-[7px] font-semibold">{item.orders}</span>
+                      <div className="w-5 rounded-t bg-[var(--color-success)]" style={{ height: `${Math.max(4, (item.orders / maxBrandOrders) * 125)}px` }} />
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="mb-1 text-[7px] font-semibold">{item.chilledOrders}</span>
+                      <div className="w-5 rounded-t bg-blue-400" style={{ height: `${Math.max(item.chilledOrders ? 4 : 0, (item.chilledOrders / maxBrandOrders) * 125)}px` }} />
+                    </div>
                   </div>
-
-                  {/* Style */}
-                  <div className="flex flex-col items-center">
-                    <span className="mb-1 text-[7px] font-semibold">
-                      {item.style}
-                    </span>
-
-                    <div
-                      className="w-4 rounded-t bg-purple-500"
-                      style={{
-                        height: `${(item.style / maxDemand) * 130}px`,
-                      }}
-                    />
-                  </div>
-
-                  {/* Tech */}
-                  <div className="flex flex-col items-center">
-                    <span className="mb-1 text-[7px] font-semibold">
-                      {item.tech}
-                    </span>
-
-                    <div
-                      className="w-4 rounded-t bg-[var(--color-warning)]"
-                      style={{
-                        height: `${(item.tech / maxDemand) * 130}px`,
-                      }}
-                    />
-                  </div>
+                  <p className="mt-2 truncate text-center text-[8px] font-semibold" title={item.brand}>{item.brand}</p>
                 </div>
-
-                <p className="mt-2 text-center text-[8px] font-semibold">
-                  {item.week}
-                </p>
-
-                <p className="text-center text-[7px] text-[var(--color-text-muted)]">
-                  {item.date}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="grid h-[190px] place-items-center text-center text-[9px] text-[var(--color-text-muted)]">
+              {loading ? "Loading actual order data…" : "No submitted or confirmed orders exist for this week and depot."}
+            </div>
+          )}
+          <div className="mt-2 flex gap-3 text-[8px] text-[var(--color-text-secondary)]">
+            <span>■ All scheduled orders</span>
+            <span className="text-blue-500">■ Chilled subset</span>
           </div>
         </div>
 
-        {/* Capacity panel */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <h2 className="text-[11px] font-semibold text-[var(--color-text)]">
-            Demand vs Available Capacity (Week 3)
-          </h2>
-
+          <h2 className="text-[11px] font-semibold text-[var(--color-text)]">Recorded Demand vs Fleet Capacity</h2>
+          <p className="mt-1 text-[8px] text-[var(--color-text-muted)]">Capacity shown per vehicle trip; schedule demand covers the selected week.</p>
           <div className="mt-5 space-y-5">
             <CapacityBar
-              label="Total Demand (orders)"
-              value="1,010"
-              percentage={90}
-              status=""
+              label="Scheduled order weight / fleet weight per trip"
+              value={`${formatNumber(demand.weightKg, 1)} / ${formatNumber(weightCapacity, 1)} kg`}
+              percentage={totalWeightRatio}
+              status={weightCapacity ? "Actual order weight compared with one-trip capacity" : "No active fleet capacity recorded"}
               color="bg-[var(--color-success)]"
             />
-
             <CapacityBar
-              label="Available Vehicle Capacity"
-              value="1,120"
-              percentage={100}
-              status="Sufficient"
-              color="bg-[var(--color-success)]"
-              statusColor="text-[var(--color-success)]"
+              label="Scheduled chilled weight / reefer capacity per trip"
+              value={`${formatNumber(demand.chilledWeightKg, 1)} / ${formatNumber(reeferCapacity, 1)} kg`}
+              percentage={chilledWeightRatio}
+              status={reeferCapacity ? "Actual chilled weight compared with one-trip capacity" : "No refrigerated fleet capacity recorded"}
+              color="bg-blue-400"
             />
-
-            <CapacityBar
-              label="Chilled Demand (orders)"
-              value="360"
-              percentage={90}
-              color="bg-red-400"
-            />
-
-            <CapacityBar
-              label="Available Refrigerated Capacity"
-              value="200"
-              percentage={50}
-              status="Shortfall: 160"
-              color="bg-[var(--color-danger)]"
-              statusColor="text-[var(--color-danger)]"
-            />
+            <div className="border-t border-[var(--color-border)] pt-3 text-[8px] text-[var(--color-text-secondary)]">
+              Saved trips: <strong>{loading ? "…" : formatNumber(fleet.plannedTrips)}</strong>
+              {" · "}Published trips: <strong>{loading ? "…" : formatNumber(fleet.publishedTrips)}</strong>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Weekly summary and fleet availability */}
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_310px]">
-        {/* Weekly forecast table */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <h2 className="mb-3 text-[11px] font-semibold text-[var(--color-text)]">
-            Weekly Forecast Summary (Kandy Depot)
+            Scheduled Demand by Delivery Date ({capacity?.depot || "All Depots"})
           </h2>
-
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-[8px]">
-              <thead>
-                <tr className="border-b border-[var(--color-border)] text-left text-[var(--color-text-muted)]">
-                  <th className="py-2">Week</th>
-                  <th>Date Range</th>
-                  <th>Fresh</th>
-                  <th>Style</th>
-                  <th>Tech</th>
-                  <th>Total</th>
-                  <th>Chilled Demand</th>
-                  <th>Trips</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-
+            <table className="w-full min-w-[600px] border-collapse text-[8px]">
+              <thead><tr className="border-b border-[var(--color-border)] text-left text-[var(--color-text-muted)]"><th className="py-2">Date</th><th>Orders</th><th>Ambient</th><th>Chilled</th><th>Order Weight (kg)</th><th>Chilled Weight (kg)</th></tr></thead>
               <tbody>
-                {forecastData.map((item) => (
-                  <tr
-                    key={item.week}
-                    className={`border-b border-[var(--color-border)] ${
-                      item.status === "Shortfall"
-                        ? "bg-[var(--color-danger-soft)]"
-                        : ""
-                    }`}
-                  >
-                    <td className="py-2 font-semibold">{item.week}</td>
-                    <td>{item.date}</td>
-                    <td>{item.fresh}</td>
-                    <td>{item.style}</td>
-                    <td>{item.tech}</td>
-                    <td className="font-semibold">{item.total}</td>
-                    <td>{item.chilled}</td>
-                    <td>{item.trips}</td>
-
-                    <td
-                      className={
-                        item.status === "Shortfall"
-                          ? "font-medium text-[var(--color-danger)]"
-                          : "font-medium text-[var(--color-success)]"
-                      }
-                    >
-                      {item.status === "Shortfall" ? "●" : "✓"}{" "}
-                      {item.status}
-                    </td>
+                {byDate.map((item) => (
+                  <tr key={item.date} className="border-b border-[var(--color-border)]">
+                    <td className="py-2 font-semibold">{item.date}</td>
+                    <td>{item.orders}</td>
+                    <td>{item.ambientOrders}</td>
+                    <td>{item.chilledOrders}</td>
+                    <td>{formatNumber(item.weightKg, 1)}</td>
+                    <td>{formatNumber(item.chilledWeightKg, 1)}</td>
                   </tr>
                 ))}
+                {!byDate.length && (
+                  <tr><td colSpan="6" className="py-5 text-center text-[var(--color-text-muted)]">{loading ? "Loading…" : "No scheduled orders for this week."}</td></tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Fleet availability */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold text-[var(--color-text)]">
-              Fleet Availability (Kandy Depot)
-            </h2>
-
-            <button className="text-[8px] font-medium text-blue-500">
-              View All
-            </button>
+            <h2 className="text-[11px] font-semibold text-[var(--color-text)]">Active Fleet Resources</h2>
+            <button type="button" onClick={openPlanning} className="text-[8px] font-medium text-blue-500">Open Planner</button>
           </div>
-
-          <div className="mt-5 space-y-5">
-            <FleetRow
-              icon="🚚"
-              label="Total Vehicles"
-              value="16 / 20"
-              percentage="80%"
-              barWidth="80%"
-              barColor="bg-[var(--color-success)]"
-            />
-
-            <FleetRow
-              icon="❄"
-              label="Refrigerated Vehicles"
-              value="4 / 8"
-              percentage="50%"
-              barWidth="50%"
-              barColor="bg-[var(--color-warning)]"
-            />
-
-            <FleetRow
-              icon="👤"
-              label="Drivers"
-              value="15 / 18"
-              percentage="83%"
-              barWidth="83%"
-              barColor="bg-purple-500"
-            />
+          <div className="mt-5 space-y-4 text-[8px]">
+            {[
+              ["Vehicles", formatNumber(fleet.activeVehicles)],
+              ["Refrigerated vehicles", formatNumber(fleet.refrigeratedVehicles)],
+              ["Active Drivers", formatNumber(fleet.drivers)],
+              ["Fleet volume capacity per trip", `${formatNumber(fleet.totalVolumeCapacityM3, 2)} m³`],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
+                <span className="text-[var(--color-text-secondary)]">{label}</span>
+                <strong className="text-[var(--color-text)]">{loading ? "…" : value}</strong>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Capacity warning */}
-      {criticalCapacityAlert && (
-        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold text-[var(--color-danger)]">
-              ⚠ Capacity Alert
-            </p>
-
-            <p className="mt-1 text-[9px] text-[var(--color-danger)]">
-              {criticalCapacityAlert.week} has a predicted refrigerated capacity
-              shortfall of {criticalCapacityAlert.shortfall} orders. Consider
-              reallocating vehicles or arranging additional refrigerated trucks.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handlePlanAllocation}
-            className="shrink-0 rounded-md border border-[var(--color-primary)] bg-[var(--color-surface)] px-5 py-2 text-[9px] font-medium text-[var(--color-success)]"
-          >
-            ✎ Plan Allocation
-          </button>
+      {capacityAlerts.length > 0 && (
+        <div className="mt-4 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4">
+          <p className="text-[10px] font-semibold text-[var(--color-danger)]">Capacity Alert</p>
+          <ul className="mt-1 list-inside list-disc text-[9px] text-[var(--color-danger)]">
+            {capacityAlerts.map((alert) => <li key={alert}>{alert}</li>)}
+          </ul>
+          <button type="button" onClick={openPlanning} className="mt-3 rounded-md border border-[var(--color-primary)] bg-[var(--color-surface)] px-4 py-2 text-[9px] font-medium text-[var(--color-success)]">Plan Allocation</button>
         </div>
       )}
-    </div>
-  );
-};
-
-const CapacityBar = ({
-  label,
-  value,
-  percentage,
-  status,
-  color,
-  statusColor = "",
-}) => {
-  return (
-    <div>
-      <p className="text-[8px] text-[var(--color-text-secondary)]">{label}</p>
-
-      <div className="mt-1 flex items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-surface-soft)]">
-          <div
-            className={`h-full rounded-full ${color}`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-
-        <span className="w-10 text-right text-[8px] font-semibold">
-          {value}
-        </span>
-      </div>
-
-      {status && (
-        <p className={`mt-1 text-right text-[7px] ${statusColor}`}>
-          {status}
-        </p>
-      )}
-    </div>
-  );
-};
-
-const FleetRow = ({
-  icon,
-  label,
-  value,
-  percentage,
-  barWidth,
-  barColor,
-}) => {
-  return (
-    <div className="grid grid-cols-[28px_1fr_45px] items-center gap-2">
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface-soft)]">
-        {icon}
-      </div>
-
-      <div>
-        <div className="flex justify-between text-[8px]">
-          <span>{label}</span>
-          <span className="font-semibold">{value}</span>
-        </div>
-
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-soft)]">
-          <div
-            className={`h-full rounded-full ${barColor}`}
-            style={{ width: barWidth }}
-          />
-        </div>
-      </div>
-
-      <span className="text-right text-[8px] text-[var(--color-text-secondary)]">
-        {percentage}
-      </span>
     </div>
   );
 };

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ExternalLink,
   Info,
-  LocateFixed,
   MapPin,
   Navigation2,
   ShieldAlert,
@@ -21,11 +20,6 @@ import useConnectivity from '../../hooks/useConnectivity';
 import { getDriverStop, recordArrival } from '../../services/offlineService';
 import { fetchDrivingRoute, haversineMeters } from '../../services/routingService';
 import { publishDriverRoute } from '../../services/driverMonitoringService';
-
-const demoDriverLocation = {
-  lat: Number(import.meta.env.VITE_DEMO_DRIVER_LAT || 6.9088),
-  lng: Number(import.meta.env.VITE_DEMO_DRIVER_LNG || 79.8646),
-};
 
 function formatDistanceKm(value) {
   if (!Number.isFinite(value)) return '—';
@@ -66,8 +60,7 @@ export default function NavigationPage() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setDriverLocation(demoDriverLocation);
-      setLocationMode('demo');
+      setLocationMode('unavailable');
       return undefined;
     }
 
@@ -81,8 +74,9 @@ export default function NavigationPage() {
         setLocationMode('live');
       },
       () => {
-        setDriverLocation(demoDriverLocation);
-        setLocationMode('demo');
+        setDriverLocation(null);
+        setLocationAccuracy(null);
+        setLocationMode('unavailable');
       },
       {
         enableHighAccuracy: true,
@@ -95,10 +89,12 @@ export default function NavigationPage() {
   }, []);
 
   const destination = useMemo(() => {
-    if (!stop?.destination?.latitude || !stop?.destination?.longitude) return null;
+    const latitude = Number(stop?.destination?.latitude);
+    const longitude = Number(stop?.destination?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
     return {
-      lat: Number(stop.destination.latitude),
-      lng: Number(stop.destination.longitude),
+      lat: latitude,
+      lng: longitude,
     };
   }, [stop]);
 
@@ -195,7 +191,9 @@ export default function NavigationPage() {
 
   function openGoogleMaps() {
     if (!destination) {
-      window.open(stop.mapsUrl, '_blank', 'noopener,noreferrer');
+      if (stop.mapsUrl) {
+        window.open(stop.mapsUrl, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
 
@@ -225,8 +223,8 @@ export default function NavigationPage() {
         <div className="live-map__badge">
           <span className={online && locationMode === 'live' ? 'live-dot' : 'offline-dot'} />
           {online
-            ? `${locationMode === 'live' ? 'Live GPS' : locationMode === 'demo' ? 'Demo GPS' : 'Locating'} · ${stop.outletId}`
-            : `Offline route · ${stop.outletId}`}
+            ? `${locationMode === 'live' ? 'Live GPS' : locationMode === 'unavailable' ? 'Location unavailable' : 'Locating'} · ${stop.outletId}`
+            : `${route?.points?.length > 1 ? 'Offline cached route' : 'Offline · no verified route coordinates'} · ${stop.outletId}`}
         </div>
 
         {online && routeState === 'loading' && <div className="routing-state">Calculating road route…</div>}
@@ -236,16 +234,18 @@ export default function NavigationPage() {
         {!online && (
           <OfflineBanner
             title="No Internet Connection"
-            message="Your route is still available. Updates will be saved on this device."
+            message={route?.points?.length > 1
+              ? 'A cached route is available. Delivery updates will be queued on this device.'
+              : 'No cached route is available for this stop. Delivery updates will be queued on this device.'}
           />
         )}
 
-        {online && locationMode === 'demo' && (
+        {online && locationMode === 'unavailable' && (
           <div className="route-notice route-notice--warning">
-            <LocateFixed size={18} />
+            <Info size={18} />
             <div>
               <strong>Live GPS is unavailable</strong>
-              <span>Using a demo driver position. On a phone, allow location access over HTTPS for live routing.</span>
+              <span>Allow location access over HTTPS to share a live position. No substitute location is shown.</span>
             </div>
           </div>
         )}
@@ -298,7 +298,7 @@ export default function NavigationPage() {
           )}
         </section>
 
-        <button className="btn btn-primary full" onClick={openGoogleMaps}><ExternalLink size={16}/> Open in Google Maps</button>
+        <button className="btn btn-primary full" onClick={openGoogleMaps} disabled={!destination && !stop.mapsUrl} title={!destination && !stop.mapsUrl ? 'Verified destination coordinates are unavailable.' : undefined}><ExternalLink size={16}/>{destination || stop.mapsUrl ? ' Open in Google Maps' : ' Map coordinates unavailable'}</button>
         <div className="safety-note"><ShieldAlert size={17}/> Use delivery controls only when safely stopped.</div>
       </div>
 

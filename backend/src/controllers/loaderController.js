@@ -1,132 +1,63 @@
 import {
-  completeHandover,
-  createIssue,
-  getDashboardData,
-  getIssues,
-  getTrip,
-  getTrips,
-  resolveIssue,
-  updateLoadingItem,
-  updateVerification,
-} from "../services/loaderService.js";
+  completeLoaderHandoverInDatabase,
+  createLoaderIssueInDatabase,
+  getLoaderDashboardFromDatabase,
+  getLoaderIssuesFromDatabase,
+  getLoaderTripFromDatabase,
+  getLoaderTripsFromDatabase,
+  resolveLoaderIssueInDatabase,
+  updateLoaderItemInDatabase,
+  updateLoaderVerificationInDatabase,
+} from "../services/loaderDatabaseService.js";
+
+function respondWithServiceError(res, error) {
+  const status = Number(error?.status) || 500;
+  if (status >= 500) console.error("Loader database request failed:", error);
+  return res.status(status).json({
+    success: false,
+    message: status < 500 ? error.message : "The Loader request could not be completed.",
+  });
+}
 
 // ============================================================
 // DASHBOARD
 // ============================================================
 
-export async function getLoaderDashboard(
-  req,
-  res
-) {
-  const depotKey =
-    req.query.depot ||
-    "peliyagoda";
-
-  const data =
-    await getDashboardData(
-      depotKey
-    );
-
-  if (!data) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Depot not found.",
-      });
+export async function getLoaderDashboard(req, res) {
+  try {
+    const data = await getLoaderDashboardFromDatabase(req.user?.depotId);
+    if (!data) {
+      return res.status(404).json({ success: false, message: "No active depot is assigned to this Loader." });
+    }
+    return res.json({ success: true, data });
+  } catch (error) {
+    return respondWithServiceError(res, error);
   }
-
-  return res.json({
-    success: true,
-    data,
-  });
 }
 
 // ============================================================
 // TRIPS
 // ============================================================
 
-export async function getLoaderTrips(
-  req,
-  res
-) {
+export async function getLoaderTrips(req, res) {
   try {
-    const trips =
-      await getTrips(
-        req.query.depot
-      );
-
+    const trips = await getLoaderTripsFromDatabase(req.user?.depotId);
     if (!trips) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message:
-            "Depot not found.",
-        });
+      return res.status(404).json({ success: false, message: "No active depot is assigned to this Loader." });
     }
-
-    return res.json({
-      success: true,
-      data: trips,
-    });
+    return res.json({ success: true, data: trips });
   } catch (error) {
-    console.error(
-      "Loader trips error:",
-      error
-    );
-
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message:
-          "Failed to load trips.",
-      });
+    return respondWithServiceError(res, error);
   }
 }
 
-export async function getLoaderTrip(
-  req,
-  res
-) {
+export async function getLoaderTrip(req, res) {
   try {
-  const trip =
-    await getTrip(
-      req.params.tripId,
-      req.user.id
-    );
-
-  if (!trip) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Trip not found.",
-      });
-  }
-
-  return res.json({
-    success: true,
-    data: trip,
-  });
-} catch (error) {
-    console.error(
-      "Loader trip error:",
-      error
-    );
-
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message:
-          "Failed to load trip.",
-      });
+    const trip = await getLoaderTripFromDatabase(req.params.tripId, req.user?.depotId);
+    if (!trip) return res.status(404).json({ success: false, message: "Trip not found." });
+    return res.json({ success: true, data: trip });
+  } catch (error) {
+    return respondWithServiceError(res, error);
   }
 }
 
@@ -135,78 +66,33 @@ export async function getLoaderTrip(
 // LOADING ITEMS
 // ============================================================
 
-export async function patchLoadingItem(
-  req,
-  res
-) {
+export async function patchLoadingItem(req, res) {
   const {
     loaded,
   } = req.body;
 
-  if (
-    typeof loaded !==
-    "boolean"
-  ) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-
-        message:
-          "loaded must be true or false.",
-      });
+  if (typeof loaded !== "boolean") {
+    return res.status(400).json({ success: false, message: "loaded must be true or false." });
   }
-
-  const result =
-    await updateLoadingItem(
-      req.params.tripId,
-      req.params.itemId,
+  try {
+    const result = await updateLoaderItemInDatabase({
+      tripCode: req.params.tripId,
+      depotId: req.user?.depotId,
+      itemId: req.params.itemId,
       loaded,
-      req.user.id
-    );
-
-  if (
-    result.error ===
-    "TRIP_NOT_FOUND"
-  ) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Trip not found.",
-      });
+      loaderUser: req.user,
+    });
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return respondWithServiceError(res, error);
   }
-
-  if (
-    result.error ===
-    "ITEM_NOT_FOUND"
-  ) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Loading item not found.",
-      });
-  }
-
-  return res.json({
-    success: true,
-    data: result,
-  });
 }
 
 // ============================================================
 // ISSUES
 // ============================================================
 
-export async function postLoadingIssue(
-  req,
-  res
-) {
+export async function postLoadingIssue(req, res) {
   const {
     itemId,
     issueType,
@@ -266,12 +152,11 @@ export async function postLoadingIssue(
       });
   }
 
-  const result =
-  await createIssue({
-    tripId:
-      req.params.tripId,
-
-    itemId,
+  try {
+    const result = await createLoaderIssueInDatabase({
+      tripCode: req.params.tripId,
+      depotId: req.user?.depotId,
+      itemId,
 
     issueType,
 
@@ -285,55 +170,28 @@ export async function postLoadingIssue(
 
     note,
 
-    loaderUserId:
-      req.user.id,
-  });
-
-  if (result.error) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          result.error ===
-          "TRIP_NOT_FOUND"
-            ? "Trip not found."
-            : "Loading item not found.",
-      });
+      loaderUser: req.user,
+    });
+    return res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    return respondWithServiceError(res, error);
   }
-
-  return res
-    .status(201)
-    .json({
-      success: true,
-      data: result,
-    });
 }
 
-export async function getLoaderIssues(
-  req,
-  res
-) {
-  const data =
-    await getIssues({
-      tripId:
-        req.query.tripId,
-
-      status:
-        req.query.status,
+export async function getLoaderIssues(req, res) {
+  try {
+    const data = await getLoaderIssuesFromDatabase({
+      depotId: req.user?.depotId,
+      tripCode: req.query.tripId,
+      status: req.query.status,
     });
-
-  res.json({
-    success: true,
-    data,
-  });
+    return res.json({ success: true, data });
+  } catch (error) {
+    return respondWithServiceError(res, error);
+  }
 }
 
-export async function patchIssueResolution(
-  req,
-  res
-) {
+export async function patchIssueResolution(req, res) {
   const {
     resolution,
   } = req.body;
@@ -349,110 +207,74 @@ export async function patchIssueResolution(
       });
   }
 
-  const issue =
-  await resolveIssue(
-    req.params.issueId,
-    resolution,
-    req.user?.id
-  );
-
-  if (!issue) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Issue not found.",
-      });
+  try {
+    const issue = await resolveLoaderIssueInDatabase({
+      issueId: req.params.issueId,
+      resolution,
+      depotId: req.user?.depotId,
+    });
+    return res.json({ success: true, data: issue });
+  } catch (error) {
+    return respondWithServiceError(res, error);
   }
-
-  return res.json({
-    success: true,
-    data: issue,
-  });
 }
 
 // ============================================================
 // VERIFICATION
 // ============================================================
 
-export async function patchVerification(
-  req,
-  res
-) {
-  const allowed =
-    [
-      "count",
-      "secure",
-      "temperature",
-      "docs",
-    ];
-
+export async function patchVerification(req, res) {
+  const allowed = ["count", "secure", "temperature", "docs"];
   const updates = {};
-
-  for (
-    const key
-    of allowed
-  ) {
-    if (
-      key in req.body
-    ) {
-      updates[key] =
-        Boolean(
-          req.body[key]
-        );
+  for (const key of allowed) {
+    if (key in req.body) {
+      if (typeof req.body[key] !== "boolean") {
+        return res.status(400).json({
+          success: false,
+          message: `${key} must be true or false.`,
+        });
+      }
+      updates[key] = req.body[key];
     }
   }
-
-  const result =
-  await updateVerification(
-    req.params.tripId,
-    updates,
-    req.user.id
-  );
-
-  if (!result) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-
-        message:
-          "Trip not found.",
-      });
+  if (!Object.keys(updates).length) {
+    return res.status(400).json({
+      success: false,
+      message: "Provide at least one verification check.",
+    });
   }
 
-  return res.json({
-    success: true,
-    data: result,
-  });
+  try {
+    const result = await updateLoaderVerificationInDatabase({
+      tripCode: req.params.tripId,
+      depotId: req.user?.depotId,
+      verification: updates,
+    });
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Trip not found." });
+    }
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return respondWithServiceError(res, error);
+  }
 }
 
 // ============================================================
 // HANDOVER
 // ============================================================
 
-export async function postHandover(
-  req,
-  res
-) {
-  const result =
-    await completeHandover(
-      req.params.tripId,
-      {
-        loaderUserId:
-          req.user.id,
-
-        sealNumber:
-          req.body
-            .sealNumber,
-
-        handoverCode:
-          req.body
-            .handoverCode,
-      }
-    );
+export async function postHandover(req, res) {
+  let result;
+  try {
+    result = await completeLoaderHandoverInDatabase({
+      tripCode: req.params.tripId,
+      depotId: req.user?.depotId,
+      loaderUser: req.user,
+      sealNumber: req.body.sealNumber,
+    });
+  } catch (error) {
+    return respondWithServiceError(res, error);
+  }
 
   if (
     result.error ===
@@ -494,6 +316,25 @@ export async function postHandover(
         message:
           "Resolve all loading issues before handover.",
       });
+  }
+
+  if (result.error === "ITEMS_NOT_LOADED") {
+    return res.status(400).json({
+      success: false,
+      message: "Mark all assigned order items as loaded before handover.",
+    });
+  }
+  if (result.error === "DRIVER_NOT_ASSIGNED") {
+    return res.status(409).json({
+      success: false,
+      message: "Assign an active Driver before completing handover.",
+    });
+  }
+  if (result.error === "SEAL_NUMBER_REQUIRED") {
+    return res.status(400).json({
+      success: false,
+      message: "Enter the physical seal number before completing handover.",
+    });
   }
 
   return res

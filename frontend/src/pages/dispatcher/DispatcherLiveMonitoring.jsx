@@ -142,7 +142,11 @@ function RouteMap({ trip }) {
   // render that exact geometry. Fall back to the planned stop line
   // only until the Driver opens navigation.
   const routeGeometry = liveRoutePoints.length > 1 ? liveRoutePoints : stopPoints;
-  const center = routeGeometry[0] || stopPoints[0] || [6.9271, 79.8612];
+  const currentPoint =
+    Number.isFinite(trip?.currentLat) && Number.isFinite(trip?.currentLng)
+      ? [trip.currentLat, trip.currentLng]
+      : null;
+  const center = routeGeometry[0] || liveRoutePoints[0] || currentPoint;
 
   return (
     <div className="dlm-panel dlm-map-card">
@@ -150,7 +154,7 @@ function RouteMap({ trip }) {
         Route Map - {trip?.tripCode || "No trip selected"}
       </div>
 
-      {trip ? (
+      {trip && center ? (
         <>
           <MapContainer
             className="dlm-map"
@@ -229,6 +233,10 @@ function RouteMap({ trip }) {
             {liveRoutePoints.length > 1 && <span>Driver road route</span>}
           </div>
         </>
+      ) : trip ? (
+        <div className="dlm-empty">
+          Location unavailable: this trip has no verified vehicle or stop coordinates.
+        </div>
       ) : (
         <div className="dlm-empty">Select an active trip to view its route.</div>
       )}

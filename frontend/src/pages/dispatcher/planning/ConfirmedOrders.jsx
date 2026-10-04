@@ -26,6 +26,7 @@ import DispatcherLayout
   from "../../../components/dispatcher/DispatcherLayout";
 
 import {
+  deferDispatcherOrder,
   getDispatcherPlanning,
 } from "../../../services/dispatcherPlanningService";
 
@@ -91,6 +92,9 @@ function ConfirmedOrders() {
   });
 
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [deferReason, setDeferReason] = useState("");
+  const [deferMessage, setDeferMessage] = useState("");
+  const [deferring, setDeferring] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,7 +109,7 @@ function ConfirmedOrders() {
         setSelectedOrderId((current) =>
           current && data?.orders?.some((order) => order.id === current)
             ? current
-            : data?.orders?.[0]?.id || null
+            : null
         );
       })
       .catch((error) => {
@@ -120,9 +124,9 @@ function ConfirmedOrders() {
   const orders = planningData.orders || [];
   const summary = planningData.summary || {};
   const selectedOrder =
-    orders.find((order) => order.id === selectedOrderId) ||
-    orders[0] ||
-    null;
+    orders.find((order) => order.id === selectedOrderId) || null;
+  const brands = [...new Set(orders.map((order) => order.brand).filter(Boolean))].sort();
+  const districts = [...new Set(orders.map((order) => order.district).filter(Boolean))].sort();
 
 
   const filteredOrders =
@@ -173,10 +177,10 @@ function ConfirmedOrders() {
 
 
           const matchesStatus =
-            selectedStatus ===
-              "ALL" ||
-            order.status ===
-              selectedStatus;
+            selectedStatus === "ALL" ||
+            (selectedStatus === "Deferred"
+              ? order.status === "Deferred"
+              : order.allocationStatus === selectedStatus);
 
 
           const matchesDeferred =
@@ -212,6 +216,30 @@ function ConfirmedOrders() {
     value
       ? value
       : "—";
+
+  async function handleDeferOrder() {
+    if (!selectedOrder || selectedOrder.status === "Deferred" || deferring) return;
+    try {
+      setDeferring(true);
+      setDeferMessage("");
+      await deferDispatcherOrder({
+        orderId: selectedOrder.id,
+        reason: deferReason,
+      });
+      setDeferReason("");
+      setDeferMessage(`${selectedOrder.orderId} deferred.`);
+      const data = await getDispatcherPlanning({
+        date: selectedDate,
+        depot: selectedDepot,
+      });
+      setPlanningData(data || { orders: [], summary: {} });
+      setSelectedOrderId(null);
+    } catch (error) {
+      setDeferMessage(error.message || "Unable to defer the selected order.");
+    } finally {
+      setDeferring(false);
+    }
+  }
 
 
   return (
@@ -259,13 +287,10 @@ function ConfirmedOrders() {
                 value={
                   selectedDate
                 }
-                onChange={(
-                  event
-                ) =>
-                  setSelectedDate(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setSelectedDate(event.target.value);
+                  sessionStorage.setItem("dispatcherPlanningDate", event.target.value);
+                }}
               />
 
             </div>
@@ -281,13 +306,10 @@ function ConfirmedOrders() {
                 value={
                   selectedDepot
                 }
-                onChange={(
-                  event
-                ) =>
-                  setSelectedDepot(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setSelectedDepot(event.target.value);
+                  sessionStorage.setItem("dispatcherPlanningDepot", event.target.value);
+                }}
               >
 
                 <option value="ALL">
@@ -547,22 +569,8 @@ function ConfirmedOrders() {
                   setSelectedBrand
                 }
                 options={[
-                  [
-                    "ALL",
-                    "All Brands",
-                  ],
-                  [
-                    "Fresh",
-                    "Fresh",
-                  ],
-                  [
-                    "Style",
-                    "Style",
-                  ],
-                  [
-                    "Tech",
-                    "Tech",
-                  ],
+                  ["ALL", "All Brands"],
+                  ...brands.map((brand) => [brand, brand]),
                 ]}
               />
 
@@ -576,10 +584,8 @@ function ConfirmedOrders() {
                   setSelectedDistrict
                 }
                 options={[
-                  [
-                    "ALL",
-                    "All Districts",
-                  ],
+                  ["ALL", "All Districts"],
+                  ...districts.map((district) => [district, district]),
                 ]}
               />
 
@@ -717,6 +723,8 @@ function ConfirmedOrders() {
                           key={
                             order.orderId
                           }
+                          onClick={() => setSelectedOrderId(order.id)}
+                          className={order.id === selectedOrderId ? "selected-order-row" : ""}
                         >
 
                           <td>
@@ -1029,21 +1037,45 @@ function ConfirmedOrders() {
                   </h3>
 
                   <span>
-                    No deferral information
-                    available.
+                    {selectedOrder.deferredReason || "No deferral reason has been recorded."}
                   </span>
 
                 </div>
 
 
+                {selectedOrder.status !== "Deferred" && (
+                  <div className="defer-order-action">
+                    <input
+                      type="text"
+                      maxLength={500}
+                      value={deferReason}
+                      onChange={(event) => setDeferReason(event.target.value)}
+                      placeholder="Reason for deferring this order"
+                      aria-label="Reason for deferring order"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDeferOrder}
+                      disabled={!deferReason.trim() || deferring}
+                    >
+                      {deferring ? "Deferring..." : "Defer Order"}
+                    </button>
+                  </div>
+                )}
+
+                {deferMessage && <p role="status">{deferMessage}</p>}
+
                 <button
                   type="button"
                   className="eligible-vehicle-button"
-                  onClick={() =>
-                    navigate(
-                      "/dispatcher/planning/fleet"
-                    )
-                  }
+                  disabled={selectedOrder.status === "Deferred"}
+                  onClick={() => {
+                    if (!selectedOrder || selectedOrder.status === "Deferred") return;
+                    sessionStorage.setItem("dispatcherSelectedOrderId", String(selectedOrder.id));
+                    sessionStorage.setItem("dispatcherPlanningDate", selectedDate);
+                    sessionStorage.setItem("dispatcherPlanningDepot", selectedOrder.depot);
+                    navigate("/dispatcher/planning/fleet");
+                  }}
                 >
 
                   <Truck
@@ -1524,6 +1556,11 @@ function ConfirmedOrders() {
           vertical-align: middle;
         }
 
+        .orders-table .selected-order-row {
+          background: #eefaf5;
+          cursor: pointer;
+        }
+
 
         .orders-table td strong,
         .orders-table td span {
@@ -1874,6 +1911,35 @@ function ConfirmedOrders() {
           font-weight: 600;
         }
 
+        .defer-order-action {
+          display: flex;
+          gap: 6px;
+          margin-top: 12px;
+        }
+
+        .defer-order-action input {
+          min-width: 0;
+          flex: 1;
+          padding: 8px;
+          border: 1px solid #d9e3de;
+          border-radius: 6px;
+          font: inherit;
+        }
+
+        .defer-order-action button {
+          border: 0;
+          border-radius: 6px;
+          padding: 0 10px;
+          background: #fff1df;
+          color: #86551a;
+          cursor: pointer;
+        }
+
+        .defer-order-action button:disabled,
+        .eligible-vehicle-button:disabled {
+          cursor: not-allowed;
+          opacity: .55;
+        }
 
         /* ===============================================
            RESPONSIVE

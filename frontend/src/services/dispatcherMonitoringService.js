@@ -34,6 +34,19 @@ export async function getDispatcherDeliveryReports({ depot } = {}) {
   return response.data;
 }
 
+export async function saveDispatcherReceiptDecision({
+  tripCode,
+  stopCode,
+  action,
+  note,
+}) {
+  const response = await api.post(
+    `/dispatcher/delivery-reports/discrepancies/${encodeURIComponent(tripCode)}/${encodeURIComponent(stopCode)}/decision`,
+    { action, note }
+  );
+  return response.data;
+}
+
 export function createDispatcherMonitoringSocket() {
   const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 

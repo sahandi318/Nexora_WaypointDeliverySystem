@@ -11,13 +11,20 @@ import {
   getDeliveryReports,
   getLiveMonitoring,
   getLiveMonitoringTrip,
+  postReceiptDiscrepancyDecision,
 } from "../controllers/dispatcherMonitoringController.js";
 
 import {
+  decideLoadingException,
   deferPlanningOrder,
+  getCapacitySnapshot,
+  getLoadingExceptions,
+  getLoadingOverview,
   getPlanningSnapshot,
   publishPlanningTrip,
+  savePlanningDraft,
 } from "../controllers/dispatcherPlanningController.js";
+import { getDispatcherDashboard } from "../controllers/dispatcherMonitoringController.js";
 
 import {
   getDispatcherStoreOrder,
@@ -34,12 +41,22 @@ const dispatcherAccess = [
   authorizeRoles("DISPATCHER", "ADMIN"),
 ];
 
-router.get("/dashboard", ...dispatcherAccess, getDashboard);
+router.get(
+  "/dashboard",
+  ...dispatcherAccess,
+  getDispatcherDashboard
+);
 
 router.get(
   "/planning",
   ...dispatcherAccess,
   getPlanningSnapshot
+);
+
+router.post(
+  "/planning/draft",
+  ...dispatcherAccess,
+  savePlanningDraft
 );
 
 router.post(
@@ -55,6 +72,30 @@ router.post(
 );
 
 router.get(
+  "/loading",
+  ...dispatcherAccess,
+  getLoadingOverview
+);
+
+router.get(
+  "/loading/exceptions",
+  ...dispatcherAccess,
+  getLoadingExceptions
+);
+
+router.get(
+  "/capacity",
+  ...dispatcherAccess,
+  getCapacitySnapshot
+);
+
+router.post(
+  "/loading/exceptions/:id/decision",
+  ...dispatcherAccess,
+  decideLoadingException
+);
+
+router.get(
   "/live-monitoring",
   ...dispatcherAccess,
   getLiveMonitoring
@@ -64,6 +105,12 @@ router.get(
   "/delivery-reports",
   ...dispatcherAccess,
   getDeliveryReports
+);
+
+router.post(
+  "/delivery-reports/discrepancies/:tripCode/:stopCode/decision",
+  ...dispatcherAccess,
+  postReceiptDiscrepancyDecision
 );
 
 router.get(

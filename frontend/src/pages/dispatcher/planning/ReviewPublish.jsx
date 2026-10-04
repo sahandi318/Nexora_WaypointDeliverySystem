@@ -29,7 +29,7 @@ import DispatcherLayout
 
 import {
   getDispatcherPlanning,
-  publishDispatcherTrip,
+  publishDispatcherPlan,
 } from "../../../services/dispatcherPlanningService";
 
 
@@ -71,15 +71,17 @@ function ReviewPublish() {
     setPlanningData(
       data || {
         summary: {},
+        deliveryPlan: null,
+        plannedTrips: [],
         suggestedTrips: [],
         publicationPreview: [],
       }
     );
 
     setSelectedTripId((current) =>
-      current && data?.suggestedTrips?.some((trip) => trip.tripId === current)
+      current && data?.plannedTrips?.some((trip) => trip.tripId === current)
         ? current
-        : data?.suggestedTrips?.[0]?.tripId || null
+        : data?.plannedTrips?.[0]?.tripId || null
     );
   }
 
@@ -91,11 +93,16 @@ function ReviewPublish() {
   }, [selectedDate, selectedDepot]);
 
   const summary = planningData.summary || {};
-  const trips = planningData.suggestedTrips || [];
+  const trips = planningData.plannedTrips || [];
   const selectedTrip =
     trips.find((trip) => trip.tripId === selectedTripId) ||
     trips[0] ||
     null;
+  const planDepotId = planningData.deliveryPlan?.depotId || selectedTrip?.depotId;
+  const hasActiveDriver =
+    planningData.drivers?.some(
+      (driver) => Number(driver.depotId) === Number(planDepotId)
+    ) || false;
 
   const validationItems = selectedTrip
     ? [
@@ -108,8 +115,11 @@ function ReviewPublish() {
         {
           id: "driver",
           title: "Driver assignment",
-          description: selectedTrip.driverName || "No active Driver assigned.",
-          status: selectedTrip.driverUserId ? "Ready" : "Blocking",
+          description: selectedTrip.driverName ||
+            (hasActiveDriver
+              ? "A depot Driver will be assigned when this plan is published."
+              : "No active Driver is assigned to this depot."),
+          status: selectedTrip.driverUserId || hasActiveDriver ? "Ready" : "Blocking",
         },
       ]
     : [];
@@ -120,6 +130,7 @@ function ReviewPublish() {
       : [];
 
   const publicationPreview = planningData.publicationPreview || [];
+  const allOrdersAccounted = Number(summary.unallocatedOrders || 0) === 0;
 
   async function handlePublishPlan() {
     if (!selectedTrip || publishing) return;
@@ -128,10 +139,13 @@ function ReviewPublish() {
       setPublishing(true);
       setPublishMessage("");
 
-      const result = await publishDispatcherTrip(selectedTrip);
+      const result = await publishDispatcherPlan({
+        date: selectedDate,
+        depot: selectedDepot,
+      });
 
       setPublishMessage(
-        `${result.tripCode} published. The assigned Driver can now see the trip.`
+        `${result.tripCodes?.length || 0} saved trip(s) published to the Loader and Driver workflows.`
       );
 
       await loadPlanning();
@@ -403,13 +417,13 @@ function ReviewPublish() {
             <div>
 
               <strong>
-                All orders accounted for
+                {allOrdersAccounted
+                  ? "All orders accounted for"
+                  : `${summary.unallocatedOrders} confirmed order(s) still unallocated`}
               </strong>
 
               <span>
-                Every confirmed order must
-                be allocated to a trip or
-                have a documented deferral.
+                Every confirmed order must be allocated to a trip or deferred with a reason before publication.
               </span>
 
             </div>
@@ -891,15 +905,9 @@ function ReviewPublish() {
                       }
                     >
 
-                      <CheckCircle2
-                        size={14}
-                      />
-
                       <span>
-                        {
-                          item.label ||
-                          "—"
-                        }
+                        {item.title} — {item.status}
+                        <small>{item.description}</small>
                       </span>
 
                     </div>
@@ -1094,7 +1102,16 @@ function ReviewPublish() {
               type="button"
               className="publish-plan-button"
               onClick={handlePublishPlan}
-              disabled={!selectedTrip || publishing}
+              disabled={
+                !planningData.deliveryPlan ||
+                planningData.deliveryPlan.status === "PUBLISHED" ||
+                !trips.length ||
+                !allOrdersAccounted ||
+                Number(summary.blockingErrors || 0) > 0 ||
+                !hasActiveDriver ||
+                selectedDepot === "ALL" ||
+                publishing
+              }
             >
               {publishing ? "Publishing..." : "Confirm & Publish Plan"}
 

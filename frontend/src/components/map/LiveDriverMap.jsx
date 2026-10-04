@@ -46,7 +46,21 @@ export default function LiveDriverMap({ driverLocation, destination, routePoints
     [outletId],
   );
 
-  const center = driverLocation || destination || { lat: 6.9271, lng: 79.8612 };
+  const firstRoutePoint = routePoints?.[0];
+  const center =
+    driverLocation ||
+    destination ||
+    (firstRoutePoint
+      ? { lat: firstRoutePoint[0], lng: firstRoutePoint[1] }
+      : null);
+
+  if (!center) {
+    return (
+      <div className="driver-leaflet-map grid place-items-center p-6 text-center">
+        <p>Location unavailable: no verified vehicle or destination coordinates are available.</p>
+      </div>
+    );
+  }
 
   return (
     <MapContainer
