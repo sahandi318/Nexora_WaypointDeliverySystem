@@ -12,6 +12,7 @@ function StoreManagerMobileDrawer({
   user,
   outlet,
   depot,
+  issueCount,
 }) {
   const {
     t,
@@ -58,6 +59,7 @@ function StoreManagerMobileDrawer({
           user={user}
           outlet={outlet}
           depot={depot}
+          issueCount={issueCount}
           onNavigate={
             onClose
           }

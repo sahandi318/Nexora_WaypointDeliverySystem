@@ -19,7 +19,7 @@ export async function getPlanningSnapshot(req, res, next) {
           requestedDepot !== "ALL"
             ? requestedDepot
             : null,
-      });
+      }, req.user);
 
     return res.status(200).json({
       success: true,

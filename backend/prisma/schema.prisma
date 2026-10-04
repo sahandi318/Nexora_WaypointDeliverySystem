@@ -38,6 +38,15 @@ enum StoreOrderStatus {
 }
 
 // ============================================================
+// STORE ORDER DISPATCHER DECISION
+// ============================================================
+
+enum StoreOrderDecisionType {
+  CONFIRMED
+  DEFERRED
+}
+
+// ============================================================
 // STORE ORDER CUTOFF DECISION
 // ============================================================
 
@@ -53,6 +62,16 @@ enum StoreOrderCutoffDecision {
 enum StoreOrderType {
   AMBIENT_DRY
   CHILLED
+}
+
+// ============================================================
+// DELIVERY ALLOCATION STATUS
+// ============================================================
+
+enum DeliveryAllocationStatus {
+  ALLOCATED
+  PUBLISHED
+  CANCELLED
 }
 
 // ============================================================
@@ -152,10 +171,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  passwordResetOtps       PasswordResetOtp[]
-  liveTripsAsDriver       LiveTrip[]         @relation("LiveTripDriver")
-  createdStoreOrders      StoreOrder[]       @relation("StoreOrderCreatedBy")
-  dispatcherDeliveryPlans DeliveryPlan[]     @relation("DispatcherDeliveryPlans")
+  passwordResetOtps     PasswordResetOtp[]
+  liveTripsAsDriver     LiveTrip[]            @relation("LiveTripDriver")
+  createdStoreOrders    StoreOrder[]          @relation("StoreOrderCreatedBy")
+  storeOrderDecisions   StoreOrderDecision[]  @relation("StoreOrderDecisionBy")
+  dispatcherDeliveryPlans DeliveryPlan[] @relation("DispatcherDeliveryPlans")
 
   @@index([role])
   @@index([outletId])
@@ -307,6 +327,8 @@ model LiveTripStop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  deliveryAllocations DeliveryAllocation[]
+
   @@index([liveTripId, sequence])
   @@index([outletCode])
   @@map("live_trip_stops")
@@ -431,7 +453,9 @@ model StoreOrder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items             StoreOrderItem[]
+  items               StoreOrderItem[]
+  deliveryAllocations DeliveryAllocation[]
+  dispatcherDecisions StoreOrderDecision[]
   tripAllocations   TripOrderAllocation[]
   loadingExceptions LoadingException[]
 
@@ -441,6 +465,39 @@ model StoreOrder {
   @@index([createdByUserId])
   @@index([effectiveDispatchDate])
   @@map("store_orders")
+}
+
+
+// ============================================================
+// STORE ORDER DISPATCHER DECISION HISTORY
+// ============================================================
+
+/// Immutable audit trail for Dispatcher decisions on Store Manager orders.
+/// Current state stays on StoreOrder.status; this table records who changed
+/// that state and why, without duplicating the order itself.
+model StoreOrderDecision {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  decidedByUserId Int?  @map("decided_by_user_id")
+  decidedByUser   User? @relation("StoreOrderDecisionBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  decision        StoreOrderDecisionType
+  previousStatus  StoreOrderStatus       @map("previous_status")
+  resultingStatus StoreOrderStatus       @map("resulting_status")
+
+  reason String? @db.VarChar(500)
+
+  effectiveDispatchDate DateTime @map("effective_dispatch_date") @db.Date
+
+  decidedAt DateTime @default(now()) @map("decided_at")
+
+  @@index([storeOrderId, decidedAt])
+  @@index([decidedByUserId])
+  @@index([decision, decidedAt])
+  @@map("store_order_decisions")
 }
 
 // ============================================================
@@ -463,6 +520,44 @@ model StoreOrderItem {
   @@unique([orderId, productId])
   @@index([productId])
   @@map("store_order_items")
+}
+
+// ============================================================
+// DELIVERY ALLOCATION BRIDGE
+// ============================================================
+
+/// Connects a confirmed Store Manager order to the exact live trip stop
+/// that will deliver it. This bridge keeps the business order lifecycle
+/// separate from transport execution while still allowing multiple store
+/// orders to share the same outlet stop.
+model DeliveryAllocation {
+  id Int @id @default(autoincrement())
+
+  storeOrderId Int        @map("store_order_id")
+  storeOrder   StoreOrder @relation(fields: [storeOrderId], references: [id], onDelete: Cascade)
+
+  liveTripStopId Int          @map("live_trip_stop_id")
+  liveTripStop   LiveTripStop @relation(fields: [liveTripStopId], references: [id], onDelete: Cascade)
+
+  status DeliveryAllocationStatus @default(ALLOCATED)
+
+  // Snapshot of the StoreOrder total units at allocation time.
+  // The dispatcher does not provide this value from the browser.
+  allocatedUnits Int @map("allocated_units")
+
+  allocatedAt DateTime  @default(now()) @map("allocated_at")
+  publishedAt DateTime? @map("published_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  cancellationReason String? @map("cancellation_reason") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([storeOrderId, liveTripStopId])
+  @@index([storeOrderId, status])
+  @@index([liveTripStopId, status])
+  @@map("delivery_allocations")
 }
 
 // ============================================================

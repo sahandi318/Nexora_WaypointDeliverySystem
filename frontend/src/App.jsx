@@ -74,6 +74,9 @@ import StoreManagerModuleEntryPage from "./pages/storeManager/StoreManagerModule
 import StoreManagerOrdersPage from "./pages/storeManager/StoreManagerOrdersPage";
 import StoreManagerOrderDetailsPage from "./pages/storeManager/StoreManagerOrderDetailsPage";
 import StoreManagerCreateOrderPage from "./pages/storeManager/StoreManagerCreateOrderPage";
+import StoreManagerDeliveriesPage from "./pages/storeManager/StoreManagerDeliveriesPage";
+import StoreManagerDeliveryDetailsPage from "./pages/storeManager/StoreManagerDeliveryDetailsPage";
+import StoreManagerIssuesPage from "./pages/storeManager/StoreManagerIssuesPage";
 
 import DispatcherDashboard from "./pages/dispatcher/DispatcherDashboard";
 import DispatcherLiveMonitoring from "./pages/dispatcher/DispatcherLiveMonitoring";
@@ -592,11 +595,33 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
+                <StoreManagerDeliveriesPage />
 
-                  section="deliveries"
+              </ProtectedRoute>
 
-                />
+            }
+
+          />
+
+
+
+          <Route
+
+            path="/store-manager/deliveries/:orderCode"
+
+            element={
+
+              <ProtectedRoute
+
+                allowedRoles={[
+
+                  "STORE_MANAGER",
+
+                ]}
+
+              >
+
+                <StoreManagerDeliveryDetailsPage />
 
               </ProtectedRoute>
 
@@ -622,11 +647,7 @@ function App() {
 
               >
 
-                <StoreManagerModuleEntryPage
-
-                  section="issues"
-
-                />
+                <StoreManagerIssuesPage />
 
               </ProtectedRoute>
 

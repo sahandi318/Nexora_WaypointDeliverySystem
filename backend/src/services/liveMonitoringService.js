@@ -340,8 +340,157 @@ async function ensureAdditionalDemoTrips(depot) {
   }
 }
 
+export const STORE_MANAGER_DELIVERY_SOCKET_EVENT =
+  "store-manager:delivery-update";
+
 export function setMonitoringIo(io) {
   ioInstance = io;
+}
+
+function normalizeSocketOutletCode(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+function storeManagerOutletRoom(outletCode) {
+  const normalizedOutletCode =
+    normalizeSocketOutletCode(outletCode);
+
+  return normalizedOutletCode
+    ? `outlet:${normalizedOutletCode}`
+    : null;
+}
+
+/**
+ * Resolve only outlets that have a PUBLISHED allocation on the trip.
+ * This prevents an unrelated Store Manager from receiving a refresh event
+ * even if their browser attempts to supply another outlet code.
+ */
+export async function getPublishedStoreManagerOutletRoomsForTrip(
+  tripCode,
+  { stopCode = null } = {}
+) {
+  const normalizedTripCode =
+    String(tripCode ?? "").trim();
+  const normalizedStopCode =
+    String(stopCode ?? "").trim();
+
+  if (!normalizedTripCode) return [];
+
+  const stops = await prisma.liveTripStop.findMany({
+    where: {
+      liveTrip: {
+        tripCode: normalizedTripCode,
+      },
+      ...(normalizedStopCode
+        ? { stopCode: normalizedStopCode }
+        : {}),
+      deliveryAllocations: {
+        some: {
+          status: "PUBLISHED",
+        },
+      },
+    },
+    select: {
+      outletCode: true,
+    },
+  });
+
+  return [
+    ...new Set(
+      stops
+        .map((stop) =>
+          storeManagerOutletRoom(
+            stop.outletCode
+          )
+        )
+        .filter(Boolean)
+    ),
+  ];
+}
+
+/**
+ * Store Manager socket events are deliberately small invalidation notices.
+ * The frontend must refetch the outlet-isolated REST tracking endpoint for
+ * actual delivery details. We never push another outlet's stop, coordinates,
+ * route geometry, POD payload, or downstream route data through the socket.
+ */
+export function classifyStoreManagerDeliverySocketReason(reason) {
+  const normalizedReason = String(reason || "").toUpperCase();
+
+  if (normalizedReason.includes("ROUTE")) return "ETA_POSITION";
+  if (normalizedReason.includes("ARRIV")) return "ARRIVAL";
+  if (normalizedReason.includes("OUTCOME")) return "OUTCOME";
+  if (normalizedReason.includes("POD")) return "POD";
+  if (normalizedReason.includes("EXCEPTION")) return "EXCEPTION";
+  if (normalizedReason.includes("COMPLETE")) return "COMPLETION";
+  if (normalizedReason.includes("ONLINE") || normalizedReason.includes("OFFLINE")) {
+    return "PRESENCE";
+  }
+
+  return "STATUS";
+}
+
+export function buildSafeStoreManagerDeliverySocketPayload(
+  payload = {}
+) {
+  const reason =
+    String(payload.reason || "delivery-update");
+
+  return {
+    at: new Date().toISOString(),
+    reason,
+    eventKind:
+      classifyStoreManagerDeliverySocketReason(
+        reason
+      ),
+    tripCode:
+      payload.tripCode
+        ? String(payload.tripCode)
+        : null,
+  };
+}
+
+export async function emitStoreManagerDeliveryUpdate(
+  payload = {}
+) {
+  if (!ioInstance || !payload.tripCode) {
+    return [];
+  }
+
+  const rooms =
+    await getPublishedStoreManagerOutletRoomsForTrip(
+      payload.tripCode,
+      {
+        // Stop-scoped driver updates (route, arrival, outcome, POD, exception)
+        // refresh only the affected outlet. Trip-wide changes such as driver
+        // presence, synchronization, or stop completion can refresh all
+        // published outlets because they change remaining-stop progress.
+        stopCode:
+          payload.notifyTripOutlets
+            ? null
+            : payload.stopCode || null,
+      }
+    );
+
+  if (rooms.length === 0) return rooms;
+
+  const safePayload =
+    buildSafeStoreManagerDeliverySocketPayload(
+      payload
+    );
+
+  for (const room of rooms) {
+    ioInstance
+      .to(room)
+      .emit(
+        STORE_MANAGER_DELIVERY_SOCKET_EVENT,
+        safePayload
+      );
+  }
+
+  return rooms;
 }
 
 export function emitMonitoringUpdate(payload = {}) {
@@ -349,6 +498,19 @@ export function emitMonitoringUpdate(payload = {}) {
     at: new Date().toISOString(),
     ...payload,
   });
+
+  // Store Managers receive only a safe refresh signal for published
+  // deliveries that belong to their server-authorized outlet room.
+  if (payload.tripCode) {
+    void emitStoreManagerDeliveryUpdate(payload).catch(
+      (error) => {
+        console.error(
+          "Store Manager live-delivery event failed:",
+          error
+        );
+      }
+    );
+  }
 }
 
 export async function initializeLiveMonitoring() {
@@ -375,10 +537,17 @@ export async function synchronizeDriverState() {
   const depot = await resolveDepot(driver);
 
   for (const trip of state.trips || []) {
-    await upsertTripFromDriverState(trip, driver, depot);
-  }
+    await upsertTripFromDriverState(
+      trip,
+      driver,
+      depot
+    );
 
-  emitMonitoringUpdate({ reason: "driver-state-sync" });
+    emitMonitoringUpdate({
+      reason: "driver-state-sync",
+      tripCode: trip.tripId,
+    });
+  }
 }
 
 export async function synchronizeTripForDriver({ trip, driverUser, emit = true }) {
@@ -461,9 +630,15 @@ export async function updateDriverPresence({
           : trip.latestDriverUpdateAt || now,
       },
     });
-  }
 
-  emitMonitoringUpdate({ reason: online ? "driver-online" : "driver-offline" });
+    emitMonitoringUpdate({
+      reason:
+        online
+          ? "driver-online"
+          : "driver-offline",
+      tripCode: trip.tripCode,
+    });
+  }
 }
 
 export async function recordDriverRouteSnapshot({
@@ -598,6 +773,10 @@ export async function recordDriverWorkflowEvent({
     reason: type.toLowerCase(),
     tripCode: trip.tripId,
     stopCode: stop?.stopId || null,
+    // Completion changes the stops-remaining calculation for later outlets,
+    // so every published Store Manager delivery on the trip may refresh.
+    notifyTripOutlets:
+      type === COMPLETION_EVENT_TYPE,
   });
 
   return { ok: true, recordedAt: now.toISOString() };
@@ -607,11 +786,13 @@ export async function getLiveMonitoringSnapshot({
   depotId,
   status = "ACTIVE",
   tripCode = null,
+  date = null,
 } = {}) {
   const where = {};
 
   if (depotId) where.depotId = Number(depotId);
   if (tripCode) where.tripCode = tripCode;
+  if (date) where.deliveryDate = new Date(`${date}T00:00:00.000Z`);
   if (status === "ACTIVE") where.status = { not: "COMPLETED" };
   if (status === "OFFLINE") where.status = "OFFLINE";
   if (status === "DELAYED") where.status = "DELAYED";
@@ -637,6 +818,7 @@ export async function getLiveMonitoringSnapshot({
   const summaryTrips = await prisma.liveTrip.findMany({
     where: {
       ...(depotId ? { depotId: Number(depotId) } : {}),
+      ...(date ? { deliveryDate: new Date(`${date}T00:00:00.000Z`) } : {}),
       status: { not: "COMPLETED" },
     },
     select: {
@@ -646,7 +828,7 @@ export async function getLiveMonitoringSnapshot({
   });
 
   const depots = await prisma.depot.findMany({
-    where: { isActive: true },
+    where: { isActive: true, ...(depotId ? { id: Number(depotId) } : {}) },
     select: { id: true, code: true, name: true },
     orderBy: { name: "asc" },
   });

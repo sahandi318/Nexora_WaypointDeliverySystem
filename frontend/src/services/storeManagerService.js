@@ -320,3 +320,106 @@ export async function getStoreManagerOrderSetup({
 
   return responseData.data.setup;
 }
+
+// ============================================================
+// STORE MANAGER DELIVERIES
+// ============================================================
+
+/**
+ * Loads the delivery workspace for the authenticated Store Manager.
+ *
+ * SECURITY:
+ * The browser does not send an outlet ID. The backend resolves the
+ * Store Manager's trusted outlet from the authenticated database user.
+ */
+export async function getStoreManagerDeliveries({
+  signal,
+} = {}) {
+  const response = await api.get(
+    "/store-manager/deliveries",
+    { signal }
+  );
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !Array.isArray(responseData?.data?.deliveries)
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager deliveries response."
+    );
+  }
+
+  return responseData.data.deliveries;
+}
+
+/**
+ * Loads one outlet-isolated delivery by Store Order code.
+ */
+export async function getStoreManagerDelivery({
+  orderCode,
+  signal,
+} = {}) {
+  const normalizedOrderCode = String(orderCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedOrderCode) {
+    throw new Error("A valid order code is required.");
+  }
+
+  const response = await api.get(
+    `/store-manager/deliveries/${encodeURIComponent(normalizedOrderCode)}`,
+    { signal }
+  );
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !responseData?.data?.delivery
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager delivery response."
+    );
+  }
+
+  return responseData.data.delivery;
+}
+
+/**
+ * Loads the privacy-filtered live tracking view for one Store Manager
+ * delivery. The backend resolves the outlet from the authenticated user;
+ * no outlet or room identifier is sent by the browser.
+ */
+export async function getStoreManagerDeliveryTracking({
+  orderCode,
+  signal,
+} = {}) {
+  const normalizedOrderCode = String(orderCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedOrderCode) {
+    throw new Error("A valid order code is required.");
+  }
+
+  const response = await api.get(
+    `/store-manager/deliveries/${encodeURIComponent(normalizedOrderCode)}/tracking`,
+    { signal }
+  );
+
+  const responseData = response.data;
+
+  if (
+    !responseData?.success ||
+    !responseData?.data?.tracking
+  ) {
+    throw new Error(
+      "The server returned an invalid Store Manager tracking response."
+    );
+  }
+
+  return responseData.data.tracking;
+}

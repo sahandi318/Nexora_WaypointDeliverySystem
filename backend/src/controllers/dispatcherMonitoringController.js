@@ -1,3 +1,27 @@
+import prisma from "../config/database.js";
+import { resolveActorScope, DispatcherOrderError } from "../services/dispatcherOrderService.js";
+import { getDispatcherDashboardData, validateDispatcherDate } from "../services/dispatcherDashboardService.js";
+
+export async function getDashboard(req, res, next) {
+  try {
+    const data = await getDispatcherDashboardData(req.user, req.query);
+    res.status(200).json({ success: true, data });
+  } catch (error) { next(error); }
+}
+
+async function monitoringScope(req) {
+  // Dispatcher requests always use the assignment loaded by authentication.
+  let depotCode = null;
+  if (req.user.role === "ADMIN" && req.query.depotId) {
+    const id = Number(req.query.depotId);
+    if (!Number.isInteger(id) || id <= 0) throw new DispatcherOrderError("Invalid depot.");
+    const depot = await prisma.depot.findUnique({ where: { id } });
+    if (!depot) throw new DispatcherOrderError("Depot not found.", { status: 404 });
+    depotCode = depot.code;
+  }
+  return resolveActorScope(req.user, depotCode);
+}
+
 import {
   getDispatcherDeliveryReports,
   getLiveMonitoringSnapshot,
@@ -6,12 +30,13 @@ import {
 
 export async function getLiveMonitoring(req, res, next) {
   try {
-    const requestedDepotId = req.query.depotId;
-    const ownDepotId = req.user?.depot?.id || req.user?.depotId || null;
-    const depotId = requestedDepotId || ownDepotId || undefined;
+    const scope = await monitoringScope(req);
     const status = String(req.query.status || "ACTIVE").toUpperCase();
-
-    const snapshot = await getLiveMonitoringSnapshot({ depotId, status });
+    if (!["ACTIVE", "ALL", "OFFLINE", "DELAYED"].includes(status)) {
+      throw new DispatcherOrderError("Invalid monitoring status.");
+    }
+    const date = validateDispatcherDate(req.query.date);
+    const snapshot = await getLiveMonitoringSnapshot({ depotId: scope.depotId, status, date });
 
     res.status(200).json({
       success: true,
@@ -27,7 +52,9 @@ export async function getLiveMonitoring(req, res, next) {
 
 export async function getLiveMonitoringTrip(req, res, next) {
   try {
+    const scope = await monitoringScope(req);
     const snapshot = await getLiveMonitoringSnapshot({
+      depotId: scope.depotId,
       tripCode: req.params.tripCode,
       status: "ALL",
     });
